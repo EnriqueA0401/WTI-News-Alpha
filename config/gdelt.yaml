@@ -1,8 +1,9 @@
-# GDELT GKG: filtro amplio versionado e ingesta por streaming (ADR-011, D5 aprobado 2026-10-15).
+# GDELT GKG: filtro amplio versionado e ingesta por streaming (ADR-011, D5 aprobado 2026-10-15; ADR-013).
+# v1: solo prueba de un día (2024-06-10). v2: + token FUEL, título/organización ampliados y URL (revisión adversarial).
 # El filtro decide qué filas del GKG se conservan en raw; la relevancia fina se decide en F3.
 # Cambiar cualquier campo de gkg_filter exige una nueva version (la salida va a otra carpeta).
 gkg_filter:
-  version: gkg-oil-v1
+  version: gkg-oil-v2
   # Un tema de V1Themes cuenta si alguno de sus tokens separados por "_" está en esta lista
   # (así ENV_OIL y ECON_OILPRICE cuentan, pero WB_1913_SOIL_MANAGEMENT no).
   theme_tokens:
@@ -26,11 +27,14 @@ gkg_filter:
     - FUELPRICES
     - HEATINGOIL
     - HEATINGOILPRICE
+    - FUEL
   # Aceite de oliva, coco, etc. (medido en la muestra F1).
   theme_exclude_prefixes:
     - TAX_FOODSTAPLES_
-  title_regex: '(?i)\b(crude|oil|opec|wti|brent|petroleum|refinery|refineries|gasoline|pipelines?)\b'
-  org_regex: '(?i)(opec|organization of the petroleum exporting|petroleum exporting countries)'
+  title_regex: '(?i)\b(crude|oil|oils|opec|wti|brent|petroleum|petrol|oilfields?|refinery|refineries|gasoline|pipelines?|aramco)\b'
+  org_regex: '(?i)(opec|organization of the petroleum exporting|petroleum exporting countries|aramco)'
+  # URL del artículo (en 2015-2018 no hay título). Delimitadores no alfabéticos: "-oil-", "/oil_".
+  url_regex: '(?i)(?:^|[^a-z])(crude|oil|opec|wti|brent|petroleum|petrol|oilfields?|aramco)(?:[^a-z]|$)'
   # Solo para marcar líneas rechazadas que parecían relevantes (no filtra nada).
   reject_relevance_regex: '(?i)(oil|crude|opec|petrol)'
 
@@ -38,6 +42,11 @@ ingest:
   url_prefix: https://data.gdeltproject.org/gdeltv2/
   # Fracción máxima de líneas rechazadas (nº de campos != 27) por día; si se supera, el día falla.
   max_reject_fraction_per_day: 0.005
+  # Por fichero: falla si rechaza más de reject_lines_tolerance_per_file líneas Y más de esta fracción.
+  max_reject_fraction_per_file: 0.02
+  reject_lines_tolerance_per_file: 2
+  # 404 tolerados por día (F1: el índice lista ficheros inexistentes); por encima, el día falla y se reintenta.
+  max_missing_404_per_day: 8
   # Líneas mal formadas toleradas en el índice maestro (F1: 61 líneas truncadas).
   max_malformed_index_lines: 100
   http_timeout_s: 120.0

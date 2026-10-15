@@ -70,19 +70,34 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Propuesta:** (c). Conserva el margen aprobado y cubre las subidas tardías. Si Last-Modified reflejara una re-subida posterior, solo retrasa la disponibilidad (más conservador).
 - **Consecuencias:** F2 guarda el header Last-Modified en el manifiesto. Cambia la definición de un timestamp: requiere aprobación (CLAUDE.md §4).
 
-## ADR-013 — Filtro GKG `gkg-oil-v1` y columnas conservadas (aceptada, implementa ADR-011)
-- **Contexto:** D5 aprobado: ingesta del GKG por streaming con un filtro amplio y versionado. Hay que decidir qué filas y qué columnas se guardan, porque lo descartado solo se recupera volviendo a descargar.
-- **Medido en la muestra F1 (175.850 filas):**
+## ADR-013 — Filtro GKG versionado, columnas conservadas y flujo de publicación (aceptada, implementa ADR-011)
+- **Contexto:** D5 aprobado: ingesta del GKG por streaming con un filtro amplio y versionado. Lo descartado solo se recupera volviendo a descargar.
+- **Medido en la muestra F1 (175.851 líneas):**
   - GCAM ocupa el 70 % de los bytes de cada fila.
-  - Un filtro por tokens de tema más título y organización conserva entre el 3 % y el 6 % de las filas.
-  - Un día real (2024-06-10, 96 ficheros) dio 142.570 filas, de las que se conservaron 4.107. El Parquet resultante ocupa 13,6 MB, lo que da unos 5 GB/año.
-- **Decisión:**
-  - Se conserva una fila si cumple alguna de estas condiciones:
-    - un tema contiene un token de petróleo entre `_` (lista en `config/gdelt.yaml`), excluyendo `TAX_FOODSTAPLES_*`;
-    - el título coincide con la regex de crudo, OPEC, WTI, etc.;
-    - la organización es OPEC.
-  - Se guardan las 27 columnas originales, GCAM incluida, para no perder información del piloto.
-  - Las filas se validan: 27 campos, GKGRECORDID al inicio y sin fragmento en la línea siguiente. Las rechazadas se cuentan, con un umbral de 0,5 % por día.
+  - Un día real (2024-06-10, 96 ficheros, filtro v1) dio 142.570 filas, de las que se conservaron 4.107. El Parquet ocupa 13,6 MB, lo que da unos 5 GB/año.
+- **Decisión: filtro `gkg-oil-v2`.** Se conserva una fila si cumple alguna de estas condiciones:
+  - un tema contiene un token de petróleo o combustible entre `_` (lista en `config/gdelt.yaml`), excluyendo `TAX_FOODSTAPLES_*`;
+  - el título coincide con crudo, petrol, OPEC, WTI, Aramco, etc.;
+  - la organización es OPEC o Aramco;
+  - la URL contiene esos términos entre separadores no alfabéticos.
+
+  Conserva el 4,4 % de las filas de la muestra F1. La URL añade 116 filas (58 de ellas en 2015, que no tiene títulos).
+- **Columnas:** se guardan las 27 columnas originales (GCAM incluida), más `source_file_ts`, `row_in_file` y los cuatro motivos de coincidencia.
+- **Validación de filas:**
+  - 27 campos y GKGRECORDID al inicio;
+  - la línea siguiente también debe ser un registro bien formado; si no, la línea actual puede ser un registro partido y se rechaza;
+  - los rechazos se cuentan.
+- **Umbrales:** el fichero falla si rechaza más de 2 líneas y más del 2 %; el día falla si rechaza más del 0,5 % o tiene más de 8 ficheros 404.
+- **Flujo:**
+  - los procesos de trabajo escriben en `data/staging`;
+  - el proceso principal, con lock exclusivo, enlaza la salida en raw y la registra;
+  - si una ejecución muere entre ambos pasos, la siguiente regenera el día y adopta la salida solo si el sha256 coincide.
+- **Procedencia en cada línea del manifiesto:** `filter_sha256`, índice usado (ruta, sha256 y último fichero), versión de Polars, `Last-Modified`, reemplazos UTF-8 y conteos.
+  - Un cambio del filtro sin nueva `version` hace fallar la verificación.
+  - `end` no puede pasar del día del último fichero del índice.
+- **Revisión adversarial (14 hallazgos):** corregidos los hallazgos 1–7 y 9–14, con test de regresión.
+  - **Riesgo aceptado (hallazgo 8, bajo):** las líneas rechazadas no se guardan. Son 2 de 175.851 en la muestra y se cuentan en el manifiesto.
+  - **Nota:** `gkg_record_id` no es único en 2015–2018; la clave de fila es `(source_file_ts, row_in_file)`.
 - **Consecuencias:**
-  - Con GCAM, el histórico completo (≈ 11 años) podría no caber en el disco de la sesión. La decisión de quitar GCAM se tomará con las cifras del piloto.
-  - Cualquier cambio del filtro exige una nueva `version` y otra carpeta de salida.
+  - v1 solo se usó en la prueba de un día (2024-06-10, se conserva como registro); el piloto usa v2.
+  - Con GCAM, el histórico completo podría no caber en el disco de la sesión. La decisión de quitarlo se tomará con las cifras del piloto.

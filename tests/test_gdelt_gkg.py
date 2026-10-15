@@ -19,7 +19,12 @@ import polars as pl
 import pytest
 import yaml
 
-from wti_news_alpha.config import GdeltConfig, load_gdelt_config, load_yaml_model
+from wti_news_alpha.config import (
+    GdeltConfig,
+    GkgFilterConfig,
+    load_gdelt_config,
+    load_yaml_model,
+)
 from wti_news_alpha.errors import RawIntegrityError, SchemaError, SourceAccessError
 from wti_news_alpha.ingestion import gdelt_gkg as g
 from wti_news_alpha.ingestion.rawstore import RawStore
@@ -248,7 +253,7 @@ def test_filter_rejects_naive_ts() -> None:
 
 def test_decode_zip_checks_single_expected_member() -> None:
     text = gkg_text(line())
-    assert g.decode_gkg_zip(zip_bytes(text), "20240610141500.gkg.csv") == (text, False)
+    assert g.decode_gkg_zip(zip_bytes(text), "20240610141500.gkg.csv") == (text, 0)
     with pytest.raises(SchemaError, match="miembro"):
         g.decode_gkg_zip(zip_bytes(text, member="other.csv"), "20240610141500.gkg.csv")
     buf = io.BytesIO()
@@ -261,10 +266,22 @@ def test_decode_zip_checks_single_expected_member() -> None:
         g.decode_gkg_zip(b"not a zip", "20240610141500.gkg.csv")
 
 
-def test_decode_zip_invalid_utf8_is_replaced_and_flagged() -> None:
-    text, replaced = g.decode_gkg_zip(zip_bytes(b"ab\xffcd\n"), "20240610141500.gkg.csv")
-    assert replaced is True
-    assert text == "ab�cd\n"
+def test_decode_zip_invalid_utf8_is_replaced_and_counted() -> None:
+    raw = "x\ufffd".encode() + b"ab\xffcd\xfe\n"  # un U+FFFD legítimo y dos bytes inválidos
+    text, n = g.decode_gkg_zip(zip_bytes(raw), "20240610141500.gkg.csv")
+    assert n == 2
+    assert text == "x\ufffdab\ufffdcd\ufffd\n"
+
+
+def test_decode_zip_corrupt_deflate_is_schema_error() -> None:
+    # Regresión (revisión adversarial): zlib.error escapaba como excepción no tipada.
+    good = zip_bytes(gkg_text(line(), line(), line()) * 50)
+    data_start = 30 + len("20240610141500.gkg.csv")
+    bad = bytearray(good)
+    for i in range(data_start + 5, data_start + 40):
+        bad[i] ^= 0xFF
+    with pytest.raises(SchemaError, match="zip"):
+        g.decode_gkg_zip(bytes(bad), "20240610141500.gkg.csv")
 
 
 # ------------------------------------------------------------------ descarga de un fichero
@@ -385,8 +402,11 @@ def test_fetch_other_4xx_fails_without_retry() -> None:
 # ------------------------------------------------------------------ día completo
 
 
-def make_store(tmp_path: Path, commit: str = "abc") -> g.GkgDayStore:
-    return g.GkgDayStore(tmp_path / "raw", tmp_path / "manifests", FLT.version, commit)
+IDX = g.IndexRef("gdelt/index/m.txt", "f" * 64, "2026-10-15T05:00:00+00:00")
+
+
+def make_store(tmp_path: Path, commit: str = "abc", flt: GkgFilterConfig = FLT) -> g.GkgDayStore:
+    return g.GkgDayStore(tmp_path / "raw", tmp_path / "manifests", flt, commit, IDX)
 
 
 def day_fixture() -> tuple[list[g.IndexEntry], Server]:
@@ -404,19 +424,21 @@ def run_day(store: g.GkgDayStore, entries: list[g.IndexEntry], srv: Server) -> g
     return g.process_day(DAY, entries, CFG, store.spec(), client_factory=srv.client, sleep=no_sleep)
 
 
-def test_process_day_writes_read_only_parquet_sorted(tmp_path: Path) -> None:
+def test_process_day_writes_only_to_staging(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     entries, srv = day_fixture()
     out = run_day(store, list(reversed(entries)), srv)
-    path = store.raw_root / out.rel_path
-    assert out.rel_path == "gdelt_gkg_oil/gkg-oil-v1/2024/06/20240610.parquet"
-    assert not path.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-    df = pl.read_parquet(path)
+    staged = Path(out.staged_path)
+    assert staged.parent == store.staging_dir
+    assert not (store.raw_root / out.rel_path).exists()
+    assert out.rel_path == "gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    assert not staged.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+    df = pl.read_parquet(staged)
     assert labels(df) == ["a1", "b1"]
     assert df.schema == g.OUTPUT_SCHEMA
     assert out.n_rows == 2
     assert [r.status for r in out.files] == ["ok", "ok", "missing_404"]
-    assert out.sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert out.sha256 == hashlib.sha256(staged.read_bytes()).hexdigest()
 
 
 def test_process_day_is_deterministic(tmp_path: Path) -> None:
@@ -427,29 +449,55 @@ def test_process_day_is_deterministic(tmp_path: Path) -> None:
     assert a.sha256 == b.sha256
 
 
-def test_process_day_reject_threshold_fails_and_writes_nothing(tmp_path: Path) -> None:
+def test_process_day_reject_threshold_fails(tmp_path: Path) -> None:
     store = make_store(tmp_path)
-    content = zip_bytes(gkg_text(line(), "broken\tline"))
+    content = zip_bytes(gkg_text(*[line(record_id=str(i)) for i in range(5)], "broken\tline"))
     e = entry_for(content)
+    ingest = CFG.ingest.model_copy(update={"reject_lines_tolerance_per_file": 5})
+    cfg = CFG.model_copy(update={"ingest": ingest})
     with pytest.raises(SchemaError, match="rechazadas"):
-        run_day(store, [e], Server({e.name: [ok(content)]}))
-    assert not list(store.raw_root.rglob("*.parquet"))
+        g.process_day(
+            DAY, [e], cfg, store.spec(), client_factory=Server({e.name: [ok(content)]}).client
+        )
+    assert not list(tmp_path.rglob("*.parquet"))
+
+
+def test_file_reject_threshold_fails() -> None:
+    # Regresión (revisión adversarial): un fichero pequeño mal formado pasaba el umbral diario.
+    content = zip_bytes(gkg_text(line(), "x", "y", "z"))
+    e = entry_for(content)
+    with (
+        Server({e.name: [ok(content)]}).client() as c,
+        pytest.raises(SchemaError, match="en el fichero"),
+    ):
+        g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+
+
+def test_file_reject_within_tolerance_passes() -> None:
+    content = zip_bytes(gkg_text(*[line(record_id=str(i)) for i in range(3)], "frag"))
+    e = entry_for(content)
+    with Server({e.name: [ok(content)]}).client() as c:
+        _, rec = g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+    assert (rec.rows_in, rec.rejected) == (2, 2)
+
+
+def test_process_day_too_many_404_fails(tmp_path: Path) -> None:
+    # Regresión (revisión adversarial): un 404 dejaba el día "done" para siempre sin límite.
+    store = make_store(tmp_path)
+    n = CFG.ingest.max_missing_404_per_day + 1
+    entries = [
+        entry_for(b"x", datetime(2024, 6, 10, i // 4, 15 * (i % 4), tzinfo=UTC)) for i in range(n)
+    ]
+    srv = Server({e.name: [httpx.Response(404)] for e in entries})
+    with pytest.raises(SourceAccessError, match="404"):
+        run_day(store, entries, srv)
 
 
 def test_process_day_empty_day_writes_empty_output(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     out = run_day(store, [], Server({}))
     assert out.n_rows == 0
-    assert pl.read_parquet(store.raw_root / out.rel_path).schema == g.OUTPUT_SCHEMA
-
-
-def test_process_day_never_overwrites(tmp_path: Path) -> None:
-    store = make_store(tmp_path)
-    entries, srv = day_fixture()
-    run_day(store, entries, srv)
-    entries, srv = day_fixture()
-    with pytest.raises(RawIntegrityError, match="existe"):
-        run_day(store, entries, srv)
+    assert pl.read_parquet(out.staged_path).schema == g.OUTPUT_SCHEMA
 
 
 def read_manifest(store: g.GkgDayStore) -> list[dict[str, object]]:
@@ -457,18 +505,29 @@ def read_manifest(store: g.GkgDayStore) -> list[dict[str, object]]:
     return [json.loads(x) for x in gzip.decompress(path.read_bytes()).decode().splitlines()]
 
 
-def test_record_and_status(tmp_path: Path) -> None:
+def test_publish_and_status(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     assert store.status(DAY) == "todo"
     entries, srv = day_fixture()
     out = run_day(store, entries, srv)
-    assert store.status(DAY) == "orphan"
-    store.record(out)
+    assert store.publish(out) is False
+    assert not Path(out.staged_path).exists()
+    path = store.raw_root / out.rel_path
+    assert not path.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
     assert store.status(DAY) == "done"
     (rec,) = read_manifest(store)
     assert rec["sha256"] == out.sha256
-    assert rec["filter_version"] == "gkg-oil-v1"
+    assert rec["filter_version"] == "gkg-oil-v2"
+    assert rec["filter_sha256"] == g.filter_sha256(FLT)
     assert rec["code_commit"] == "abc"
+    assert rec["index"] == {
+        "rel_path": "gdelt/index/m.txt",
+        "sha256": "f" * 64,
+        "last_file_ts": "2026-10-15T05:00:00+00:00",
+    }
+    assert rec["polars_version"] == pl.__version__
+    assert rec["adopted"] is False
+    assert rec["n_no_last_modified"] == 0
     files = rec["files"]
     assert isinstance(files, list)
     assert [f["status"] for f in files] == ["ok", "ok", "missing_404"]
@@ -477,11 +536,55 @@ def test_record_and_status(tmp_path: Path) -> None:
         store.record(out)
 
 
+def test_publish_adopts_identical_orphan_and_rejects_different(tmp_path: Path) -> None:
+    # Regresión (revisión adversarial): una salida huérfana quedaba irrecuperable.
+    store = make_store(tmp_path)
+    entries, srv = day_fixture()
+    out = run_day(store, entries, srv)
+    dest = store.raw_root / out.rel_path
+    dest.parent.mkdir(parents=True)
+    os.link(out.staged_path, dest)  # simula muerte entre enlace y registro
+    assert store.status(DAY) == "orphan"
+    assert store.publish(out) is True
+    assert store.status(DAY) == "done"
+    assert read_manifest(store)[0]["adopted"] is True
+
+    other = make_store(tmp_path / "o")
+    entries, srv = day_fixture()
+    out2 = run_day(other, entries, srv)
+    d2 = other.raw_root / out2.rel_path
+    d2.parent.mkdir(parents=True)
+    d2.write_bytes(b"different")
+    with pytest.raises(RawIntegrityError, match="contenido distinto"):
+        other.publish(out2)
+
+
+def test_publish_rejects_altered_staging(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    entries, srv = day_fixture()
+    out = run_day(store, entries, srv)
+    forged = g.DayOutput(
+        out.day, out.rel_path, out.staged_path, "0" * 64, out.n_bytes, out.n_rows, out.files
+    )
+    with pytest.raises(RawIntegrityError, match="distinto"):
+        store.publish(forged)
+
+
+def test_record_rejects_sha_mismatch(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    entries, srv = day_fixture()
+    out = run_day(store, entries, srv)
+    store.publish(out)
+    forged = g.DayOutput(date(2024, 6, 12), out.rel_path, "", "0" * 64, 0, 0, ())
+    with pytest.raises(RawIntegrityError, match="distinto"):
+        store.record(forged)
+
+
 def test_status_detects_tampered_and_missing(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     entries, srv = day_fixture()
     out = run_day(store, entries, srv)
-    store.record(out)
+    store.publish(out)
     path = store.raw_root / out.rel_path
     os.chmod(path, 0o644)
     path.write_bytes(b"tampered")
@@ -492,15 +595,39 @@ def test_status_detects_tampered_and_missing(tmp_path: Path) -> None:
         store.status(DAY)
 
 
-def test_manifest_duplicate_day_fails(tmp_path: Path) -> None:
+def test_status_detects_filter_change_without_new_version(tmp_path: Path) -> None:
+    # Regresión (revisión adversarial): editar el filtro sin cambiar version no se detectaba.
     store = make_store(tmp_path)
     entries, srv = day_fixture()
-    out = run_day(store, entries, srv)
-    store.record(out)
+    store.publish(run_day(store, entries, srv))
+    changed = FLT.model_copy(update={"theme_tokens": (*FLT.theme_tokens, "LNG")})
+    with pytest.raises(RawIntegrityError, match="filtro cambió"):
+        make_store(tmp_path, flt=changed).status(DAY)
+
+
+def test_manifest_duplicate_or_corrupt_fails(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    entries, srv = day_fixture()
+    store.publish(run_day(store, entries, srv))
     mpath = store.manifest_path(DAY)
-    mpath.write_bytes(mpath.read_bytes() * 2)
+    good = mpath.read_bytes()
+    mpath.write_bytes(good * 2)
     with pytest.raises(RawIntegrityError, match="duplicad"):
         store.status(DAY)
+    mpath.write_bytes(good[:-10])  # gzip truncado
+    with pytest.raises(RawIntegrityError, match="ilegible"):
+        store.status(DAY)
+
+
+def test_lock_is_exclusive_and_cleans_staging(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    store.staging_dir.mkdir(parents=True)
+    leftover = store.staging_dir / "20240610-x.parquet"
+    leftover.write_bytes(b"x")
+    with store.lock():
+        assert not leftover.exists()
+        with pytest.raises(RawIntegrityError, match="otra ejecución"), make_store(tmp_path).lock():
+            pass
 
 
 # ------------------------------------------------------------------ ejecución completa
@@ -540,6 +667,7 @@ def test_ingest_gkg_end_to_end_and_idempotent(tmp_path: Path) -> None:
     s1 = run({DAY: entries, other: []})
     assert s1.written == [DAY, other]
     assert s1.failed == {}
+    assert not list((tmp_path / "staging").rglob("*.parquet"))
     n_calls = len(srv.calls)
     s2 = run({DAY: entries, other: []})
     assert s2.already_done == [DAY, other]
@@ -574,12 +702,55 @@ def test_ingest_gkg_refuses_dirty_tree(tmp_path: Path) -> None:
     assert s.written == [DAY]
 
 
-def test_ingest_gkg_orphan_output_is_failure(tmp_path: Path) -> None:
+def test_ingest_gkg_adopts_identical_orphan(tmp_path: Path) -> None:
     entries, srv = day_fixture()
     store = make_store(tmp_path)
-    run_day(store, entries, srv)  # salida sin manifiesto
+    out = run_day(store, entries, srv)
+    dest = store.raw_root / out.rel_path
+    dest.parent.mkdir(parents=True)
+    os.link(out.staged_path, dest)
     s = runner(tmp_path, srv)({DAY: entries})
-    assert "huérfan" in s.failed[DAY]
+    assert s.adopted == [DAY]
+    assert s.ok
+
+
+def test_ingest_gkg_different_orphan_is_failure(tmp_path: Path) -> None:
+    entries, srv = day_fixture()
+    dest = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    dest.parent.mkdir(parents=True)
+    dest.write_bytes(b"other")
+    s = runner(tmp_path, srv)({DAY: entries})
+    assert "contenido distinto" in s.failed[DAY]
+
+
+def test_ingest_gkg_tampered_done_day_is_failure(tmp_path: Path) -> None:
+    entries, srv = day_fixture()
+    run = runner(tmp_path, srv)
+    run({DAY: entries})
+    path = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    os.chmod(path, 0o644)
+    path.write_bytes(b"x")
+    s = run({DAY: entries})
+    assert "checksum" in s.failed[DAY]
+
+
+def test_unexpected_exception_cancels_pending_and_propagates(tmp_path: Path) -> None:
+    def broken_factory() -> httpx.Client:
+        raise RuntimeError("bug")
+
+    store = make_store(tmp_path)
+    days: dict[date, list[g.IndexEntry]] = {date(2024, 6, d): [] for d in range(1, 20)}
+    with ThreadPoolExecutor(max_workers=1) as ex, pytest.raises(RuntimeError, match="bug"):
+        g.ingest_gkg(
+            days,
+            CFG,
+            store,
+            executor=ex,
+            client_factory=broken_factory,
+            free_disk_gb=lambda: 100.0,
+            logger=logging.getLogger("test"),
+        )
+    assert not list(tmp_path.rglob("*.parquet"))
 
 
 def test_summary_counts() -> None:
@@ -590,18 +761,20 @@ def test_summary_counts() -> None:
 # ------------------------------------------------------------------ pipeline e infraestructura
 
 
-def test_run_pipeline_verifies_index_and_ingests(tmp_path: Path) -> None:
-    entries, srv = day_fixture()
-    index_text = "".join(f"{e.size} {e.md5} {e.url}\n" for e in entries)
+def index_store(tmp_path: Path, index_text: str) -> tuple[Path, Path]:
     raw, man = tmp_path / "raw", tmp_path / "manifests"
     idx_srv = httpx.Client(
         transport=httpx.MockTransport(lambda r: httpx.Response(200, text=index_text))
     )
     with idx_srv as c:
         RawStore(raw, man, "abc").fetch(c, "gdelt", "https://x/master.txt", "gdelt/index/m.txt")
-    s = g.run_pipeline(
+    return raw, man
+
+
+def pipeline(raw: Path, man: Path, srv: Server, end: date = date(2024, 6, 11)) -> g.RunSummary:
+    return g.run_pipeline(
         DAY,
-        date(2024, 6, 11),
+        end,
         CFG,
         raw_root=raw,
         manifest_dir=man,
@@ -612,10 +785,37 @@ def test_run_pipeline_verifies_index_and_ingests(tmp_path: Path) -> None:
         executor_factory=lambda n: ThreadPoolExecutor(max_workers=n),
         client_factory=srv.client,
     )
+
+
+def test_run_pipeline_verifies_index_and_ingests(tmp_path: Path) -> None:
+    entries, srv = day_fixture()
+    late = entry_for(b"q", datetime(2024, 6, 12, 1, 0, tzinfo=UTC))
+    index_text = "".join(f"{e.size} {e.md5} {e.url}\n" for e in [*entries, late])
+    raw, man = index_store(tmp_path, index_text)
+    s = pipeline(raw, man, srv)
     assert s.written == [DAY]
     assert s.ok
-    out = pl.read_parquet(raw / "gdelt_gkg_oil/gkg-oil-v1/2024/06/20240610.parquet")
+    out = pl.read_parquet(raw / "gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet")
     assert labels(out) == ["a1", "b1"]
+    (rec,) = read_manifest(g.GkgDayStore(raw, man, FLT, "abc", IDX))
+    index = rec["index"]
+    assert isinstance(index, dict)
+    assert index["last_file_ts"] == "2024-06-12T01:00:00+00:00"
+
+
+def test_run_pipeline_rejects_end_beyond_index_coverage(tmp_path: Path) -> None:
+    # Regresión (revisión adversarial): días fuera del índice quedaban "done" vacíos.
+    entries, srv = day_fixture()
+    index_text = "".join(f"{e.size} {e.md5} {e.url}\n" for e in entries)
+    raw, man = index_store(tmp_path, index_text)
+    with pytest.raises(SchemaError, match="cobertura"):
+        pipeline(raw, man, srv, end=date(2024, 6, 11))
+
+
+def test_run_pipeline_rejects_index_without_gkg(tmp_path: Path) -> None:
+    raw, man = index_store(tmp_path, GOOD_INDEX.split("\n", maxsplit=1)[0] + "\n")
+    with pytest.raises(SchemaError, match="no contiene"):
+        pipeline(raw, man, Server({}))
 
 
 def test_run_pipeline_rejects_unregistered_index(tmp_path: Path) -> None:
@@ -641,23 +841,6 @@ def test_infrastructure_helpers(tmp_path: Path) -> None:
     ex.shutdown()
 
 
-def test_unexpected_exception_in_worker_propagates(tmp_path: Path) -> None:
-    def broken_factory() -> httpx.Client:
-        raise RuntimeError("bug")
-
-    store = make_store(tmp_path)
-    with ThreadPoolExecutor(max_workers=1) as ex, pytest.raises(RuntimeError, match="bug"):
-        g.ingest_gkg(
-            {DAY: []},
-            CFG,
-            store,
-            executor=ex,
-            client_factory=broken_factory,
-            free_disk_gb=lambda: 100.0,
-            logger=logging.getLogger("test"),
-        )
-
-
 def test_last_modified_invalid_header_fails() -> None:
     content = zip_bytes(gkg_text(line()))
     e = entry_for(content)
@@ -666,6 +849,15 @@ def test_last_modified_invalid_header_fails() -> None:
         pytest.raises(SchemaError, match="Last-Modified"),
     ):
         g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+
+
+def test_last_modified_minus_zero_is_utc() -> None:
+    # Regresión (revisión adversarial): "-0000" daba un datetime naive y el día fallaba siempre.
+    content = zip_bytes(gkg_text(line()))
+    e = entry_for(content)
+    with Server({e.name: [ok(content, lm="Mon, 10 Jun 2024 14:05:00 -0000")]}).client() as c:
+        _, rec = g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+    assert rec.last_modified_utc == "2024-06-10T14:05:00+00:00"
 
 
 def test_gdelt_config_validation(tmp_path: Path) -> None:
@@ -694,21 +886,24 @@ def test_filter_last_line_without_newline_is_a_record() -> None:
     assert (st.rows_in, df.height) == (1, 1)
 
 
-def test_record_rejects_sha_mismatch(tmp_path: Path) -> None:
-    store = make_store(tmp_path)
-    entries, srv = day_fixture()
-    out = run_day(store, entries, srv)
-    forged = g.DayOutput(out.day, out.rel_path, "0" * 64, out.n_bytes, out.n_rows, out.files)
-    with pytest.raises(RawIntegrityError, match="distinto"):
-        store.record(forged)
+def test_filter_rejects_record_followed_by_malformed_id_line() -> None:
+    # Regresión (revisión adversarial): un fragmento que empieza como GKGRECORDID colaba
+    # la primera mitad del registro partido.
+    good = line(record_id="a", themes="ENV_OIL;")
+    partial = line(record_id="b", themes="ENV_OIL;")
+    fragment = "20240610141500-7\trest of title</PAGE_TITLE>"
+    df, st = g.filter_gkg(gkg_text(good, partial, fragment), TS, FLT)
+    assert labels(df) == ["a"]
+    assert st.rejected == 2
 
 
-def test_ingest_gkg_tampered_done_day_is_failure(tmp_path: Path) -> None:
-    entries, srv = day_fixture()
-    run = runner(tmp_path, srv)
-    run({DAY: entries})
-    path = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v1/2024/06/20240610.parquet"
-    os.chmod(path, 0o644)
-    path.write_bytes(b"x")
-    s = run({DAY: entries})
-    assert "checksum" in s.failed[DAY]
+def test_filter_url_criterion() -> None:
+    text = gkg_text(
+        line(record_id="markets-oil-prices-fall"),
+        line(record_id="soil-health"),
+        line(record_id="opec_meeting"),
+    )
+    df, st = g.filter_gkg(text, TS, FLT)
+    assert labels(df) == ["markets-oil-prices-fall", "opec_meeting"]
+    assert df["match_url"].to_list() == [True, True]
+    assert st.match_url == 2

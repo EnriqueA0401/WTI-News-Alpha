@@ -18,7 +18,9 @@
   - estado HTTP;
   - filas leídas, conservadas y rechazadas.
 
-## Filtro `gkg-oil-v1` (alta sensibilidad; la relevancia fina se decide en F3)
+## Filtro (alta sensibilidad; la relevancia fina se decide en F3)
+Versión vigente: `gkg-oil-v2` (ADR-013). La v1 se describe abajo; la v2 añade el token FUEL, amplía título y organización (petrol, oilfield, Aramco) y añade un criterio por URL.
+
 Una fila se conserva si cumple alguna de estas condiciones:
 - **(a) Tema:** algún tema de `V1Themes` contiene un token de petróleo entre `_` (OIL, OILPRICE, PETROLEUM, CRUDE, OPEC, REFINERIES, PIPELINE…). Se excluyen los temas `TAX_FOODSTAPLES_*` (aceite de oliva o de coco). Por eso SOIL no cuenta.
 - **(b) Título:** `PAGE_TITLE` contiene crude, oil, opec, wti, brent, petroleum, refinery, gasoline o pipeline.
@@ -81,3 +83,16 @@ En la muestra de F1 conserva un 3–6 % de las filas.
 - `make check` en verde.
 - Revisión adversarial resuelta.
 - Piloto ejecutado con informe `reports/f2/gdelt_gkg_pilot.md`: días OK o fallidos, 404, rechazos, tamaño y filas por mes.
+
+## Revisión adversarial (2026-10-15)
+14 hallazgos.
+- Corregidos los hallazgos 1–7 y 9–14 (ver ADR-013), con test de regresión:
+  - el flujo pasa por staging y solo el proceso principal publica;
+  - las salidas huérfanas se adoptan si el sha256 coincide;
+  - límite de cobertura del índice;
+  - límites de 404 y de rechazos por fichero;
+  - hash del filtro en el manifiesto;
+  - lock;
+  - errores de zip y de manifiesto tipados;
+  - `Last-Modified` "-0000" se trata como UTC.
+- Riesgo aceptado: no se guardan las líneas rechazadas (hallazgo 8).
