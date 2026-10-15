@@ -61,8 +61,11 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Propuesta:** (a). Primero el piloto 2024–2025 (≈ 400 GB de transferencia, ≈ 1,5–3 h); luego, si G1 lo justifica, el histórico completo (≈ 9–10 h). El filtro debe ser amplio (alta sensibilidad) porque la relevancia fina se decide en F3.
 - **Consecuencias:** el "raw" de GDELT pasa a ser un extracto filtrado y reproducible (código + md5 de origen), no el zip original; queda documentado como excepción a CLAUDE.md §3.3. Requiere aprobación por tamaño y duración.
 
-## ADR-012 — Margen de disponibilidad GDELT (propuesta, pendiente de usuario)
-- **Contexto:** A9 aprobó `first_available_at = timestamp del fichero + 15 min`, a validar en F1. Evidencia (`reports/f1/gdelt.md` §4): en 2015–2026 los ficheros se publican entre 12 y 2 min **antes** de su timestamp nominal (máximo observado +0,3 min).
-- **Opciones:** (a) mantener +15 min; (b) bajar a +5 min.
-- **Propuesta:** (b). +5 min sigue cubriendo con holgura el peor caso observado (+0,3 min) y no penaliza tanto el horizonte de 15 min. Con (a) el horizonte de 15 min pierde gran parte de la reacción inicial.
-- **Consecuencias:** cambia un parámetro aprobado: requiere aprobación (CLAUDE.md §4).
+## ADR-012 — Disponibilidad de ficheros GDELT (propuesta revisada tras la revisión G0, pendiente de usuario)
+- **Contexto:** A9 aprobó `first_available_at = timestamp del fichero + 15 min`, a validar en F1. Evidencia (`reports/f1/gdelt.md` §4.3):
+  - En slots normales el fichero se publica 2–12 min antes del nombre.
+  - Los ficheros degradados llegan hasta +2 min tarde.
+  - El primer fichero tras una caída puede llegar **hasta +80 min tarde** (5 de 489 superan +15 min).
+- **Opciones:** (a) +15 min fijo; (b) +5 min fijo (descartado: lo invalidan los casos tardíos); (c) `max(nominal + 15 min, Last-Modified + 5 min)`, registrando Last-Modified en cada descarga.
+- **Propuesta:** (c). Conserva el margen aprobado y cubre las subidas tardías. Si Last-Modified reflejara una re-subida posterior, solo retrasa la disponibilidad (más conservador).
+- **Consecuencias:** F2 guarda el header Last-Modified en el manifiesto. Cambia la definición de un timestamp: requiere aprobación (CLAUDE.md §4).

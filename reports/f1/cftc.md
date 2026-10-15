@@ -76,7 +76,7 @@ Otros mercados WTI que **no** deben confundirse con 067651 (zip 2025–2026): `0
 2. Una publicación prematura en 2015-07-03 y retrasos puntuales de hasta +124 min respecto a las 15:30 en la API. No se sabe si la web publicó a la hora y solo la API se retrasó.
 3. Sin vintages: si hubo revisiones no anunciadas, el histórico actual tendría *look-ahead* (riesgo bajo según §4).
 4. La publicación del viernes a las 15:30 ET cae después del settlement de CL (14:30 ET) y antes de la pausa de las 17:00 ET.
-5. Discrepancia entre la tabla oficial y la API para el as-of 2025-12-23.
+5. Discrepancia entre la tabla oficial y la API para el as-of 2025-12-23. **Revisión G0:** la regla no incluye los cierres federales por orden ejecutiva (p. ej., días de Nochebuena o el 26-dic). Si hubo cierres el 24 y 26-dic-2025, la regla daría 2025-12-31, igual que la API. Un posible cierre el 24-dic-2015 movería la publicación del as-of 2015-12-22. Estos errores son de días enteros y en la dirección que filtra datos: hay que añadir los cierres verificados (Federal Register/OPM) o aplicar la regla conservadora R-PIT.
 
 ## 6. Recomendación
 

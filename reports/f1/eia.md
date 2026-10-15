@@ -8,7 +8,7 @@ Scripts (`scripts/f1_audit/`): `eia_fetch.py` (descarga al almacén raw), `eia_s
 
 | # | Comprobación | Resultado |
 |---|---|---|
-| 1 | Series WPSR clave vía API v2 (ruta `/v2/seriesid/PET.<id>`) | OK: 10 series semanales, sin huecos desde 2015-02-18 |
+| 1 | Series WPSR clave vía API v2 (ruta `/v2/seriesid/PET.<id>`) | OK: 11 series semanales, sin huecos desde 2015-02-18 |
 | 2 | Significado de `period` | Viernes que cierra la semana de datos ("week ending"); 607/607 períodos son viernes |
 | 3 | Calendario oficial (`schedule.php`) | Solo excepciones de dic-2024 a nov-2026; no hay años anteriores |
 | 4 | Fechas reales de publicación 2015–hoy | **Sí (fechas)**: índice del archivo oficial, 612 publicaciones; cuadran 611/612 con el release 212 de FRED |

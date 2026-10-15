@@ -14,8 +14,8 @@
 
 ## Pendiente
 - Decisiones G0 D1–D12 (incluye compras Databento: A 2,80 USD; C 75,78 USD).
-- ADR-011 (ingesta GDELT por streaming) y ADR-012 (margen +5 min): propuestas.
-- Revisión adversarial del informe G0 (en curso).
+- ADR-011 (ingesta GDELT por streaming) y ADR-012 revisado (`max(nominal+15 min, Last-Modified+5 min)`): propuestas.
+- Revisión adversarial G0 hecha: 11 hallazgos resueltos o convertidos en decisiones (`reports/F1_source_audit.md` §6).
 - Credenciales: guardadas solo en la sesión (`~/.config/wna/secrets.env`, fuera del repo). Recomendado regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
 
 ## Bloqueos

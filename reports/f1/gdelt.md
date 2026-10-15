@@ -15,7 +15,7 @@ Scripts: `scripts/f1_audit/gdelt_*.py`. Todas las cifras salen de esos ficheros.
 ## 2. Cobertura (índice maestro, 2015-02-18 23:00 → 2026-10-15 05:00 UTC)
 - Rejilla de 15 min perfecta: 0 timestamps fuera de rejilla y 0 duplicados.
 - 61 líneas del índice están truncadas (solo el prefijo de URL); no afectan.
-- **Huecos:** 7.291 slots sin Export/Mentions y 7.286 sin GKG (≈ 2,0 % del periodo). Las rachas más largas:
+- **Huecos:** 7.291 slots sin Export/Mentions y 7.286 sin GKG (1,78 % del periodo). Las rachas más largas:
 
 | Desde (UTC) | Duración |
 |---|---|
@@ -26,6 +26,8 @@ Scripts: `scripts/f1_audit/gdelt_*.py`. Todas las cifras salen de esos ficheros.
 | 2020-11-06 11:00 | 20,2 h |
 
 - Huecos por año (GKG): 2015: 200 · 2016: 44 · 2017: 990 · 2018: 992 · 2019: 11 · 2020: 2.585 · 2021: 610 · 2022: 5 · 2023: 165 · 2024: 2 · 2025: 1.681 · 2026: 1.
+- **Slots degradados (revisión G0):** 2.859 ficheros GKG pesan < 200 KB (la mediana es de 4–11 MB). 2.565 caen entre mar y nov de 2017 (máximo: 562 en jul-2017) y 83 en nov-2022. La cobertura efectiva de 2017 es mucho peor de lo que dicen sus 990 huecos. Se tratarán como hueco de la fuente (umbral por tamaño o nº de filas, a fijar en F2).
+- **Ficheros del índice que dan 404:** 8 de 642 comprobados (2022-11-10/11 y 2023-03-23 13:00). El índice no garantiza que el fichero exista.
 - **Consecuencia:** "sin fichero" ≠ "sin noticias". Las features de noticias deben distinguir hueco de la fuente (dato ausente) de ventana sin eventos; los periodos con hueco quedan marcados.
 
 ## 3. Volumen y tamaño
@@ -53,14 +55,16 @@ Scripts: `scripts/f1_audit/gdelt_*.py`. Todas las cifras salen de esos ficheros.
 ## 4. Timestamps (crítico para `first_available_at`)
 1. **GKG:** el campo `DATE` coincide con el timestamp del fichero en el 100 % de filas. No hay otra hora "vista por GDELT" por artículo.
 2. **Export/Mentions:** `DATEADDED` y `MentionTimeDate` = timestamp del fichero en el 100 % (101 + 101 ficheros).
-3. **Hora real de publicación del fichero:**
-   - `Last-Modified` de los ficheros históricos de la muestra queda **entre 12,0 y 2,1 min antes** del nombre en todos los años 2015–2026; un único caso queda 0,3 min después (2017). La mediana por año va de −4,7 a −10,9 min. Si los objetos no se re-subieron, el fichero está disponible antes de su hora nominal.
-   - El monitor en vivo lo confirma: `…050000` ya estaba publicado a las 04:53:30 UTC y `…051500` a las 05:05:08 (−9,9 min); reloj del contenedor contrastado con tres servidores. El monitor se cortó con un reinicio del contenedor a las ~05:05 y se relanzó a las 07:25.
-   - **Conclusión:** `first_available_at = timestamp nominal del fichero` no adelanta información; el margen aprobado de +15 min (A9) es conservador en ~17–27 min.
+3. **Hora real de publicación del fichero** (corregido tras la revisión G0; `gdelt_lastmodified.csv`, `gdelt_lastmodified_edge.csv`):
+   - **Slots normales:** `Last-Modified` de los GKG de la muestra fija (n = 101) cae entre 12,0 y 2,1 min antes del nombre. Con los tres tipos (n = 303), el máximo es +0,5 min: 3 casos positivos, todos del slot degradado 2017-09-10 08:00.
+   - **Ficheros degradados (< 200 KB; 145 comprobados con HEAD):** 143 se subieron después del nombre, como mucho **+2,0 min**.
+   - **Primer fichero tras un hueco de ≥ 4 slots (489 comprobados):** 15 llegaron tarde, 12 más de +5 min y 5 más de +15 min. El peor, **+79,7 min** (2020-11-18 00:15). Tras una caída, GDELT sube con retraso.
+   - **Monitor en vivo:** `…050000` publicado a las 04:53:30 UTC y `…051500` a las 05:05:08 (−9,9 min). Solo 2–3 medidas: el contenedor se reinició a las ~05:05 y el monitor se relanzó a las 07:25.
+   - **Conclusión:** el timestamp nominal **no siempre** es conservador. Regla propuesta (ADR-012 revisado): `first_available_at = max(nominal + 15 min, Last-Modified + 5 min)`. Last-Modified se registra en cada descarga de F2.
 4. **Publicación del artículo** (`PAGE_PRECISEPUBTIMESTAMP` en `V2EXTRASXML`): presente en 0 % (2015), 27 % (2016) y 37–57 % (2017–2026).
-   - Retraso fichero − publicación: mediana 90–128 min; p75 207–387 min; p95 0,7–2,4 días.
-   - **5–7 % con publicación posterior al fichero** (p1 entre −98 y −380 min). Son timestamps incoherentes (zona horaria mal declarada, probablemente): se marcan y excluyen (CLAUDE.md §7).
-   - **≈ 3–5 % publicados más de 1 día antes** de que GDELT los viera (re-rastreos). Riesgo de "falsa novedad": no tratarlos como noticia nueva.
+   - Retraso fichero − publicación: mediana 90–128 min; p75 207–387 min; p95 0,49–1,64 días.
+   - **4,4–6,9 % con publicación posterior al fichero** (p1 entre −98 y −380 min). Son timestamps incoherentes (zona horaria mal declarada, probablemente): se marcan y excluyen (CLAUDE.md §7).
+   - **2,8–7,1 % publicados más de 1 día antes** de que GDELT los viera (re-rastreos). Riesgo de "falsa novedad": no tratarlos como noticia nueva.
 5. **Títulos** (`PAGE_TITLE`): 0 % en 2015–2018, 27 % en 2019 y 100 % desde 2020. Antes de 2019 la relevancia solo puede venir de temas y entidades GKG.
 
 ## 5. Duplicados
@@ -80,12 +84,14 @@ Responde 429 casi siempre desde este entorno ("Please limit requests to one ever
 ## 8. Riesgos
 - Huecos largos (17 días en 2025) y años con muchos huecos (2017, 2018, 2020, 2025).
 - 2015–2018 sin títulos; 2015 sin hora de publicación.
-- Timestamps de publicación incoherentes (5–7 %) y re-rastreos antiguos (3–5 %).
+- Timestamps de publicación incoherentes (4,4–6,9 %) y re-rastreos antiguos (2,8–7,1 %).
+- Publicación tardía de hasta +80 min en el primer fichero tras una caída, y ficheros del índice que dan 404.
+- **Fallo de parseo detectado:** en 2020-12-10 08:00 un registro con un salto de línea dentro se partió en dos y `truncate_ragged_lines=True` lo aceptó sin avisar. El parser de F2 debe detectarlo y fallar ruidosamente (§6.3).
 - La hora de disponibilidad histórica se apoya en `Last-Modified`, que podría reflejar re-subidas. Su coherencia (siempre 2–12 min antes del nombre, 2015–2026) y el monitor en vivo la hacen creíble, pero no es un registro oficial.
 - Solo fuentes en inglés (el índice de traducción, 141 MB, no se auditó).
 - Licencia: uso libre con atribución según los términos de GDELT. No se redistribuye contenido de medios; solo metadatos.
 
 ## 9. Recomendación (para G0 y F2)
 - GDELT es **viable** como fuente de estructura de noticias para 2019/2020–2026. Para 2015–2018 solo con temas y entidades.
-- `first_available_at` = timestamp nominal del fichero + margen. El monitor nocturno dará la distribución actual; propuesta para decidir: mantener +15 min o bajarlo a +5 min.
+- `first_available_at = max(nominal + 15 min, Last-Modified + 5 min)` (ADR-012 revisado); se descarta bajar el margen a +5 min.
 - Ingesta F2: filtrar en streaming el GKG (empezando por el piloto 2024–2025) en lugar de descargar los 2,9 TB.
