@@ -46,23 +46,35 @@ def test_ensure_utc_keeps_utc_instant() -> None:
     assert ensure_utc(ts) == ts
 
 
+def _transitions(ts: datetime) -> tuple[bool, bool]:
+    """Oráculo independiente (round-trip por UTC): (en_hueco, ambigua)."""
+    wall = ts.replace(tzinfo=None, fold=0)
+    candidates = {
+        datetime.combine(ts.date(), ts.time(), tzinfo=ts.tzinfo).replace(fold=f).astimezone(UTC)
+        for f in (0, 1)
+    }
+    valid = {c for c in candidates if c.astimezone(ts.tzinfo).replace(tzinfo=None, fold=0) == wall}
+    return (len(valid) == 0, len(valid) == 2)
+
+
 @given(
     st.datetimes(
-        min_value=datetime(2000, 1, 1),
+        min_value=datetime(1950, 1, 1),
         max_value=datetime(2040, 1, 1),
         timezones=st.sampled_from([UTC, NEW_YORK, timezone(timedelta(hours=3))]),
     )
 )
 def test_ensure_utc_preserves_instant(ts: datetime) -> None:
-    # Las horas de pared inexistentes deben fallar (ver test de regresión abajo).
-    in_gap = ts.astimezone(UTC).astimezone(ts.tzinfo).replace(tzinfo=None, fold=0) != ts.replace(
-        tzinfo=None, fold=0
-    )
+    in_gap, is_ambiguous = _transitions(ts)
     if in_gap:
-        with pytest.raises(CalendarError):
+        with pytest.raises(CalendarError, match="no existe"):
             ensure_utc(ts)
         return
-    out = ensure_utc(ts)
+    if is_ambiguous:
+        with pytest.raises(CalendarError, match="ambigua"):
+            ensure_utc(ts)
+    policy = "use_fold" if is_ambiguous else "raise"
+    out = ensure_utc(ts, ambiguous=policy)
     assert out.tzinfo is UTC
     # Se compara por epoch: la igualdad entre zonas de horas ambiguas
     # devuelve siempre False en Python (PEP 495).
@@ -75,14 +87,31 @@ def test_ensure_utc_rejects_nonexistent_wall_time_regression() -> None:
     ts = datetime(2016, 3, 13, 2, 0, tzinfo=NEW_YORK)
     with pytest.raises(CalendarError, match="no existe"):
         ensure_utc(ts)
+    with pytest.raises(CalendarError, match="no existe"):
+        ensure_utc(ts, ambiguous="use_fold")
 
 
-def test_ensure_utc_accepts_ambiguous_with_fold() -> None:
-    # 01:30 del 1-nov-2026: fold=0 es EDT (05:30 UTC), fold=1 es EST (06:30 UTC).
+def test_ensure_utc_rejects_ambiguous_by_default_regression() -> None:
+    # Regresión (revisión adversarial): 01:30 del 1-nov-2026 ocurre dos veces;
+    # resolver con fold=0 por defecto adelantaría una hora el instante.
+    with pytest.raises(CalendarError, match="ambigua"):
+        ensure_utc(datetime(2026, 11, 1, 1, 30, tzinfo=NEW_YORK))
+    with pytest.raises(CalendarError, match="ambigua"):
+        to_new_york(datetime(2026, 11, 1, 1, 30, tzinfo=NEW_YORK))
+
+
+def test_ensure_utc_ambiguous_with_explicit_fold_policy() -> None:
+    # fold=0 es EDT (05:30 UTC), fold=1 es EST (06:30 UTC).
     first = datetime(2026, 11, 1, 1, 30, tzinfo=NEW_YORK)
     second = first.replace(fold=1)
-    assert ensure_utc(first) == datetime(2026, 11, 1, 5, 30, tzinfo=UTC)
-    assert ensure_utc(second) == datetime(2026, 11, 1, 6, 30, tzinfo=UTC)
+    assert ensure_utc(first, ambiguous="use_fold") == datetime(2026, 11, 1, 5, 30, tzinfo=UTC)
+    assert ensure_utc(second, ambiguous="use_fold") == datetime(2026, 11, 1, 6, 30, tzinfo=UTC)
+
+
+@pytest.mark.parametrize("bad", [date(2026, 1, 1), "2026-01-01T00:00:00Z", 1_700_000_000])
+def test_ensure_utc_rejects_non_datetime(bad: object) -> None:
+    with pytest.raises(CalendarError, match="datetime"):
+        ensure_utc(bad)  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------- to_new_york
@@ -155,6 +184,11 @@ def test_ny_wall_to_utc_rejects_ambiguous_fall_back() -> None:
         ny_wall_to_utc(date(2026, 11, 1), time(1, 30))
 
 
+def test_ny_wall_to_utc_rejects_datetime_as_date_regression() -> None:
+    with pytest.raises(CalendarError, match="no datetime"):
+        ny_wall_to_utc(datetime(2026, 1, 15, 3, 0, tzinfo=UTC), time(10, 30))
+
+
 def test_ny_wall_to_utc_rejects_time_with_tzinfo() -> None:
     with pytest.raises(CalendarError):
         ny_wall_to_utc(date(2026, 1, 14), time(10, 30, tzinfo=UTC))
@@ -166,6 +200,13 @@ def test_ny_wall_to_utc_rejects_time_with_tzinfo() -> None:
 def test_require_utc_column_accepts_utc() -> None:
     df = pl.DataFrame({"ts": [datetime(2026, 1, 1, tzinfo=UTC)]})
     require_utc_column(df, "ts")  # no lanza
+
+
+def test_require_utc_column_rejects_nulls_by_default() -> None:
+    df = pl.DataFrame({"ts": [datetime(2026, 1, 1, tzinfo=UTC), None]})
+    with pytest.raises(SchemaError, match="1 nulos"):
+        require_utc_column(df, "ts")
+    require_utc_column(df, "ts", allow_nulls=True)
 
 
 def test_require_utc_column_rejects_naive() -> None:
