@@ -1,6 +1,6 @@
 # Progreso
 
-**Fase actual:** F1 terminada. **Puerta G0 pendiente de decisión del usuario** (`reports/F1_source_audit.md` §5; D5 aprobado, falta el resto). En curso: piloto GDELT GKG 2024–2025 (D5).
+**Fase actual:** F1 terminada. **Puerta G0 pendiente de decisión del usuario** (`reports/F1_source_audit.md` §5; D5 aprobado, falta el resto). Piloto GDELT GKG 2024–2025 (D5) terminado.
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
@@ -14,7 +14,12 @@
   - Plan: `docs/plans/FASE_02_gdelt_gkg.md`.
   - Revisión adversarial: 14 hallazgos. Corregidos los 1–7 y 9–14; el 8 es un riesgo aceptado (bajo).
   - Prueba real de un día: 2024-06-10, filtro v1.
-  - Piloto 2024-01-01 → 2026-01-01 con filtro v2, lanzado a las 21:04 UTC.
+  - Piloto 2024-01-01 → 2026-01-01 con filtro v2 terminado (`reports/f2/gdelt_gkg_pilot.md`):
+    - 731 días, 0 fallidos, 0 ficheros 404;
+    - 92,5 M filas leídas, 2,87 M conservadas;
+    - 9,0 GB en disco.
+    - Re-ejecución: 731 días verificados sin red.
+  - Evidencia D6: 2 de 68.493 ficheros se publicaron más de 15 min después de su nombre (máximo +35,7 min).
 - `make check` en verde (206 tests, cobertura de ramas 99 %).
 
 ## Pendiente
