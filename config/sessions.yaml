@@ -1,21 +1,25 @@
 # Sesión de negociación de NYMEX CL (Globex). Horas de pared en America/New_York.
-# ESTADO F0: NINGÚN valor verificado. cmegroup.com devuelve 403 desde el entorno
-# (ver docs/DECISIONS.md ADR-005). No utilizables hasta verificar contra CME.
+# ESTADO: NO verificadas. El Rulebook (200102.A) dice que el horario lo fija el
+# Exchange; la única fuente recibida (WTI Fact Card, 2012) indica Globex
+# domingo-viernes 18:00-17:15 ET con pausa de 45 min desde las 17:15, que
+# contradice los valores de trabajo de abajo. El horario ha podido cambiar en
+# el periodo de estudio: se verificará empíricamente en F1 con barras de 1 min
+# (Databento) por fecha (ADR-010).
 timezone: America/New_York
 weekly_open_et:
   value: {weekday: sunday, time: "18:00"}
   status: unverified
-  source_ref: "Documento §3.2/[S9] CME WTI Fact Card (pendiente de verificar)"
+  source_ref: "WTI Fact Card 2012 (18:00 ET domingo); pendiente de verificación empírica F1"
 daily_close_et:
   value: "17:00"
   status: unverified
-  source_ref: "Documento [S9] CME WTI Fact Card (pendiente de verificar)"
+  source_ref: "Documento §3.2 (17:00); WTI Fact Card 2012 dice 17:15. Pendiente F1"
 daily_reopen_et:
   value: "18:00"
   status: unverified
-  source_ref: "Documento [S9] CME WTI Fact Card (pendiente de verificar)"
+  source_ref: "WTI Fact Card 2012 (18:00 ET). Pendiente F1"
 settlement_time_et:
   value: "14:30"
   status: unverified
-  source_ref: "CME settlement procedures (pendiente de verificar)"
-  note: "Aprobado (PROTOCOL A3): 'fin de sesión' = settlement. La hora sigue pendiente de verificar contra CME."
+  source_ref: "WTI Fact Card 2012: open outcry 9:00-14:30 ET; procedimiento de settlement no incluido en los documentos recibidos"
+  note: "Aprobado (PROTOCOL A3): 'fin de sesión' = settlement. La hora sigue pendiente de verificar."

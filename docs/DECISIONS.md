@@ -22,11 +22,12 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Decisión:** todo parámetro externo o de diseño en `config/*.yaml` es un `Param` con `status ∈ {verified, approved, unverified, proposed}` y `source_ref`. `Param.require()` lanza `UnverifiedValueError` salvo `verified`/`approved`.
 - **Consecuencias:** ningún cálculo puede usar especificaciones de CL ni horizontes hasta verificarlos o aprobarlos.
 
-## ADR-005 — cmegroup.com inaccesible desde el entorno (pendiente de usuario)
+## ADR-005 — cmegroup.com inaccesible desde el entorno (resuelta parcialmente)
 - **Contexto:** la web de CME devuelve 403 / corta la conexión (anti-bot). No se pueden verificar tick, horario, pausa ni settlement. CLAUDE.md §4 prohíbe sustituir en silencio.
 - **Opciones:** (a) el usuario sube WTI Fact Card + capítulo 200 del Rulebook NYMEX; (b) usar definiciones de instrumento de Databento (origen exchange); (c) ambas cruzadas.
 - **Recomendación:** (c).
 - **Consecuencias:** hasta resolverlo, `config/sessions.yaml` y `config/contracts.yaml` quedan `unverified`.
+- **Actualización 2026-10-15:** el usuario subió WTI Fact Card (2012) y Rulebook NYMEX cap. 200 (vigente). Hashes en `manifests/cme_docs.json`; los PDF no se commitean (copyright CME, no redistribución). Verificados: 1.000 bbl, tick 0,01 USD/bbl, valor del tick 10 USD, regla de último día de negociación. Horario y settlement siguen sin verificar (ADR-010).
 
 ## ADR-006 — Persistencia de datos y captura prospectiva (pendiente de usuario)
 - **Contexto:** el contenedor de trabajo es efímero; `data/` no va a git; la captura prospectiva de noticias (F2) necesita un proceso continuo.
@@ -37,6 +38,12 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 ## ADR-007 — Hallazgo de hypothesis: horas de pared inexistentes (aceptada)
 - **Contexto:** el test de propiedades encontró que `ensure_utc` aceptaba `datetime(2016-03-13 02:00, America/New_York)`, hora que no existe (salto DST); Python la convierte sin avisar.
 - **Decisión:** `ensure_utc`/`to_new_york` lanzan `CalendarError` ante horas en el hueco DST. Las ambiguas (vuelta de noviembre) también lanzan por defecto (resolverlas con `fold=0` adelantaría una hora un `available_at`); el llamador puede declarar `ambiguous="use_fold"` solo si `fold` proviene de una conversión fiable. Las horas publicadas por fuentes en ET se convierten con `ny_wall_to_utc`, que siempre es estricta. Tests de regresión añadidos.
+
+## ADR-010 — Horario de sesión CL versionado por fecha y verificado empíricamente (propuesta)
+- **Contexto:** el Rulebook (200102.A) no fija el horario ("determined by the Exchange"). La Fact Card recibida es de 2012 y dice Globex 18:00–17:15 ET con pausa de 45 min, distinto de los valores de trabajo (cierre 17:00, pausa de 60 min). El horario puede haber cambiado dentro del periodo de estudio (2015–2026), y un horario erróneo invalidaría etiquetas que cruzan la pausa.
+- **Opciones:** (a) fijar un único horario; (b) horario versionado por intervalos de fecha, derivado de las barras de 1 min reales (Databento) y contrastado con notices oficiales de CME cuando estén disponibles.
+- **Decisión propuesta:** (b). En F1 se mide, por fecha, el primer y último minuto con negociación y la pausa diaria; cada cambio detectado se documenta. El settlement se verifica con datos de settlement oficiales (schema de estadísticas de Databento) o un documento de CME.
+- **Consecuencias:** `config/sessions.yaml` seguirá `unverified` hasta F1; en F2+ pasará a tabla de vigencias por fecha.
 
 ## ADR-009 — Protocolo aprobado (aceptada)
 - **Contexto:** cierre de F0; el usuario aprueba `docs/PROTOCOL.md` el 2026-10-15.

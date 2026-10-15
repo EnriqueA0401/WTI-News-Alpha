@@ -11,11 +11,11 @@
 - `reports/source_access.md`: acceso de red por fuente.
 
 ## Pendiente
-- Decisiones de usuario: ADR-005 (CME). ADR-006: datos en la sesión en la nube; captura prospectiva a replantear en F2.
+- Especificaciones CL verificadas con Rulebook cap. 200 (ADR-005). Horario/settlement: verificación empírica en F1 (ADR-010). ADR-006: datos en la sesión en la nube; captura prospectiva a replantear en F2.
 - Credenciales: EIA, FRED y Databento verificadas (200) en esta sesión, guardadas fuera del repo en `~/.config/wna/secrets.env` (se pierden al terminar la sesión). Recomendado: regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
 - F1 — auditoría de fuentes (plan en `docs/plans/FASE_01.md`).
 
 ## Bloqueos
-- cmegroup.com inaccesible desde el entorno (ADR-005).
+- cmegroup.com inaccesible desde el entorno (mitigado con documentos subidos; ADR-005).
 - GDELT DOC API devuelve 429 (rate limit) desde el entorno.
 - EIA/FRED/Databento requieren claves.

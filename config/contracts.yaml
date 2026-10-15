@@ -1,18 +1,23 @@
-# Especificaciones del contrato CL. ESTADO F0: no verificadas contra CME (ADR-005).
+# Especificaciones del contrato CL.
+# Verificadas contra NYMEX Rulebook cap. 200 y WTI Fact Card (manifests/cme_docs.json).
 root_symbol: CL
 exchange: NYMEX
 contract_size_bbl:
   value: 1000
-  status: unverified
-  source_ref: "Documento §3.2/[S9] CME WTI Fact Card (pendiente de verificar)"
+  status: verified
+  source_ref: "NYMEX Rulebook 200102.B (1.000 U.S. barrels)"
 tick_size_usd_per_bbl:
   value: 0.01
-  status: unverified
-  source_ref: "CLAUDE.md §7 / CME WTI Fact Card (pendiente de verificar)"
+  status: verified
+  source_ref: "NYMEX Rulebook 200102.C ($0.01 per barrel)"
 tick_value_usd:
   value: 10.0
-  status: unverified
-  source_ref: "CLAUDE.md §7 / CME WTI Fact Card (pendiente de verificar)"
+  status: verified
+  source_ref: "Derivado: 1.000 bbl x 0,01 USD/bbl (Rulebook 200102.B y 200102.C)"
+last_trade_rule:
+  value: "3 días hábiles antes del día 25 del mes previo al de entrega; si el 25 no es hábil, 3 días hábiles antes del último día hábil previo al 25. Si la fecha listada pasa a festivo, se adelanta al día hábil anterior; cambios posteriores del calendario de festivos no la alteran."
+  status: verified
+  source_ref: "NYMEX Rulebook 200102.F"
 roll_rule:
   value: null
   status: proposed

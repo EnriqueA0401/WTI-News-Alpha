@@ -113,6 +113,7 @@ class ContractsConfig(_Strict):
     contract_size_bbl: Param[PositiveInt]
     tick_size_usd_per_bbl: Param[PositiveFloat]
     tick_value_usd: Param[PositiveFloat]
+    last_trade_rule: Param[NonEmptyStr]
     roll_rule: Param[NonEmptyStr]
 
 

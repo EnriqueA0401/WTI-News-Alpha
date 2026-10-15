@@ -34,14 +34,24 @@ def test_repository_config_loads() -> None:
     assert {s.name for s in cfg.sources.sources} >= {"gdelt_files", "eia_api", "fred_api"}
 
 
-def test_unverified_market_specs_cannot_be_used() -> None:
-    # F0: la web de CME no es accesible; nada de especificaciones de CL puede
-    # usarse en cálculos hasta verificarse (CLAUDE.md §7).
+def test_contract_specs_verified_against_rulebook() -> None:
+    cfg = load_project_config(CONFIG_DIR)
+    size = cfg.contracts.contract_size_bbl.require("contract_size")
+    tick = cfg.contracts.tick_size_usd_per_bbl.require("tick_size")
+    assert size == 1000
+    assert tick == 0.01
+    # Coherencia: valor del tick = tamaño x tick.
+    assert cfg.contracts.tick_value_usd.require("tick_value") == pytest.approx(size * tick)
+
+
+def test_unverified_session_times_cannot_be_used() -> None:
+    # El horario no está en el Rulebook y la Fact Card es de 2012 (ADR-010):
+    # no puede usarse en cálculos hasta verificarse.
     cfg = load_project_config(CONFIG_DIR)
     with pytest.raises(UnverifiedValueError):
-        cfg.contracts.tick_size_usd_per_bbl.require("tick_size")
-    with pytest.raises(UnverifiedValueError):
         cfg.sessions.daily_close_et.require("daily_close")
+    with pytest.raises(UnverifiedValueError):
+        cfg.sessions.settlement_time_et.require("settlement")
 
 
 def test_src_never_reads_param_value_directly() -> None:
@@ -93,6 +103,7 @@ def _contracts(**override: Any) -> dict[str, Any]:
         "contract_size_bbl": _param(1000),
         "tick_size_usd_per_bbl": _param(0.01),
         "tick_value_usd": _param(10.0),
+        "last_trade_rule": _param("regla"),
         "roll_rule": _param(None, "proposed"),
     }
     base.update(override)
