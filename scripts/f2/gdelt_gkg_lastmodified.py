@@ -48,9 +48,7 @@ def main() -> None:
             )
         )
         .sort("nominal")
-        .with_columns(
-            (pl.col("nominal").diff().dt.total_minutes() > 15).alias("after_gap")
-        )
+        .with_columns((pl.col("nominal").diff().dt.total_minutes() > 15).alias("after_gap"))
     )
     OUT.mkdir(parents=True, exist_ok=True)
     df.write_csv(OUT / "gdelt_gkg_lastmodified_lag.csv")
