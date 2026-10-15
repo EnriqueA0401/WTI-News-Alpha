@@ -12,7 +12,7 @@ from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
-app = typer.Typer(no_args_is_help=True, help="WTI News Alpha")
+app = typer.Typer(no_args_is_help=True, help="WTI News Alpha", pretty_exceptions_show_locals=False)
 sources_app = typer.Typer(no_args_is_help=True, help="Fuentes de datos")
 app.add_typer(sources_app, name="sources")
 

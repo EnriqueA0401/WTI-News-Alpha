@@ -1,5 +1,6 @@
 """Tests de la comprobación de acceso a fuentes (sin red: httpx.MockTransport)."""
 
+import logging
 from datetime import UTC, datetime
 
 import httpx
@@ -17,24 +18,28 @@ from wti_news_alpha.ingestion.source_check import (
 
 
 @pytest.mark.parametrize(
-    ("code", "body", "key_present", "expected"),
+    ("code", "body", "keyed", "key_present", "expected"),
     [
-        (200, "", False, AccessStatus.OK),
-        (204, "", True, AccessStatus.OK),
-        (429, "", False, AccessStatus.RATE_LIMITED),
-        (403, '{"error":{"code":"API_KEY_MISSING"}}', False, AccessStatus.AUTH_REQUIRED),
-        (400, "Variable api_key is not set", False, AccessStatus.AUTH_REQUIRED),
-        (401, "", False, AccessStatus.AUTH_REQUIRED),
-        (401, "", True, AccessStatus.BLOCKED),
-        (403, "api_key invalid", True, AccessStatus.BLOCKED),
-        (403, "Access Denied", False, AccessStatus.BLOCKED),
-        (400, "bad request", False, AccessStatus.ERROR),
-        (500, "", False, AccessStatus.ERROR),
-        (None, "", False, AccessStatus.UNREACHABLE),
+        (200, "", False, False, AccessStatus.OK),
+        (204, "", True, True, AccessStatus.OK),
+        (429, "", False, False, AccessStatus.RATE_LIMITED),
+        (403, '{"error":{"code":"API_KEY_MISSING"}}', True, False, AccessStatus.AUTH_REQUIRED),
+        (400, "Variable api_key is not set", True, False, AccessStatus.AUTH_REQUIRED),
+        (401, "", False, False, AccessStatus.AUTH_REQUIRED),
+        (401, "", True, True, AccessStatus.BLOCKED),
+        (403, "api_key invalid", True, True, AccessStatus.BLOCKED),
+        # Fuente con clave, sin clave en entorno, 403 sin marcador: falta la clave.
+        (403, "Forbidden", True, False, AccessStatus.AUTH_REQUIRED),
+        (403, "Access Denied", False, False, AccessStatus.BLOCKED),
+        (400, "bad request", False, False, AccessStatus.ERROR),
+        (500, "", False, False, AccessStatus.ERROR),
+        (None, "", False, False, AccessStatus.UNREACHABLE),
     ],
 )
-def test_classify(code: int | None, body: str, key_present: bool, expected: AccessStatus) -> None:
-    assert classify(code, body, key_present=key_present) == expected
+def test_classify(
+    code: int | None, body: str, keyed: bool, key_present: bool, expected: AccessStatus
+) -> None:
+    assert classify(code, body, keyed_source=keyed, key_present=key_present) == expected
 
 
 def _spec(**kw: str | None) -> SourceSpec:
@@ -93,14 +98,31 @@ def test_probe_without_key_sends_no_auth() -> None:
     assert not res.key_present
 
 
-def test_probe_query_param_without_param_name_sends_nothing() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        assert not request.url.params
-        return httpx.Response(200)
+def test_probe_key_never_reaches_httpx_logs(caplog: pytest.LogCaptureFixture) -> None:
+    # Regresión (revisión adversarial): httpx registra la URL con la query a INFO.
+    spec = _spec(auth="query_param", auth_env="K", auth_param="api_key")
+    original = httpx.Client.__init__
 
-    spec = _spec(auth="query_param", auth_env="K")
-    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
-        assert not probe(spec, client, {"K": SECRET}).key_present
+    def patched(self: httpx.Client, **kw: object) -> None:
+        original(self, transport=httpx.MockTransport(lambda r: httpx.Response(200)))
+
+    with caplog.at_level(logging.INFO), pytest.MonkeyPatch.context() as mp:
+        mp.setattr(httpx.Client, "__init__", patched)
+        logging.getLogger("httpx").setLevel(logging.INFO)
+        probe_all([spec], {"K": SECRET})
+    assert SECRET not in caplog.text
+
+
+def test_probe_too_many_redirects_is_error() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(302, headers={"location": str(request.url)})
+
+    with httpx.Client(
+        transport=httpx.MockTransport(handler), follow_redirects=True, max_redirects=2
+    ) as client:
+        res = probe(_spec(), client, {})
+    assert res.status is AccessStatus.ERROR
+    assert res.detail == "TooManyRedirects"
 
 
 def test_probe_network_error_is_unreachable() -> None:
@@ -133,5 +155,11 @@ def test_render_markdown_rows() -> None:
     ]
     md = render_markdown(rows, datetime(2026, 10, 15, 3, 0, tzinfo=UTC))
     assert "2026-10-15T03:00:00+00:00" in md
-    assert "| a | ok | 200 | no | https://a |" in md
-    assert "| b | unreachable | — | sí | https://b |" in md
+    assert "| a | ok | 200 | HTTP 200 | no | https://a |" in md
+    assert "| b | unreachable | — | ConnectError | sí | https://b |" in md
+
+
+def test_render_markdown_escapes_pipes() -> None:
+    rows = [ProbeResult("a|b", "https://x", AccessStatus.OK, 200, False, "x|y")]
+    md = render_markdown(rows, datetime(2026, 10, 15, tzinfo=UTC))
+    assert r"| a\|b | ok | 200 | x\|y |" in md
