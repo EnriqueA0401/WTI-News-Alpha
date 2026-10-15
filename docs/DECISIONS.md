@@ -61,7 +61,7 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Propuesta:** (a). Primero el piloto 2024–2025 (≈ 400 GB de transferencia, ≈ 1,5–3 h); luego, si G1 lo justifica, el histórico completo (≈ 9–10 h). El filtro debe ser amplio (alta sensibilidad) porque la relevancia fina se decide en F3.
 - **Consecuencias:** el "raw" de GDELT pasa a ser un extracto filtrado y reproducible (código + md5 de origen), no el zip original; queda documentado como excepción a CLAUDE.md §3.3. Requiere aprobación por tamaño y duración.
 
-## ADR-012 — Disponibilidad de ficheros GDELT (propuesta revisada tras la revisión G0, pendiente de usuario)
+## ADR-012 — Disponibilidad de ficheros GDELT (decidida por el usuario 2026-10-15: se mantiene +15 min, ver ADR-014)
 - **Contexto:** A9 aprobó `first_available_at = timestamp del fichero + 15 min`, a validar en F1. Evidencia (`reports/f1/gdelt.md` §4.3):
   - En slots normales el fichero se publica 2–12 min antes del nombre.
   - Los ficheros degradados llegan hasta +2 min tarde.
@@ -101,3 +101,27 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Consecuencias:**
   - v1 solo se usó en la prueba de un día (2024-06-10, se conserva como registro); el piloto usa v2.
   - Con GCAM, el histórico completo podría no caber en el disco de la sesión. La decisión de quitarlo se tomará con las cifras del piloto.
+
+## ADR-014 — Decisiones de la puerta G0 (usuario, 2026-10-15)
+Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elección de proveedor.
+
+| # | Decisión del usuario | Consecuencia registrada |
+|---|---|---|
+| D1 | Precio: **Darwinex como guía** (intradía) | Desviación del Documento (que pide NYMEX CL). Se documenta como limitación (ver abajo). |
+| D2/D3 | **No se compra nada a Databento** | Sin datos oficiales de CL por contrato ni verificación de sesiones y settlement con `status`/`statistics`. |
+| Proveedor | **Darwinex**; el usuario dará acceso con credenciales | Credenciales solo como variables de entorno de la configuración del entorno, nunca en el chat ni en el repo. |
+| D4 | Ventana principal **2020–2026**; 2015–2019 secundaria | — |
+| D5 | Ingesta GDELT por streaming (aprobada antes) | Piloto 2024–2025 hecho (`reports/f2/gdelt_gkg_pilot.md`). |
+| D6 | **Mantener `first_available_at = nominal + 15 min`** (se rechaza la regla con `Last-Modified`) | El piloto midió 2 de 68.493 ficheros publicados después de nominal + 15 min (+35,7 y +20,2 min). Con esta regla esos ficheros serían visibles antes de existir: riesgo de leakage pequeño pero no nulo (CLAUDE.md §3.1). Se ha comunicado al usuario. |
+| D7 | **No descargar el archivo histórico de la EIA** | Los fundamentales EIA vienen de la API con valores actuales (revisados), no de primera publicación. Por CLAUDE.md §3.2 esas features se marcan **"riesgo de revisión"**, lo que afecta a M3 y M4 por igual. |
+| D8 | WPSR en miércoles normales: **10:30 ET** (riesgo declarado); festivos y desplazados: R-PIT | Se validará con la captura prospectiva (D12). |
+| D9 | **R-PIT** para horas no verificadas | Fecha verificada sin hora: 18:00 ET. Fecha dudosa: día hábil siguiente o exclusión. ALFRED: 00:00 ET del día siguiente. |
+| D10 | DTWEXBGS **solo desde 2019-02-04** | — |
+| D11 | NOAA **fuera de las features** (solo contexto) | — |
+| D12 | **Captura prospectiva con GitHub Actions**, a diseñar en F2 | — |
+
+**Limitaciones que introduce D1 (Darwinex):**
+- El precio es un CFD del bróker, no el futuro NYMEX CL. Lo fija el bróker, con su spread y sus ajustes en los vencimientos.
+- Los horarios de sesión son los del bróker.
+- La pregunta del Documento queda respondida "sobre el CFD de WTI de Darwinex". Así se dirá en todos los informes.
+- G0 no puede cerrarse hasta auditar los datos de Darwinex: cobertura, zona horaria del servidor, huecos, rollover y licencia.

@@ -45,6 +45,9 @@ Sustituye a las anteriores D8/D9, que eran contradictorias (la revisión mostró
 Si no se aprueba la compra: **alternativa diaria/prospectiva** con DCOILWTICO/RWTC (documentando que no es el futuro CL) y captura prospectiva.
 
 ## 5. Decisiones requeridas
+
+**Decididas por el usuario el 2026-10-15 (ADR-014):** D1 Darwinex como guía · D2/D3 sin compras · D4 2020–2026 · D5 sí · D6 mantener +15 min · D7 no · D8 10:30 ET · D9 sí · D10 desde 2019-02-04 · D11 fuera · D12 sí.
+
 | # | Decisión | Recomendación |
 |---|---|---|
 | D1 | Puerta G0 | Intradía viable condicionado (§4). |

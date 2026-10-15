@@ -1,6 +1,6 @@
 # Progreso
 
-**Fase actual:** F1 terminada. **Puerta G0 pendiente de decisión del usuario** (`reports/F1_source_audit.md` §5; D5 aprobado, falta el resto). Piloto GDELT GKG 2024–2025 (D5) terminado.
+**Fase actual:** F1 terminada. Decisiones G0 tomadas (ADR-014). Precio: Darwinex. **G0 no se cierra hasta auditar los datos de Darwinex, y para eso hacen falta las credenciales del usuario.** Piloto GDELT GKG 2024–2025 terminado.
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
@@ -23,13 +23,13 @@
 - `make check` en verde (206 tests, cobertura de ramas 99 %).
 
 ## Pendiente
-- Decisiones G0 D1–D4 y D6–D12 (incluye compras Databento: A 2,80 USD; C 75,78 USD). D5 aprobado.
-- Usuario: ¿Darwinex como fuente? Respondido: no sustituye al futuro CL; se recomienda mantener Databento (pendiente de confirmar).
-- ADR-012 revisado (`max(nominal+15 min, Last-Modified+5 min)`): propuestas.
+- Usuario: credenciales de Darwinex como variables de entorno (`DARWINEX_FTP_USER`, `DARWINEX_FTP_PASSWORD`).
+- Auditoría Darwinex (F1 bis): cobertura, zona horaria, huecos, rollover, licencia → cierre de G0.
+- Avisado al usuario: riesgos de D6 (+15 min: 2 ficheros tardíos) y D7 (EIA revisada).
 - Revisión adversarial G0 hecha: 11 hallazgos resueltos o convertidos en decisiones (`reports/F1_source_audit.md` §6).
 - Credenciales: guardadas solo en la sesión (`~/.config/wna/secrets.env`, fuera del repo). Recomendado regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
 
 ## Bloqueos
-- Sin aprobación de G0 no se compra precio intradía ni se inicia F2.
+- Sin credenciales de Darwinex no hay precio intradía. F2 de precio bloqueada.
 - cmegroup.com, BLS y DOL inaccesibles (403) desde el entorno; GDELT DOC API con rate limit.
 - La sesión llegó al límite de uso a las ~05:10 UTC; se reanudó a las 07:25 UTC.
