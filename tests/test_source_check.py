@@ -30,6 +30,8 @@ from wti_news_alpha.ingestion.source_check import (
         (403, "api_key invalid", True, True, AccessStatus.BLOCKED),
         # Fuente con clave, sin clave en entorno, 403 sin marcador: falta la clave.
         (403, "Forbidden", True, False, AccessStatus.AUTH_REQUIRED),
+        # Regresión: un 400 sin mención de clave es un error de petición, no de clave.
+        (400, "Variable series_id has not been set", True, True, AccessStatus.ERROR),
         (403, "Access Denied", False, False, AccessStatus.BLOCKED),
         (400, "bad request", False, False, AccessStatus.ERROR),
         (500, "", False, False, AccessStatus.ERROR),
@@ -73,6 +75,29 @@ def test_probe_query_param_key_is_sent_but_not_reported() -> None:
     assert res.key_present
     assert SECRET not in repr(res)
     assert SECRET not in render_markdown([res], datetime(2026, 1, 1, tzinfo=UTC))
+
+
+def test_probe_keeps_existing_query_params_regression() -> None:
+    # Regresión: httpx descartaba series_id/file_type al añadir api_key (FRED 400).
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200)
+
+    spec = _spec(
+        auth="query_param",
+        auth_env="K",
+        auth_param="api_key",
+        probe_url="https://example.org/series?series_id=DCOILWTICO&file_type=json",
+    )
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        assert probe(spec, client, {"K": SECRET}).status is AccessStatus.OK
+    assert dict(seen[0].url.params) == {
+        "series_id": "DCOILWTICO",
+        "file_type": "json",
+        "api_key": SECRET,
+    }
 
 
 def test_probe_basic_user_auth() -> None:

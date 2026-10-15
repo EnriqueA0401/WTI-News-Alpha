@@ -12,7 +12,7 @@
 
 ## Pendiente
 - Decisiones de usuario: ADR-005 (CME). ADR-006: datos en la sesión en la nube; captura prospectiva a replantear en F2.
-- Credenciales en la configuración del entorno: `EIA_API_KEY`, `FRED_API_KEY`, `DATABENTO_API_KEY` (las compartidas en el chat deben regenerarse).
+- Credenciales: EIA, FRED y Databento verificadas (200) en esta sesión, guardadas fuera del repo en `~/.config/wna/secrets.env` (se pierden al terminar la sesión). Recomendado: regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
 - F1 — auditoría de fuentes (plan en `docs/plans/FASE_01.md`).
 
 ## Bloqueos

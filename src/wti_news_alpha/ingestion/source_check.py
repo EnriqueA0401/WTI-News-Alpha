@@ -56,7 +56,11 @@ def classify(
     if http_code == 429:
         return AccessStatus.RATE_LIMITED
     mentions_key = any(m in body_head.lower() for m in _KEY_MISSING_MARKERS)
-    auth_like = http_code == 401 or (http_code in (400, 403) and (mentions_key or keyed_source))
+    auth_like = (
+        http_code == 401
+        or (http_code in (400, 403) and mentions_key)
+        or (http_code == 403 and keyed_source)
+    )
     if auth_like:
         # Con clave presente, un rechazo significa clave inválida o sin permisos.
         return AccessStatus.BLOCKED if key_present else AccessStatus.AUTH_REQUIRED
@@ -81,8 +85,11 @@ def probe(source: SourceSpec, client: httpx.Client, env: Mapping[str, str]) -> P
     """Hace un GET a ``source.probe_url`` leyendo como máximo ``BODY_PREVIEW_BYTES``."""
     params, basic_auth, key_present = _auth_kwargs(source, env)
     keyed = source.auth != "none"
+    # httpx sustituye (no fusiona) la query de la URL si se pasa ``params=``:
+    # se fusiona explícitamente para conservar p. ej. ``series_id``.
+    url = httpx.URL(source.probe_url).copy_merge_params(params)
     try:
-        with client.stream("GET", source.probe_url, params=params, auth=basic_auth) as resp:
+        with client.stream("GET", url, auth=basic_auth) as resp:
             head = next(resp.iter_bytes(BODY_PREVIEW_BYTES), b"")
             code: int | None = resp.status_code
     except httpx.TooManyRedirects:
