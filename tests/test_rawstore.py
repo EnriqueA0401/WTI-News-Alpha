@@ -170,3 +170,16 @@ def test_verify_all(store: RawStore) -> None:
 
 def test_verify_all_without_manifest_is_zero(store: RawStore) -> None:
     assert store.verify_all("nothing") == 0
+
+
+def test_verify_single_file(store: RawStore) -> None:
+    with _client(Counter()) as c:
+        e = store.fetch(c, "src", "https://x.org/a.csv", "src/a.csv")
+    assert store.verify("src", "src/a.csv") == e
+    with pytest.raises(RawIntegrityError, match="no está"):
+        store.verify("src", "src/zz.csv")
+    path = store.raw_root / "src/a.csv"
+    os.chmod(path, 0o644)
+    path.write_bytes(b"x")
+    with pytest.raises(RawIntegrityError, match="integridad"):
+        store.verify("src", "src/a.csv")

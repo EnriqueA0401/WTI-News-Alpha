@@ -7,14 +7,18 @@ from typing import Annotated
 
 import typer
 
-from wti_news_alpha.config import CONFIG_DIR, load_project_config
+from wti_news_alpha.config import CONFIG_DIR, load_gdelt_config, load_project_config
 from wti_news_alpha.errors import PhaseNotImplementedError
+from wti_news_alpha.ingestion import gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
 app = typer.Typer(no_args_is_help=True, help="WTI News Alpha", pretty_exceptions_show_locals=False)
 sources_app = typer.Typer(no_args_is_help=True, help="Fuentes de datos")
 app.add_typer(sources_app, name="sources")
+ingest_app = typer.Typer(no_args_is_help=True, help="Ingesta de fuentes (F2)")
+app.add_typer(ingest_app, name="ingest")
+GDELT_INDEX_REL = "gdelt/index/masterfilelist_20261015.txt"
 
 
 @sources_app.command("check")
@@ -46,10 +50,51 @@ def _not_yet(command: str, phase: str) -> None:
     raise PhaseNotImplementedError(f"`{command}` se implementa en {phase} (ver CLAUDE.md §12)")
 
 
-@app.command()
-def ingest() -> None:
-    """Ingesta de fuentes (F2)."""
-    _not_yet("ingest", "F2")
+@ingest_app.command("gdelt-gkg")
+def ingest_gdelt_gkg(
+    start: Annotated[datetime, typer.Option(formats=["%Y-%m-%d"], help="Día UTC inicial")],
+    end: Annotated[datetime, typer.Option(formats=["%Y-%m-%d"], help="Día UTC final (excluido)")],
+    index_rel: Annotated[
+        str, typer.Option(help="Índice maestro (ruta relativa a data/raw)")
+    ] = GDELT_INDEX_REL,
+    workers: Annotated[int | None, typer.Option(help="Procesos (por defecto, config)")] = None,
+) -> None:
+    """GKG de GDELT filtrado en streaming (ADR-011). Idempotente: retoma días pendientes."""
+    cfg = load_gdelt_config(CONFIG_DIR)
+    commit = current_commit()
+    stamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    logger = get_logger(REPO_ROOT / "runs" / "logs" / f"ingest_gdelt_gkg_{stamp}.jsonl")
+    with run_step(
+        "ingest_gdelt_gkg", logger, commit, start=str(start.date()), end=str(end.date())
+    ) as res:
+        summary = gdelt_gkg.run_pipeline(
+            start.date(),
+            end.date(),
+            cfg,
+            raw_root=REPO_ROOT / "data" / "raw",
+            manifest_dir=REPO_ROOT / "manifests",
+            index_rel=index_rel,
+            commit=commit,
+            logger=logger,
+            workers=workers,
+        )
+        res.update(
+            already_done=len(summary.already_done),
+            written=len(summary.written),
+            failed=len(summary.failed),
+            not_run=len(summary.not_run),
+            stopped_reason=summary.stopped_reason,
+        )
+    typer.echo(
+        f"ya hechos {len(summary.already_done)} · escritos {len(summary.written)} · "
+        f"fallidos {len(summary.failed)} · sin ejecutar {len(summary.not_run)}"
+    )
+    for day, err in summary.failed.items():
+        typer.echo(f"FALLO {day}: {err}")
+    if summary.stopped_reason:
+        typer.echo(f"PARADA: {summary.stopped_reason}")
+    if not summary.ok:
+        raise typer.Exit(code=1)
 
 
 @app.command("build-features")

@@ -219,6 +219,58 @@ class SourcesConfig(_Strict):
         return self
 
 
+# ------------------------------------------------------------------ gdelt
+
+
+def _polars_regex(v: str) -> str:
+    """Comprueba que el patrón compila en el motor de Polars (regex de Rust)."""
+    import polars as pl  # noqa: PLC0415 - import diferido: solo al validar
+
+    try:
+        pl.Series([""]).str.contains(v)
+    except pl.exceptions.ComputeError as exc:
+        raise ValueError(f"regex inválida para Polars: {v!r}") from exc
+    return v
+
+
+PolarsRegex = Annotated[NonEmptyStr, AfterValidator(_polars_regex)]
+ThemeToken = Annotated[str, StringConstraints(pattern=r"^[A-Z0-9]+$")]
+ThemePrefix = Annotated[str, StringConstraints(pattern=r"^[A-Z0-9_]+$")]
+
+
+class GkgFilterConfig(_Strict):
+    """Filtro amplio y versionado del GKG (ADR-011). Cambiarlo exige nueva ``version``."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    theme_tokens: Annotated[tuple[ThemeToken, ...], Field(min_length=1)]
+    theme_exclude_prefixes: tuple[ThemePrefix, ...]
+    title_regex: PolarsRegex
+    org_regex: PolarsRegex
+    reject_relevance_regex: PolarsRegex
+
+    @model_validator(mode="after")
+    def _unique_tokens(self) -> Self:
+        if len(set(self.theme_tokens)) != len(self.theme_tokens):
+            raise ValueError("theme_tokens duplicados")
+        return self
+
+
+class GkgIngestConfig(_Strict):
+    url_prefix: HttpsUrl
+    max_reject_fraction_per_day: UnitFraction
+    max_malformed_index_lines: Annotated[int, Strict(), Field(ge=0)]
+    http_timeout_s: PositiveFloat
+    retry_backoff_s: tuple[PositiveFloat, ...]
+    download_threads: PositiveInt
+    workers: PositiveInt
+    min_free_disk_gb: PositiveFloat
+
+
+class GdeltConfig(_Strict):
+    gkg_filter: GkgFilterConfig
+    ingest: GkgIngestConfig
+
+
 # ------------------------------------------------------------------ project
 
 
@@ -262,6 +314,11 @@ def load_yaml_model[M: BaseModel](path: Path, model: type[M]) -> M:
         return model.model_validate(raw)
     except ValidationError as exc:
         raise SchemaError(f"{path.name}: configuración inválida\n{exc}") from exc
+
+
+def load_gdelt_config(config_dir: Path = CONFIG_DIR) -> GdeltConfig:
+    """Carga ``config/gdelt.yaml``."""
+    return load_yaml_model(config_dir / "gdelt.yaml", GdeltConfig)
 
 
 def load_project_config(config_dir: Path = CONFIG_DIR) -> ProjectConfig:

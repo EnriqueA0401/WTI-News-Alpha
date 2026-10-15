@@ -161,6 +161,16 @@ class RawStore:
         self._append(entry)
         return entry
 
+    def verify(self, source: str, rel_path: str) -> ManifestEntry:
+        """Comprueba un fichero registrado; devuelve su entrada o lanza ``RawIntegrityError``."""
+        entry = self.entries(source).get(rel_path)
+        if entry is None:
+            raise RawIntegrityError(f"{rel_path} no está en el manifiesto de {source}")
+        path = self._resolve(rel_path)
+        if not path.exists() or _sha256(path) != entry.sha256:
+            raise RawIntegrityError(f"integridad rota en {rel_path}")
+        return entry
+
     def verify_all(self, source: str) -> int:
         """Comprueba el checksum de todos los ficheros de ``source``; devuelve cuántos."""
         entries = self.entries(source)

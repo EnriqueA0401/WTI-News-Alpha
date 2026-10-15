@@ -1,0 +1,47 @@
+# GDELT GKG: filtro amplio versionado e ingesta por streaming (ADR-011, D5 aprobado 2026-10-15).
+# El filtro decide qué filas del GKG se conservan en raw; la relevancia fina se decide en F3.
+# Cambiar cualquier campo de gkg_filter exige una nueva version (la salida va a otra carpeta).
+gkg_filter:
+  version: gkg-oil-v1
+  # Un tema de V1Themes cuenta si alguno de sus tokens separados por "_" está en esta lista
+  # (así ENV_OIL y ECON_OILPRICE cuentan, pero WB_1913_SOIL_MANAGEMENT no).
+  theme_tokens:
+    - OIL
+    - OILPRICE
+    - OILFIELD
+    - OILSPILL
+    - OILMEN
+    - OILMAN
+    - PETROLEUM
+    - PETROL
+    - CRUDE
+    - OPEC
+    - REFINERY
+    - REFINERIES
+    - REFINING
+    - PIPELINE
+    - PIPELINES
+    - GASOLINEPRICE
+    - DIESELPRICE
+    - FUELPRICES
+    - HEATINGOIL
+    - HEATINGOILPRICE
+  # Aceite de oliva, coco, etc. (medido en la muestra F1).
+  theme_exclude_prefixes:
+    - TAX_FOODSTAPLES_
+  title_regex: '(?i)\b(crude|oil|opec|wti|brent|petroleum|refinery|refineries|gasoline|pipelines?)\b'
+  org_regex: '(?i)(opec|organization of the petroleum exporting|petroleum exporting countries)'
+  # Solo para marcar líneas rechazadas que parecían relevantes (no filtra nada).
+  reject_relevance_regex: '(?i)(oil|crude|opec|petrol)'
+
+ingest:
+  url_prefix: https://data.gdeltproject.org/gdeltv2/
+  # Fracción máxima de líneas rechazadas (nº de campos != 27) por día; si se supera, el día falla.
+  max_reject_fraction_per_day: 0.005
+  # Líneas mal formadas toleradas en el índice maestro (F1: 61 líneas truncadas).
+  max_malformed_index_lines: 100
+  http_timeout_s: 120.0
+  retry_backoff_s: [2.0, 4.0, 8.0, 16.0]
+  download_threads: 4
+  workers: 4
+  min_free_disk_gb: 4.0
