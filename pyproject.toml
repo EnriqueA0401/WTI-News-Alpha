@@ -1,0 +1,64 @@
+[project]
+name = "wti-news-alpha"
+version = "0.1.0"
+description = "Investigación cuantitativa: ¿las noticias aportan capacidad predictiva incremental sobre WTI (NYMEX CL)?"
+readme = "CLAUDE.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "duckdb",
+    "httpx",
+    "pandera[polars]",
+    "polars",
+    "pyarrow",
+    "pydantic>=2",
+    "pyyaml",
+    "typer",
+]
+
+[project.scripts]
+wna = "wti_news_alpha.cli:app"
+
+[dependency-groups]
+dev = [
+    "hypothesis",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "types-pyyaml",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wti_news_alpha"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "BLE", "DTZ", "PT", "RET", "SIM", "PL", "RUF", "TRY"]
+ignore = ["PLR2004", "TRY003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "DTZ001"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --cov=wti_news_alpha --cov-branch --cov-report=term-missing --cov-fail-under=95"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["wti_news_alpha"]

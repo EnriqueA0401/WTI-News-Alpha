@@ -1,0 +1,25 @@
+# Datos: nunca en git (raw inmutable vive en almacenamiento persistente, ver docs/DECISIONS.md)
+data/*
+!data/README.md
+
+# Secretos
+.env
+.env.*
+
+# Python / herramientas
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Logs de ejecución locales
+runs/logs/
