@@ -35,12 +35,13 @@ def main() -> None:
                     "rejected": r["rejected"],
                     "rejected_maybe_relevant": r["rejected_maybe_relevant"],
                     "n_bytes": r["n_bytes"],
-                    "utf8_replaced": sum(f["utf8_replaced"] for f in files),
+                    "utf8_replacements": r["utf8_replacements"],
+                    "n_no_last_modified": r["n_no_last_modified"],
+                    "match_title": sum(f["match_title"] for f in files),
+                    "match_url": sum(f["match_url"] for f in files),
+                    "match_theme": sum(f["match_theme"] for f in files),
                     "date_mismatch": sum(f["date_mismatch"] for f in files),
                     "retried_files": sum(f["attempts"] > 1 for f in files),
-                    "no_last_modified": sum(
-                        f["status"] == "ok" and f["last_modified_utc"] is None for f in files
-                    ),
                 }
             )
     df = pl.DataFrame(days).sort("day")
