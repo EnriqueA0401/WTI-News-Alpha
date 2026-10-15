@@ -55,7 +55,7 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Corregidos (con test de regresión):** horas de config sin comillas que YAML lee en base 60 (`WallTime` estricto); horas ambiguas resueltas en silencio (ADR-007); el gate de estado se podía saltar leyendo `.value` (ahora `unsafe_value` + test que lo prohíbe en `src/`); NaN/bool/texto/negativos aceptados en parámetros (tipos estrictos y rangos); claves YAML duplicadas (loader que las rechaza); clave de API visible en logs de httpx y en mensajes de error (logger httpx a WARNING + redacción en `JsonFormatter`); auth de fuentes incoherente y URLs con credenciales (validadores); traceback ausente en logs; campos libres que pisaban `ts`/`level`/`commit` (ahora bajo `data`); detalle de fallo ausente en el informe, redirecciones y `|` en tablas; `ny_wall_to_utc` con datetime; nulos en columnas UTC; validación semántica de horizontes y splits; errores no tipados (YAML, no-datetime); oráculo de hypothesis independiente.
 - **Riesgos aceptados (bajos):** un 2xx solo prueba que el endpoint responde (un portal cautivo daría "ok"; el contenido se audita en F1); fechas anteriores a 1883 en NY usan offset LMT sin aviso (fuera del rango del proyecto, 2015+).
 
-## ADR-011 — Ingesta histórica GDELT por filtrado en streaming (propuesta, pendiente de usuario)
+## ADR-011 — Ingesta histórica GDELT por filtrado en streaming (aceptada: D5, usuario 2026-10-15)
 - **Contexto:** el GKG 2015–2026 ocupa ≈ 2,9 TB comprimido (`reports/f1/gdelt.md` §3). Descargarlo entero supera los topes de CLAUDE.md §4 y no cabe en disco. Medido: ≈ 94 MB/s de descarga con 8 conexiones y ≈ 0,17 s de CPU por fichero.
 - **Opciones:** (a) filtrar en streaming: descargar cada zip, verificar el md5 del índice maestro, conservar solo las filas que pasan un filtro amplio y versionado (temas/entidades de petróleo), registrar en el manifiesto el fichero de origen y la versión del filtro, y descartar el zip; (b) Google BigQuery (dataset público de GDELT; requiere cuenta GCP y tiene coste por TB escaneado); (c) solo Events/Mentions (≈ 10 GB/año, sin temas).
 - **Propuesta:** (a). Primero el piloto 2024–2025 (≈ 400 GB de transferencia, ≈ 1,5–3 h); luego, si G1 lo justifica, el histórico completo (≈ 9–10 h). El filtro debe ser amplio (alta sensibilidad) porque la relevancia fina se decide en F3.
@@ -69,3 +69,20 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Opciones:** (a) +15 min fijo; (b) +5 min fijo (descartado: lo invalidan los casos tardíos); (c) `max(nominal + 15 min, Last-Modified + 5 min)`, registrando Last-Modified en cada descarga.
 - **Propuesta:** (c). Conserva el margen aprobado y cubre las subidas tardías. Si Last-Modified reflejara una re-subida posterior, solo retrasa la disponibilidad (más conservador).
 - **Consecuencias:** F2 guarda el header Last-Modified en el manifiesto. Cambia la definición de un timestamp: requiere aprobación (CLAUDE.md §4).
+
+## ADR-013 — Filtro GKG `gkg-oil-v1` y columnas conservadas (aceptada, implementa ADR-011)
+- **Contexto:** D5 aprobado: ingesta del GKG por streaming con un filtro amplio y versionado. Hay que decidir qué filas y qué columnas se guardan, porque lo descartado solo se recupera volviendo a descargar.
+- **Medido en la muestra F1 (175.850 filas):**
+  - GCAM ocupa el 70 % de los bytes de cada fila.
+  - Un filtro por tokens de tema más título y organización conserva entre el 3 % y el 6 % de las filas.
+  - Un día real (2024-06-10, 96 ficheros) dio 142.570 filas, de las que se conservaron 4.107. El Parquet resultante ocupa 13,6 MB, lo que da unos 5 GB/año.
+- **Decisión:**
+  - Se conserva una fila si cumple alguna de estas condiciones:
+    - un tema contiene un token de petróleo entre `_` (lista en `config/gdelt.yaml`), excluyendo `TAX_FOODSTAPLES_*`;
+    - el título coincide con la regex de crudo, OPEC, WTI, etc.;
+    - la organización es OPEC.
+  - Se guardan las 27 columnas originales, GCAM incluida, para no perder información del piloto.
+  - Las filas se validan: 27 campos, GKGRECORDID al inicio y sin fragmento en la línea siguiente. Las rechazadas se cuentan, con un umbral de 0,5 % por día.
+- **Consecuencias:**
+  - Con GCAM, el histórico completo (≈ 11 años) podría no caber en el disco de la sesión. La decisión de quitar GCAM se tomará con las cifras del piloto.
+  - Cualquier cambio del filtro exige una nueva `version` y otra carpeta de salida.
