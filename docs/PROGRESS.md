@@ -11,7 +11,7 @@
 - `reports/source_access.md`: acceso de red por fuente.
 
 ## Pendiente
-- Decisiones de usuario: ADR-002 (CLAUDE.md), ADR-005 (CME), ADR-006 (persistencia).
+- Decisiones de usuario: ADR-002 (CLAUDE.md), ADR-005 (CME). ADR-006: datos en la sesión en la nube; captura prospectiva a replantear en F2.
 - Credenciales en la configuración del entorno: `EIA_API_KEY`, `FRED_API_KEY`, `DATABENTO_API_KEY` (las compartidas en el chat deben regenerarse).
 - F1 — auditoría de fuentes (plan en `docs/plans/FASE_01.md`).
 

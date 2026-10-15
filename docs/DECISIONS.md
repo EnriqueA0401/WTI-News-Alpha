@@ -31,7 +31,8 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 ## ADR-006 — Persistencia de datos y captura prospectiva (pendiente de usuario)
 - **Contexto:** el contenedor de trabajo es efímero; `data/` no va a git; la captura prospectiva de noticias (F2) necesita un proceso continuo.
 - **Opciones:** almacenamiento en máquina del usuario / bucket / disco; captura en máquina del usuario, VPS o GitHub Actions cron.
-- **Decisión:** pendiente.
+- **Decisión (usuario, 2026-10-15):** los datos se guardan en la sesión en la nube.
+- **Consecuencias:** el disco de la sesión se borra cuando el contenedor se recicla. Por eso: (1) cada descarga deja en git su manifiesto (fuente, request, fecha, sha256), de modo que las fuentes históricas re-descargables (GDELT, EIA, FRED/ALFRED, CFTC, NOAA, Databento) se pueden reconstruir y verificar por checksum; (2) la captura prospectiva de noticias (`first_seen_at`) no es re-descargable y una sesión no corre 24/7: se replanteará en F2 (propuesta: GitHub Actions cada 15 min guardando solo metadatos en una rama de datos).
 
 ## ADR-007 — Hallazgo de hypothesis: horas de pared inexistentes (aceptada)
 - **Contexto:** el test de propiedades encontró que `ensure_utc` aceptaba `datetime(2016-03-13 02:00, America/New_York)`, hora que no existe (salto DST); Python la convierte sin avisar.
