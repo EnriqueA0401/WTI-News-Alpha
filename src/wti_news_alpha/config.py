@@ -2,16 +2,29 @@
 
 Cada parámetro externo o de diseño es un ``Param`` con ``status`` y
 ``source_ref``. Solo los estados ``verified`` (comprobado contra fuente
-oficial) y ``approved`` (aprobado por el usuario) son utilizables en cálculos;
-``Param.require`` lanza ``UnverifiedValueError`` en cualquier otro caso.
+oficial) y ``approved`` (aprobado por el usuario) son utilizables en cálculos.
+El valor se guarda como ``unsafe_value`` (clave YAML ``value``) y el código de
+``src/`` solo debe leerlo mediante ``Param.require`` (lo comprueba un test).
 """
 
+import math
+import re
 from datetime import time
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Any, Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    Strict,
+    StringConstraints,
+    ValidationError,
+    model_validator,
+)
 
 from wti_news_alpha.errors import SchemaError, UnverifiedValueError
 
@@ -19,6 +32,34 @@ CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
 ParamStatus = Literal["verified", "approved", "unverified", "proposed"]
 USABLE_STATUSES: frozenset[str] = frozenset({"verified", "approved"})
+
+# ------------------------------------------------------------------ tipos
+
+_WALL_TIME_RE = re.compile(r"^\d{2}:\d{2}(:\d{2})?$")
+
+
+def _parse_wall_time(v: object) -> object:
+    """Solo acepta 'HH:MM[:SS]' como texto (PyYAML lee 17:00 sin comillas como 1020)."""
+    if isinstance(v, time):
+        return v
+    if not isinstance(v, str) or not _WALL_TIME_RE.match(v):
+        raise ValueError(f"hora de pared inválida {v!r}: usa texto 'HH:MM' entre comillas")
+    return time.fromisoformat(v)
+
+
+def _reject_tz(v: time) -> time:
+    if v.tzinfo is not None:
+        raise ValueError("la hora de pared no debe llevar zona horaria")
+    return v
+
+
+WallTime = Annotated[time, BeforeValidator(_parse_wall_time), AfterValidator(_reject_tz)]
+PositiveFloat = Annotated[float, Strict(), Field(gt=0, allow_inf_nan=False)]
+NonNegativeFloat = Annotated[float, Strict(), Field(ge=0, allow_inf_nan=False)]
+UnitFraction = Annotated[float, Strict(), Field(gt=0, lt=1, allow_inf_nan=False)]
+PositiveInt = Annotated[int, Strict(), Field(gt=0)]
+NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+HttpsUrl = Annotated[str, StringConstraints(pattern=r"^https://[^\s|]+$")]
 
 
 class _Strict(BaseModel):
@@ -28,9 +69,9 @@ class _Strict(BaseModel):
 class Param[T](_Strict):
     """Valor con trazabilidad: estado y referencia a la fuente o decisión."""
 
-    value: T | None
+    unsafe_value: T | None = Field(alias="value")
     status: ParamStatus
-    source_ref: str = Field(min_length=1)
+    source_ref: NonEmptyStr
     note: str = ""
 
     def require(self, name: str) -> T:
@@ -40,9 +81,9 @@ class Param[T](_Strict):
                 f"parámetro {name!r} con estado {self.status!r} no utilizable "
                 f"(fuente: {self.source_ref})"
             )
-        if self.value is None:
+        if self.unsafe_value is None:
             raise UnverifiedValueError(f"parámetro {name!r} {self.status} pero sin valor")
-        return self.value
+        return self.unsafe_value
 
 
 # ------------------------------------------------------------------ sessions
@@ -50,7 +91,7 @@ class Param[T](_Strict):
 
 class WeeklyTime(_Strict):
     weekday: Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-    time: time
+    time: WallTime
 
 
 class SessionsConfig(_Strict):
@@ -58,9 +99,9 @@ class SessionsConfig(_Strict):
 
     timezone: Literal["America/New_York"]
     weekly_open_et: Param[WeeklyTime]
-    daily_close_et: Param[time]
-    daily_reopen_et: Param[time]
-    settlement_time_et: Param[time]
+    daily_close_et: Param[WallTime]
+    daily_reopen_et: Param[WallTime]
+    settlement_time_et: Param[WallTime]
 
 
 # ------------------------------------------------------------------ contracts
@@ -68,24 +109,39 @@ class SessionsConfig(_Strict):
 
 class ContractsConfig(_Strict):
     root_symbol: Literal["CL"]
-    exchange: str
-    contract_size_bbl: Param[int]
-    tick_size_usd_per_bbl: Param[float]
-    tick_value_usd: Param[float]
-    roll_rule: Param[str]
+    exchange: NonEmptyStr
+    contract_size_bbl: Param[PositiveInt]
+    tick_size_usd_per_bbl: Param[PositiveFloat]
+    tick_value_usd: Param[PositiveFloat]
+    roll_rule: Param[NonEmptyStr]
 
 
 # ------------------------------------------------------------------ horizons
 
 
 class HorizonSpec(_Strict):
-    name: str
+    name: NonEmptyStr
     kind: Literal["market_minutes", "session_end", "sessions"]
-    length: int | None = Field(default=None, gt=0)
+    length: PositiveInt | None = None
+
+    @model_validator(mode="after")
+    def _length_matches_kind(self) -> Self:
+        if (self.kind == "session_end") != (self.length is None):
+            raise ValueError(
+                f"horizonte {self.name!r}: 'length' solo y siempre si kind != session_end"
+            )
+        return self
+
+
+def _unique_horizon_names(v: tuple[HorizonSpec, ...]) -> tuple[HorizonSpec, ...]:
+    names = [h.name for h in v]
+    if len(names) != len(set(names)):
+        raise ValueError(f"nombres de horizonte duplicados: {names}")
+    return v
 
 
 class HorizonsConfig(_Strict):
-    horizons: Param[list[HorizonSpec]]
+    horizons: Param[Annotated[tuple[HorizonSpec, ...], AfterValidator(_unique_horizon_names)]]
     time_basis: Param[Literal["market_time", "clock_time"]]
     session_end_reference: Param[Literal["settlement", "globex_close"]]
 
@@ -95,40 +151,71 @@ class HorizonsConfig(_Strict):
 
 class CostsConfig(_Strict):
     currency: Literal["USD"]
-    commission_usd_per_side: Param[float]
-    spread_ticks: Param[float]
-    slippage_ticks_per_side: Param[float]
-    latency_seconds: Param[float]
-    sensitivity_multipliers: Param[list[float]]
+    commission_usd_per_side: Param[NonNegativeFloat]
+    spread_ticks: Param[NonNegativeFloat]
+    slippage_ticks_per_side: Param[NonNegativeFloat]
+    latency_seconds: Param[NonNegativeFloat]
+    sensitivity_multipliers: Param[tuple[PositiveFloat, ...]]
 
 
 # ------------------------------------------------------------------ splits
 
 
 class SplitsConfig(_Strict):
-    train_fraction: Param[float]
-    validation_fraction: Param[float]
-    test_fraction: Param[float]
-    embargo: Param[str]
-    sealed_test_window: Param[str]
+    train_fraction: Param[UnitFraction]
+    validation_fraction: Param[UnitFraction]
+    test_fraction: Param[UnitFraction]
+    embargo: Param[NonEmptyStr]
+    sealed_test_window: Param[NonEmptyStr]
+
+    @model_validator(mode="after")
+    def _fractions_sum_to_one(self) -> Self:
+        parts = [self.train_fraction, self.validation_fraction, self.test_fraction]
+        values = [p.unsafe_value for p in parts]
+        if all(v is not None for v in values) and not math.isclose(
+            sum(v for v in values if v is not None), 1.0, abs_tol=1e-9
+        ):
+            raise ValueError(f"las fracciones train/validation/test deben sumar 1: {values}")
+        return self
 
 
 # ------------------------------------------------------------------ sources
 
+_SECRET_IN_URL_RE = re.compile(r"(api[_-]?key|token|secret|password)=", re.IGNORECASE)
+
 
 class SourceSpec(_Strict):
-    name: str
-    description: str
-    docs_url: str
-    terms_url: str | None
-    probe_url: str
+    name: NonEmptyStr
+    description: NonEmptyStr
+    docs_url: HttpsUrl
+    terms_url: HttpsUrl | None
+    probe_url: HttpsUrl
     auth: Literal["none", "query_param", "basic_user"]
-    auth_env: str | None = None
-    auth_param: str | None = None
+    auth_env: NonEmptyStr | None = None
+    auth_param: NonEmptyStr | None = None
+
+    @model_validator(mode="after")
+    def _auth_consistent(self) -> Self:
+        if _SECRET_IN_URL_RE.search(self.probe_url):
+            raise ValueError(f"{self.name}: probe_url no puede contener credenciales")
+        needs_env = self.auth != "none"
+        needs_param = self.auth == "query_param"
+        if needs_env != (self.auth_env is not None):
+            raise ValueError(f"{self.name}: auth_env requerido solo si auth != none")
+        if needs_param != (self.auth_param is not None):
+            raise ValueError(f"{self.name}: auth_param requerido solo si auth == query_param")
+        return self
 
 
 class SourcesConfig(_Strict):
-    sources: list[SourceSpec]
+    sources: tuple[SourceSpec, ...]
+
+    @model_validator(mode="after")
+    def _unique_names(self) -> Self:
+        names = [s.name for s in self.sources]
+        if len(names) != len(set(names)):
+            raise ValueError(f"nombres de fuente duplicados: {names}")
+        return self
 
 
 # ------------------------------------------------------------------ project
@@ -143,11 +230,31 @@ class ProjectConfig(_Strict):
     sources: SourcesConfig
 
 
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader que rechaza claves duplicadas (PyYAML se queda con la última)."""
+
+
+def _construct_unique_mapping(loader: _UniqueKeyLoader, node: yaml.MappingNode) -> dict[Any, Any]:
+    keys = [loader.construct_object(k) for k, _ in node.value]
+    dupes = sorted({str(k) for k in keys if keys.count(k) > 1})
+    if dupes:
+        raise SchemaError(f"claves YAML duplicadas {dupes} en línea {node.start_mark.line + 1}")
+    return loader.construct_mapping(node)
+
+
+_UniqueKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping
+)
+
+
 def load_yaml_model[M: BaseModel](path: Path, model: type[M]) -> M:
     """Carga ``path`` y lo valida contra ``model``. Errores → ``SchemaError``."""
     if not path.is_file():
         raise SchemaError(f"el fichero de configuración {path} no existe")
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        raw = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)  # noqa: S506
+    except yaml.YAMLError as exc:
+        raise SchemaError(f"{path.name}: YAML inválido\n{exc}") from exc
     if not isinstance(raw, dict):
         raise SchemaError(f"{path.name}: se esperaba un mapping YAML en la raíz")
     try:
