@@ -6,7 +6,8 @@
 - `CLAUDE.md` (prompt maestro) y `docs/WTI_News_Alpha_v1.1.pdf` (Documento) en el repo.
 - Esqueleto: `uv` + Python 3.12, paquete `wti_news_alpha` (`src/`), carpetas §4.1, Makefile, pre-commit, workflow CI (`make check`).
 - Núcleo: `errors.py`, `timeutils.py` (UTC, DST, rechazo de naive y de horas inexistentes), `config.py` + `config/*.yaml` (parámetros con estado), `runlog.py` (logs JSON con commit), CLI `wna` (`sources check`; comandos futuros fallan explícitamente).
-- `make check` en verde: ruff, mypy --strict, 76 tests, cobertura de ramas 99,7 %.
+- `make check` en verde: ruff, mypy --strict, 120 tests, cobertura de ramas 99 %.
+- Revisión adversarial independiente: 16 hallazgos resueltos o aceptados como riesgo bajo (ADR-008).
 - `reports/source_access.md`: acceso de red por fuente.
 
 ## Pendiente
