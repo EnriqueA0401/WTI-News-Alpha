@@ -1,0 +1,19 @@
+# Horizontes de predicción. ESTADO: propuesta (docs/PROTOCOL.md A2/A3), pendiente de aprobación.
+horizons:
+  value:
+    - {name: h15m, kind: market_minutes, length: 15}
+    - {name: h60m, kind: market_minutes, length: 60}
+    - {name: h4h, kind: market_minutes, length: 240}
+    - {name: session_end, kind: session_end}
+    - {name: h1s, kind: sessions, length: 1}
+    - {name: h3s, kind: sessions, length: 3}
+  status: proposed
+  source_ref: "Documento §0 y §8.1"
+time_basis:
+  value: market_time
+  status: proposed
+  source_ref: "docs/PROTOCOL.md A2"
+session_end_reference:
+  value: settlement
+  status: proposed
+  source_ref: "docs/PROTOCOL.md A3"

@@ -1,0 +1,21 @@
+# Splits temporales. ESTADO: propuesta del Documento §10.1; el test sellado NO está fijado.
+train_fraction:
+  value: 0.65
+  status: proposed
+  source_ref: "Documento §10.1 (60-70 %)"
+validation_fraction:
+  value: 0.175
+  status: proposed
+  source_ref: "Documento §10.1 (15-20 %)"
+test_fraction:
+  value: 0.175
+  status: proposed
+  source_ref: "Documento §10.1 (15-20 %)"
+embargo:
+  value: null
+  status: proposed
+  source_ref: "Documento §10.1: definir desde el máximo horizonte de etiqueta"
+sealed_test_window:
+  value: null
+  status: proposed
+  source_ref: "CLAUDE.md §3.5: se fija y congela antes de modelar (F6)"

@@ -1,0 +1,22 @@
+# Modelo de costes. ESTADO: sin verificar / propuesta. Fijar es punto de parada (CLAUDE.md §4).
+currency: USD
+commission_usd_per_side:
+  value: null
+  status: unverified
+  source_ref: "Pendiente: tarifa de broker + fees CME a verificar"
+spread_ticks:
+  value: null
+  status: unverified
+  source_ref: "Pendiente: medir en F1 con datos BBO si existen"
+slippage_ticks_per_side:
+  value: 1.0
+  status: proposed
+  source_ref: "CLAUDE.md §7 (mínimo caso base: >= 1 tick por lado)"
+latency_seconds:
+  value: null
+  status: proposed
+  source_ref: "docs/PROTOCOL.md (pendiente)"
+sensitivity_multipliers:
+  value: [1.0, 2.0, 3.0]
+  status: proposed
+  source_ref: "CLAUDE.md §7"

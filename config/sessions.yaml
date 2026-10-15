@@ -1,0 +1,21 @@
+# Sesión de negociación de NYMEX CL (Globex). Horas de pared en America/New_York.
+# ESTADO F0: NINGÚN valor verificado. cmegroup.com devuelve 403 desde el entorno
+# (ver docs/DECISIONS.md ADR-005). No utilizables hasta verificar contra CME.
+timezone: America/New_York
+weekly_open_et:
+  value: {weekday: sunday, time: "18:00"}
+  status: unverified
+  source_ref: "Documento §3.2/[S9] CME WTI Fact Card (pendiente de verificar)"
+daily_close_et:
+  value: "17:00"
+  status: unverified
+  source_ref: "Documento [S9] CME WTI Fact Card (pendiente de verificar)"
+daily_reopen_et:
+  value: "18:00"
+  status: unverified
+  source_ref: "Documento [S9] CME WTI Fact Card (pendiente de verificar)"
+settlement_time_et:
+  value: "14:30"
+  status: unverified
+  source_ref: "CME settlement procedures (pendiente de verificar)"
+  note: "Propuesta A3: 'fin de sesión' = settlement. Requiere aprobación (docs/PROTOCOL.md)."

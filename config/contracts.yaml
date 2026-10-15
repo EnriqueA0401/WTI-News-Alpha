@@ -1,0 +1,20 @@
+# Especificaciones del contrato CL. ESTADO F0: no verificadas contra CME (ADR-005).
+root_symbol: CL
+exchange: NYMEX
+contract_size_bbl:
+  value: 1000
+  status: unverified
+  source_ref: "Documento §3.2/[S9] CME WTI Fact Card (pendiente de verificar)"
+tick_size_usd_per_bbl:
+  value: 0.01
+  status: unverified
+  source_ref: "CLAUDE.md §7 / CME WTI Fact Card (pendiente de verificar)"
+tick_value_usd:
+  value: 10.0
+  status: unverified
+  source_ref: "CLAUDE.md §7 / CME WTI Fact Card (pendiente de verificar)"
+roll_rule:
+  value: null
+  status: proposed
+  source_ref: "docs/PROTOCOL.md A5"
+  note: "Regla de calendario fija N días hábiles antes del último día de negociación; N se mide en F1."

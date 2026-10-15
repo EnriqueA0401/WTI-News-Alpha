@@ -1,0 +1,74 @@
+# Fuentes de datos y URL de comprobación de acceso (wna sources check).
+# Las claves se leen de variables de entorno; nunca se escriben en ficheros.
+sources:
+  - name: gdelt_files
+    description: "GDELT 2.0 ficheros de actualización de 15 min (Event/Mentions/GKG)"
+    docs_url: https://www.gdeltproject.org/data.html
+    terms_url: https://www.gdeltproject.org/about.html#termsofuse
+    probe_url: https://data.gdeltproject.org/gdeltv2/lastupdate.txt
+    auth: none
+  - name: gdelt_doc_api
+    description: "GDELT DOC 2.0 API (búsqueda de artículos, ventana limitada)"
+    docs_url: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+    terms_url: https://www.gdeltproject.org/about.html#termsofuse
+    probe_url: "https://api.gdeltproject.org/api/v2/doc/doc?query=%22crude%20oil%22&mode=artlist&maxrecords=1&format=json"
+    auth: none
+  - name: eia_api
+    description: "EIA Open Data API v2"
+    docs_url: https://www.eia.gov/opendata/documentation.php
+    terms_url: https://www.eia.gov/about/copyrights_reuse.php
+    probe_url: https://api.eia.gov/v2/
+    auth: query_param
+    auth_env: EIA_API_KEY
+    auth_param: api_key
+  - name: eia_wpsr_schedule
+    description: "Calendario oficial del Weekly Petroleum Status Report"
+    docs_url: https://www.eia.gov/petroleum/supply/weekly/schedule.php
+    terms_url: https://www.eia.gov/about/copyrights_reuse.php
+    probe_url: https://www.eia.gov/petroleum/supply/weekly/schedule.php
+    auth: none
+  - name: fred_api
+    description: "FRED API (y ALFRED vía realtime_start/realtime_end)"
+    docs_url: https://fred.stlouisfed.org/docs/api/fred/
+    terms_url: https://fred.stlouisfed.org/docs/api/terms_of_use.html
+    probe_url: "https://api.stlouisfed.org/fred/series?series_id=DCOILWTICO&file_type=json"
+    auth: query_param
+    auth_env: FRED_API_KEY
+    auth_param: api_key
+  - name: alfred_web
+    description: "ALFRED (vintages)"
+    docs_url: https://fred.stlouisfed.org/docs/api/fred/realtime_period.html
+    terms_url: https://fred.stlouisfed.org/docs/api/terms_of_use.html
+    probe_url: https://alfred.stlouisfed.org/
+    auth: none
+  - name: cftc_cot_schedule
+    description: "Calendario de publicación COT"
+    docs_url: https://www.cftc.gov/MarketReports/CommitmentsofTraders/ReleaseSchedule/index.htm
+    terms_url: https://www.cftc.gov/Disclaimers/index.htm
+    probe_url: https://www.cftc.gov/MarketReports/CommitmentsofTraders/ReleaseSchedule/index.htm
+    auth: none
+  - name: cftc_cot_api
+    description: "COT disaggregated (API Socrata publicreporting.cftc.gov)"
+    docs_url: https://publicreporting.cftc.gov/
+    terms_url: https://www.cftc.gov/Disclaimers/index.htm
+    probe_url: "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?$limit=1"
+    auth: none
+  - name: noaa_storm_events
+    description: "NOAA NCEI Storm Events (CSV bulk)"
+    docs_url: https://www.ncei.noaa.gov/access/storm-events-database/
+    terms_url: null
+    probe_url: https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/
+    auth: none
+  - name: databento_api
+    description: "Databento histórico (GLBX.MDP3); solo metadatos y quotes sin aprobación"
+    docs_url: https://databento.com/docs
+    terms_url: https://databento.com/terms
+    probe_url: https://hist.databento.com/v0/metadata.list_datasets
+    auth: basic_user
+    auth_env: DATABENTO_API_KEY
+  - name: cme_specs
+    description: "CME WTI Fact Card (especificaciones CL)"
+    docs_url: https://www.cmegroup.com/trading/files/WTI-Fact-Card.pdf
+    terms_url: https://www.cmegroup.com/terms-of-use.html
+    probe_url: https://www.cmegroup.com/trading/files/WTI-Fact-Card.pdf
+    auth: none
