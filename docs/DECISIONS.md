@@ -125,3 +125,20 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
 - Los horarios de sesión son los del bróker.
 - La pregunta del Documento queda respondida "sobre el CFD de WTI de Darwinex". Así se dirá en todos los informes.
 - G0 no puede cerrarse hasta auditar los datos de Darwinex: cobertura, zona horaria del servidor, huecos, rollover y licencia.
+
+## ADR-015 — Contraste de Darwinex con el futuro CL diario (propuesta del usuario 2026-10-15; fuente para 2024-04 en adelante pendiente)
+- **Contexto:** el usuario pide contrastar los datos de Darwinex (CFD) con los precios diarios del futuro de petróleo, para asegurar su fiabilidad.
+- **Hecho:**
+  - Descargadas de la API de la EIA (gratis, con manifiesto) las liquidaciones diarias NYMEX CL de los contratos 1 a 4 (RCLC1–RCLC4).
+  - Cobertura: 2015-01-02 → **2024-04-05**, 2.337 días por serie, sin huecos de más de 5 días naturales.
+  - Incluye el −37,63 del 2020-04-20 (dato real).
+  - La API confirma que la serie termina ahí (`endPeriod` = 2024-04-05): la EIA dejó de publicarla.
+  - Auditoría: `scripts/f1_audit/eia_futures_audit.py`, `reports/f1/eia_futures_coverage.csv`.
+- **Método previsto:**
+  - Cierre diario de Darwinex a la hora de liquidación (14:30 ET) frente a RCLC1 y RCLC2.
+  - Se mide la diferencia en USD y en %, la correlación de los retornos diarios y los saltos en los vencimientos (para identificar qué contrato sigue el CFD y cuándo rola).
+  - Se fijará un umbral de aceptación antes de mirar los datos de Darwinex.
+- **Hueco:** 2024-04-06 → 2026 queda sin referencia de futuros gratuita y verificada.
+  - Stooq no es accesible desde el entorno.
+  - Yahoo (CL=F, serie continua) sí responde, pero sus términos de uso son dudosos → **requiere decisión del usuario** (CLAUDE.md §4).
+  - Alternativa sin coste ni dudas: contrastar con el spot DCOILWTICO (FRED), que no es el futuro.
