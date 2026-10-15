@@ -44,3 +44,7 @@ class UnverifiedValueError(WNAError):
 
 class PhaseNotImplementedError(WNAError):
     """Comando reservado para una fase posterior del plan (CLAUDE.md §12)."""
+
+
+class RawIntegrityError(WNAError):
+    """Un fichero de ``data/raw`` no coincide con su manifiesto o se intentó sobrescribir."""

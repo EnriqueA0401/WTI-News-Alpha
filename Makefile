@@ -10,12 +10,12 @@ setup:
 check: lint typecheck test
 
 lint:
-	$(UV) run ruff check src tests
-	$(UV) run ruff format --check src tests
+	$(UV) run ruff check src tests scripts
+	$(UV) run ruff format --check src tests scripts
 
 format:
-	$(UV) run ruff check --fix src tests
-	$(UV) run ruff format src tests
+	$(UV) run ruff check --fix src tests scripts
+	$(UV) run ruff format src tests scripts
 
 typecheck:
 	$(UV) run mypy
