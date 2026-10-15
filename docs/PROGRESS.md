@@ -1,6 +1,6 @@
 # Progreso
 
-**Fase actual:** F0 — Protocolo y esqueleto (implementación terminada; pendiente de aprobar el protocolo).
+**Fase actual:** F0 cerrada (protocolo aprobado 2026-10-15). Siguiente: F1 — auditoría de fuentes.
 
 ## Hecho
 - `CLAUDE.md` (prompt maestro) y `docs/WTI_News_Alpha_v1.1.pdf` (Documento) en el repo.
@@ -11,9 +11,8 @@
 - `reports/source_access.md`: acceso de red por fuente.
 
 ## Pendiente
-- Aprobación de `docs/PROTOCOL.md` (A2–A12).
 - Decisiones de usuario: ADR-002 (CLAUDE.md), ADR-005 (CME), ADR-006 (persistencia).
-- Credenciales: `EIA_API_KEY`, `FRED_API_KEY`, `DATABENTO_API_KEY`.
+- Credenciales en la configuración del entorno: `EIA_API_KEY`, `FRED_API_KEY`, `DATABENTO_API_KEY` (las compartidas en el chat deben regenerarse).
 - F1 — auditoría de fuentes (plan en `docs/plans/FASE_01.md`).
 
 ## Bloqueos

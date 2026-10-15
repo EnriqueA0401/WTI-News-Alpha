@@ -1,7 +1,7 @@
 # Protocolo de investigación — WTI News Alpha
 
-**Estado: BORRADOR — pendiente de aprobación del usuario (cierre de F0).**
-Ningún valor marcado *propuesto* se usa en cálculos hasta su aprobación (en `config/*.yaml` su `status` pasa a `approved`).
+**Estado: APROBADO por el usuario el 2026-10-15 (cierre de F0).**
+Las decisiones de §3 quedan aprobadas. Los valores que dependen de fuentes externas (horario y settlement de CL, tick, comisión, spread) siguen `unverified` hasta verificarlos (ADR-005); los que se fijan en fases posteriores (N del roll, splits y ventana del test sellado en F6) siguen `proposed`.
 
 ## 1. Pregunta
 ¿La información de noticias y eventos disponible en el instante de decisión mejora, fuera de muestra y neta de costes, la predicción del rendimiento o riesgo de NYMEX CL frente a un modelo que solo conoce mercado + fundamentales publicados hasta ese instante? (Documento §1.1). Un NO-GO bien demostrado es un resultado válido.
@@ -14,7 +14,7 @@ Ningún valor marcado *propuesto* se usa en cálculos hasta su aprobación (en `
 | H3 | Persistencia: algunas categorías continúan, otras revierten. | Dirección inicial y duración medidas por separado (horizontes de sesión). |
 | H4 | Utilidad operativa: la mejora sobrevive a retardos, precios ejecutables y costes. | Simulación F9 con sensibilidad 1×/2×/3×. |
 
-## 3. Propuestas pendientes de aprobación
+## 3. Decisiones aprobadas
 | # | Tema | Propuesta | Alternativa |
 |---|---|---|---|
 | A2 | Base temporal de horizontes | **Tiempo de mercado**: N minutos de sesión abierta. Etiqueta inválida (no rellenada) si cruza pausa diaria, cierre de fin de semana, festivo o roll. | Tiempo de reloj. |

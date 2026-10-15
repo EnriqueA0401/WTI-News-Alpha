@@ -1,4 +1,4 @@
-# Modelo de costes. ESTADO: sin verificar / propuesta. Fijar es punto de parada (CLAUDE.md §4).
+# Modelo de costes. Caso base aprobado (docs/PROTOCOL.md, 2026-10-15); comisión y spread sin verificar.
 currency: USD
 commission_usd_per_side:
   value: null
@@ -10,13 +10,13 @@ spread_ticks:
   source_ref: "Pendiente: medir en F1 con datos BBO si existen"
 slippage_ticks_per_side:
   value: 1.0
-  status: proposed
+  status: approved
   source_ref: "CLAUDE.md §7 (mínimo caso base: >= 1 tick por lado)"
 latency_seconds:
-  value: null
-  status: proposed
-  source_ref: "docs/PROTOCOL.md (pendiente)"
+  value: 60.0
+  status: approved
+  source_ref: "docs/PROTOCOL.md §3 (1 barra de 1 min)"
 sensitivity_multipliers:
   value: [1.0, 2.0, 3.0]
-  status: proposed
+  status: approved
   source_ref: "CLAUDE.md §7"

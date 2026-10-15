@@ -1,4 +1,4 @@
-# Horizontes de predicción. ESTADO: propuesta (docs/PROTOCOL.md A2/A3), pendiente de aprobación.
+# Horizontes de predicción. ESTADO: aprobados (docs/PROTOCOL.md A2/A3, 2026-10-15).
 horizons:
   value:
     - {name: h15m, kind: market_minutes, length: 15}
@@ -7,13 +7,13 @@ horizons:
     - {name: session_end, kind: session_end}
     - {name: h1s, kind: sessions, length: 1}
     - {name: h3s, kind: sessions, length: 3}
-  status: proposed
+  status: approved
   source_ref: "Documento §0 y §8.1"
 time_basis:
   value: market_time
-  status: proposed
+  status: approved
   source_ref: "docs/PROTOCOL.md A2"
 session_end_reference:
   value: settlement
-  status: proposed
+  status: approved
   source_ref: "docs/PROTOCOL.md A3"
