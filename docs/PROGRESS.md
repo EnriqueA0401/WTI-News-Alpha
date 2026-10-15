@@ -1,21 +1,24 @@
 # Progreso
 
-**Fase actual:** F0 cerrada (protocolo aprobado 2026-10-15). Siguiente: F1 — auditoría de fuentes.
+**Fase actual:** F1 — auditoría de fuentes terminada. **Puerta G0 pendiente de decisión del usuario** (`reports/F1_source_audit.md` §4, decisiones D1–D12).
 
 ## Hecho
-- `CLAUDE.md` (prompt maestro) y `docs/WTI_News_Alpha_v1.1.pdf` (Documento) en el repo.
-- Esqueleto: `uv` + Python 3.12, paquete `wti_news_alpha` (`src/`), carpetas §4.1, Makefile, pre-commit, workflow CI (`make check`).
-- Núcleo: `errors.py`, `timeutils.py` (UTC, DST, rechazo de naive y de horas inexistentes), `config.py` + `config/*.yaml` (parámetros con estado), `runlog.py` (logs JSON con commit), CLI `wna` (`sources check`; comandos futuros fallan explícitamente).
-- `make check` en verde: ruff, mypy --strict, 120 tests, cobertura de ramas 99 %.
-- Revisión adversarial independiente: 16 hallazgos resueltos o aceptados como riesgo bajo (ADR-008).
-- `reports/source_access.md`: acceso de red por fuente.
+- F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
+- Especificaciones de CL verificadas con el Rulebook NYMEX cap. 200 (ADR-005).
+- F1:
+  - `ingestion/rawstore.py`: almacén raw inmutable con manifiesto sha256 e idempotencia (16 tests).
+  - Auditorías con evidencia en `data/raw/` y `manifests/`: GDELT, Databento (solo metadatos y presupuestos, sin compra), EIA, FRED/ALFRED, CFTC y NOAA. Informes en `reports/f1/`.
+  - Informe consolidado G0: `reports/F1_source_audit.md`.
+  - Monitor en vivo de publicación de GDELT (`data/raw/gdelt_lag_monitor/`). Se cortó con un reinicio del contenedor (~05:05 UTC) y se relanzó a las 07:25 UTC.
+- `make check` en verde (139 tests, cobertura de ramas 99 %).
 
 ## Pendiente
-- Especificaciones CL verificadas con Rulebook cap. 200 (ADR-005). Horario/settlement: verificación empírica en F1 (ADR-010). ADR-006: datos en la sesión en la nube; captura prospectiva a replantear en F2.
-- Credenciales: EIA, FRED y Databento verificadas (200) en esta sesión, guardadas fuera del repo en `~/.config/wna/secrets.env` (se pierden al terminar la sesión). Recomendado: regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
-- F1 — auditoría de fuentes (plan en `docs/plans/FASE_01.md`).
+- Decisiones G0 D1–D12 (incluye compras Databento: A 2,80 USD; C 75,78 USD).
+- ADR-011 (ingesta GDELT por streaming) y ADR-012 (margen +5 min): propuestas.
+- Revisión adversarial del informe G0 (en curso).
+- Credenciales: guardadas solo en la sesión (`~/.config/wna/secrets.env`, fuera del repo). Recomendado regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
 
 ## Bloqueos
-- cmegroup.com inaccesible desde el entorno (mitigado con documentos subidos; ADR-005).
-- GDELT DOC API devuelve 429 (rate limit) desde el entorno.
-- EIA/FRED/Databento requieren claves.
+- Sin aprobación de G0 no se compra precio intradía ni se inicia F2.
+- cmegroup.com, BLS y DOL inaccesibles (403) desde el entorno; GDELT DOC API con rate limit.
+- La sesión llegó al límite de uso a las ~05:10 UTC; se reanudó a las 07:25 UTC.
