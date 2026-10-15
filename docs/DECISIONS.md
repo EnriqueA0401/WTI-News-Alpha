@@ -7,10 +7,10 @@ Formato: contexto · opciones · decisión · consecuencias. Estado: *aceptada*,
 - **Decisión:** canónica §9 (M0 naive, M1 lineal/logística, M2 XGB market-only, M3 +fundamentales, M4 +noticias estructuradas, M5 +embeddings, M6 TFT). Prueba central: M4 vs M3. Fijado por CLAUDE.md §2.2.
 - **Consecuencias:** la tabla de §16.4 del Documento se ignora para la numeración.
 
-## ADR-002 — Contenido de CLAUDE.md (propuesta, pendiente de usuario)
+## ADR-002 — Contenido de CLAUDE.md (aceptada)
 - **Contexto:** el usuario pidió que CLAUDE.md sea copia exacta del prompt maestro; CLAUDE.md §14 pide un resumen con fase actual.
 - **Opciones:** (a) dejarlo exacto y llevar el estado en `docs/PROGRESS.md`; (b) añadir al final una sección de estado.
-- **Decisión propuesta:** (a). Prevalece la instrucción explícita del usuario (CLAUDE.md §2.1).
+- **Decisión (usuario, 2026-10-15):** (a). CLAUDE.md queda como copia exacta del prompt; el estado del proyecto se lleva en `docs/PROGRESS.md`.
 
 ## ADR-003 — Python 3.12 (aceptada)
 - **Contexto:** CLAUDE.md exige 3.11+. El entorno trae 3.13.
