@@ -23,7 +23,7 @@
 - `make check` en verde (206 tests, cobertura de ramas 99 %).
 
 ## Pendiente
-- Usuario: credenciales de Darwinex como variables de entorno (`DARWINEX_FTP_USER`, `DARWINEX_FTP_PASSWORD`).
+- Credenciales de Darwinex guardadas en la sesión (`~/.config/wna/secrets.env`, fuera del repo). **Bloqueo:** el FTP de Darwinex (tickdata.darwinex.com:21) no es accesible desde el entorno: el DNS resuelve, pero la conexión TCP agota el tiempo; el entorno solo deja salir HTTPS por el proxy. Opciones: el usuario descarga una muestra en su ordenador y la sube, o se prueba a añadir el host en Allowed domains (puede no bastar, porque el proxy solo cubre HTTPS).
 - Auditoría Darwinex (F1 bis): cobertura, zona horaria, huecos, rollover, licencia y contraste con la EIA (futuro CL diario hasta 2024-04-05, ADR-015) → cierre de G0.
 - Avisado al usuario: riesgos de D6 (+15 min: 2 ficheros tardíos) y D7 (EIA revisada).
 - Revisión adversarial G0 hecha: 11 hallazgos resueltos o convertidos en decisiones (`reports/F1_source_audit.md` §6).
