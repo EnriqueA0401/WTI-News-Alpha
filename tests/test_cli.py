@@ -151,3 +151,17 @@ def test_normalize_fred(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(cli.app, ["normalize", "fred"])
     assert result.exit_code == 0, result.output
     assert "10 filas" in result.output
+
+
+def test_normalize_news(monkeypatch: pytest.MonkeyPatch) -> None:
+    man = {"totals": {"rows": 5}}
+
+    def fake(**_: object) -> Published:
+        return Published(created=True, outputs={"201801.parquet": "x"}, manifest=man)
+
+    monkeypatch.setattr(cli.gdelt_news, "run_normalize", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["normalize", "news"])
+    assert result.exit_code == 0, result.output
+    assert "1 meses" in result.output

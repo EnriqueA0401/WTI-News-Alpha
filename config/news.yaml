@@ -1,0 +1,10 @@
+# Noticias normalizadas (docs/plans/FASE_02_noticias.md).
+version: gdelt-news-v1
+sources:
+  - {filter_version: gkg-oil-v3, start: "2018-01-01", end: "2021-01-01"}
+  - {filter_version: gkg-oil-v2, start: "2024-01-01", end: "2026-01-01"}
+  - {filter_version: gkg-oil-v3, start: "2026-01-01", end: "2026-10-15"}
+availability_lag_minutes:
+  value: 15
+  status: approved
+  source_ref: "ADR-014 D6 (first_available_at = timestamp nominal del fichero + 15 min)"

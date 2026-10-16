@@ -7,6 +7,7 @@ El valor se guarda como ``unsafe_value`` (clave YAML ``value``) y el código de
 ``src/`` solo debe leerlo mediante ``Param.require`` (lo comprueba un test).
 """
 
+import itertools
 import math
 import re
 from datetime import date, time
@@ -377,6 +378,39 @@ class FredConfig(_Strict):
 def load_fred_config(config_dir: Path = CONFIG_DIR) -> FredConfig:
     """Carga ``config/fred.yaml``."""
     return load_yaml_model(config_dir / "fred.yaml", FredConfig)
+
+
+class NewsSource(_Strict):
+    filter_version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    start: date
+    end: date  # excluido
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.end <= self.start:
+            raise ValueError(f"rango vacío {self.start} → {self.end}")
+        return self
+
+
+class NewsConfig(_Strict):
+    """Noticias normalizadas (``config/news.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    sources: list[NewsSource] = Field(min_length=1)
+    availability_lag_minutes: Param[PositiveInt]
+
+    @model_validator(mode="after")
+    def _no_overlap(self) -> Self:
+        spans = sorted((s.start, s.end) for s in self.sources)
+        for (_, end), (start, _) in itertools.pairwise(spans):
+            if start < end:
+                raise ValueError("rangos de fuentes solapados")
+        return self
+
+
+def load_news_config(config_dir: Path = CONFIG_DIR) -> NewsConfig:
+    """Carga ``config/news.yaml``."""
+    return load_yaml_model(config_dir / "news.yaml", NewsConfig)
 
 
 class CaptureConfig(_Strict):
