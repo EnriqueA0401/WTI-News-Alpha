@@ -334,3 +334,25 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - Consecuencia: la fecha de vintage de ALFRED no garantiza ser la primera publicación. Para series diarias de mercado, el día de la observación es el límite seguro.
 - Los valores "." se conservan como nulos, para que un borrado posterior no deje vivo el valor anterior.
 - En la primera ventana (2015-01-01) los periodos previos quedan recortados y se marcan con `vintage_start_clipped`. Es conservador.
+
+## ADR-025 — Revisión adversarial de FRED/ALFRED (2026-10-16)
+9 hallazgos, ninguno crítico. Corregidos en `fred-alfred-v2`; la v1 se conserva.
+1. **(alto)** T10YIE tiene vintage el mismo día de la observación en 1.817 casos (desde 2019-H2). Con R-PIT 4 quedaría disponible a las 00:00 ET del día siguiente, 16 h antes de H.15.
+   - Ahora se aplica, además, **la hora oficial del calendario de cada serie** (páginas vigentes de la Fed, `reports/f1/fred.md` §4):
+     - H.15 (DGS10, DGS2 y T10YIE, que F1 recomendaba tratar "no antes que H.15"): siguiente día hábil federal a las 16:15 ET;
+     - H.10 (DTWEXBGS): lunes siguiente a la semana (o siguiente hábil) a las 16:15 ET;
+     - VIXCLS: 00:00 ET del día siguiente a la observación.
+   - `available_at` = máximo de R-PIT 4 y esa hora. Solo puede retrasar disponibilidades, nunca adelantarlas.
+   - Se marca `floored_by_schedule`.
+   - **Limitación:** las horas de la Fed salen de las páginas vigentes; no están verificadas para todo 2015–2026.
+2. **Corrección de ADR-024:** los 32 casos de VIXCLS con vintage anterior a la observación son sobre todo festivos con el mercado cerrado (4 de julio, Thanksgiving…), no solo festivos con mercado abierto.
+   - Riesgo residual: que una revisión se feche un día antes. No es detectable con ALFRED.
+3. Se añade `superseded_at` (= `available_at` de la vintage siguiente). La consulta point-in-time es `available_at ≤ t < superseded_at`. `vintage_end` no debe usarse para eso.
+4. Si varias vintages caen en el mismo instante, solo queda visible la última. Las demás se cuentan (`hidden_same_instant_vintages`) y se exige que `available_at` crezca estrictamente.
+5. Validaciones:
+   - valores no finitos → error;
+   - `observation_start` igual en todas las ventanas;
+   - año del fichero = ventana.
+6. DTWEXBGS: su primera ventana (2019-02-04) es la primera vintage real, no un recorte.
+   - Interpretación de D10: obs anteriores a 2019-02-04 se incluyen con la disponibilidad de esa vintage (correcta point-in-time).
+7. Fusión de ventanas vectorizada (CLAUDE.md §13). Test de propiedades: cortar la historia en ventanas no cambia la fusión.

@@ -366,13 +366,22 @@ def load_cftc_cot_config(config_dir: Path = CONFIG_DIR) -> CftcCotConfig:
     return load_yaml_model(config_dir / "cftc_cot.yaml", CftcCotConfig)
 
 
+class FredCalendarInputs(_Strict):
+    statute: NonEmptyStr
+    closure_eos: NonEmptyStr
+
+
 class FredConfig(_Strict):
     """Vintages ALFRED de series diarias (``config/fred.yaml``)."""
 
     version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
     series_glob: NonEmptyStr
+    calendar_inputs: FredCalendarInputs
     series: Param[list[NonEmptyStr]]
     available_rule: Param[Literal["next_day_midnight_et"]]
+    release_schedule: Param[dict[NonEmptyStr, Literal["h15", "h10", "none"]]]
+    official_release_time_et: Param[WallTime]
+    first_vintage: Param[dict[NonEmptyStr, date]]
 
 
 def load_fred_config(config_dir: Path = CONFIG_DIR) -> FredConfig:

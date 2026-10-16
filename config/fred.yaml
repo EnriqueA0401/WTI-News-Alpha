@@ -1,6 +1,11 @@
 # Series diarias de contexto FRED/ALFRED point-in-time (docs/plans/FASE_02_fundamentales.md §C).
-version: fred-alfred-v1
+# v1 (2026-10-16) se conserva; v2 aplica la revisión adversarial (ADR-025): cota por calendario
+# oficial (H.15/H.10), superseded_at, fusión vectorizada y validaciones.
+version: fred-alfred-v2
 series_glob: "fred/api/{series}/vintages_rt*_20261016.json"
+calendar_inputs:
+  statute: "federal_calendar/usc5_6103_2023.htm"
+  closure_eos: "federal_calendar/fr_closing_eos_2014plus_20261016.json"
 series:
   value: [DGS10, DGS2, T10YIE, VIXCLS, DTWEXBGS]
   status: approved
@@ -9,3 +14,15 @@ available_rule:
   value: next_day_midnight_et
   status: approved
   source_ref: "ADR-014 D9 / R-PIT 4: ALFRED (vintage sin hora) → 00:00 ET del día siguiente a la fecha de vintage"
+release_schedule:
+  value: {DGS10: h15, DGS2: h15, T10YIE: h15, VIXCLS: none, DTWEXBGS: h10}
+  status: verified
+  source_ref: "reports/f1/fred.md §4: H.15 'posted daily Monday through Friday at 4:15pm' (dato del día d en d+1 hábil); H.10 'On Mondays at 4:15 p.m. ... previous business week; si el lunes es festivo, el siguiente hábil'. T10YIE: 'no antes que H.15' (§6)"
+official_release_time_et:
+  value: "16:15"
+  status: verified
+  source_ref: "data/raw/fred/official/fed_h15_2026-10-15.html y fed_h10_2026-10-15.html (páginas vigentes)"
+first_vintage:
+  value: {DTWEXBGS: "2019-02-04"}
+  status: verified
+  source_ref: "reports/f1/fred.md §2 (vintagedates.json)"
