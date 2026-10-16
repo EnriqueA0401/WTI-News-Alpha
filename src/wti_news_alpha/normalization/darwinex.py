@@ -10,18 +10,16 @@ Invariantes:
 - Una hora NY inexistente o ambigua (DST) lanza ``CalendarError``.
 - Las barras en la pausa diaria o fuera de la semana se descartan y se cuentan;
   si superan ``max_drop_fraction`` → ``SchemaError``.
-- Las salidas se escriben una vez, en solo lectura, con manifiesto sha256.
+- Las salidas se escriben una vez, en solo lectura, con manifiesto sha256 de
+  entradas, parámetros y salidas (``normalization/store.py``).
 """
 
 import hashlib
 import io
-import json
-import os
-import stat
-import tempfile
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
+from typing import Any
 
 import pandera.errors as pa_errors
 import pandera.polars as pa
@@ -29,6 +27,7 @@ import polars as pl
 
 from wti_news_alpha.config import DarwinexConfig
 from wti_news_alpha.errors import CalendarError, RawIntegrityError, SchemaError
+from wti_news_alpha.normalization.store import LayerSpec, publish_or_verify
 from wti_news_alpha.timeutils import require_utc_column
 
 SOURCE = "darwinex_xti_m1"
@@ -80,6 +79,8 @@ PANDERA_SCHEMA = pa.DataFrameSchema(
     ordered=True,
 )
 BAR = timedelta(minutes=1)
+_DATE_RE = r"^\d{4}\.\d{2}\.\d{2}$"
+_TIME_RE = r"^\d{2}:\d{2}$"
 _SATURDAY, _SUNDAY, _FRIDAY = 6, 7, 5
 
 
@@ -114,7 +115,11 @@ def parse_csv(text: str) -> pl.DataFrame:
 
 
 def _check_raw(raw: pl.DataFrame) -> None:
+    floats = ("Open", "High", "Low", "Close", "AvgSpread")
     checks = [
+        ("valor no finito (NaN/inf)", ~pl.all_horizontal(pl.col(c).is_finite() for c in floats)),
+        ("fecha con formato distinto de YYYY.MM.DD", ~pl.col("Date").str.contains(_DATE_RE)),
+        ("hora con formato distinto de HH:MM", ~pl.col("Time").str.contains(_TIME_RE)),
         ("precio ≤ 0", pl.min_horizontal("Open", "High", "Low", "Close") <= 0),
         ("High < max(Open, Close)", pl.col("High") < pl.max_horizontal("Open", "Close")),
         ("Low > min(Open, Close)", pl.col("Low") > pl.min_horizontal("Open", "Close")),
@@ -150,6 +155,13 @@ def normalize_bars(raw: pl.DataFrame, cfg: DarwinexConfig) -> tuple[pl.DataFrame
     n_bad = df["server"].null_count()
     if n_bad:
         raise SchemaError(f"{n_bad} filas con fecha/hora inválida (formato YYYY.MM.DD HH:MM)")
+    lo, hi = cfg.plausible_server_range.require("plausible_server_range")
+    out_of_range = df.filter((pl.col("server").dt.date() < lo) | (pl.col("server").dt.date() > hi))
+    if out_of_range.height:
+        raise SchemaError(
+            f"{out_of_range.height} barras fuera del rango plausible [{lo}, {hi}] "
+            f"(líneas {out_of_range['source_line'].head(5).to_list()})"
+        )
     if df.height > 1 and not (df["server"].diff().drop_nulls() > timedelta(0)).all():
         raise SchemaError("barras duplicadas o fuera de orden")
 
@@ -209,12 +221,19 @@ def normalize_bars(raw: pl.DataFrame, cfg: DarwinexConfig) -> tuple[pl.DataFrame
         )
         .sort("bar_start_utc")
     )
-    validate_output(out)
+    validate_output(out, cfg)
     return out, DropStats(rows_in=raw.height, rows_out=out.height, dropped=dropped)
 
 
-def validate_output(df: pl.DataFrame) -> None:
-    """Valida esquema (pandera) e invariantes temporales de la capa normalizada."""
+def validate_output(df: pl.DataFrame, cfg: DarwinexConfig) -> None:
+    """Valida esquema (pandera) e invariantes temporales de la capa normalizada.
+
+    Toda barra cae en su ventana [``trade_date`` - 1 ``brk_end``, ``trade_date``
+    ``brk_start``) en hora de NY y ``trade_date`` es lunes-viernes: así ninguna
+    barra queda en la pausa diaria ni en el fin de semana.
+    """
+    brk_start = cfg.daily_break_start_et.require("daily_break_start_et")
+    brk_end = cfg.daily_break_end_et.require("daily_break_end_et")
     try:
         PANDERA_SCHEMA.validate(df, lazy=True)
     except (pa_errors.SchemaError, pa_errors.SchemaErrors) as exc:
@@ -227,23 +246,21 @@ def validate_output(df: pl.DataFrame) -> None:
     )
     if bad_avail.height:
         raise SchemaError(f"{bad_avail.height} filas con available_at/bar_end_utc incoherentes")
-    ny = pl.col("bar_start_utc").dt.convert_time_zone("America/New_York")
-    ny_date = ny.dt.date()
-    ok = (pl.col("trade_date") == ny_date) | (pl.col("trade_date") == ny_date + timedelta(days=1))
-    bad_td = df.filter(~ok)
+    ny = pl.col("bar_start_utc").dt.convert_time_zone("America/New_York").dt.replace_time_zone(None)
+    td = pl.col("trade_date").cast(pl.Datetime("us"))
+    win_start = td - timedelta(days=1) + pl.duration(hours=brk_end.hour, minutes=brk_end.minute)
+    win_end = td + pl.duration(hours=brk_start.hour, minutes=brk_start.minute)
+    bad_td = df.filter(
+        (ny < win_start) | (ny >= win_end) | (pl.col("trade_date").dt.weekday() > _FRIDAY)
+    )
     if bad_td.height:
-        raise SchemaError(f"{bad_td.height} filas con trade_date incoherente")
+        raise SchemaError(
+            f"{bad_td.height} filas con trade_date incoherente o en pausa/fin de semana "
+            f"(líneas {bad_td['source_line'].head(5).to_list()})"
+        )
 
 
 # ---------------------------------------------------------------- I/O
-
-
-def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 @dataclass(frozen=True)
@@ -253,79 +270,41 @@ class NormalizeResult:
     stats: DropStats
 
 
-def _manifest_path(manifest_dir: Path, version: str) -> Path:
-    return manifest_dir / "normalized" / SOURCE / f"{version}.json"
-
-
-def _verify_existing(out_dir: Path, mpath: Path, cfg: DarwinexConfig) -> NormalizeResult:
-    if not mpath.exists():
-        raise RawIntegrityError(f"{out_dir} existe sin manifiesto: no se sobrescribe")
-    man = json.loads(mpath.read_text(encoding="utf-8"))
-    if man["input_sha256"] != cfg.input.sha256:
-        raise RawIntegrityError(
-            f"{mpath.name}: la versión {cfg.version} se generó con otra entrada"
-        )
-    present = {p.name for p in out_dir.iterdir()}
-    if present != set(man["outputs"]):
-        raise RawIntegrityError(f"{out_dir}: ficheros {sorted(present)} ≠ manifiesto")
-    for name, sha in man["outputs"].items():
-        if _sha256(out_dir / name) != sha:
-            raise RawIntegrityError(f"checksum distinto del manifiesto en {name}")
-    stats = DropStats(rows_in=man["rows_in"], rows_out=man["rows_out"], dropped=man["dropped"])
-    return NormalizeResult(created=False, outputs=dict(man["outputs"]), stats=stats)
-
-
 def run_normalize(
     *, raw_root: Path, out_root: Path, manifest_dir: Path, cfg: DarwinexConfig, commit: str
 ) -> NormalizeResult:
-    """Normaliza el CSV raw de ``cfg.input`` y publica una salida por año de ``trade_date``.
+    """Normaliza el CSV raw de ``cfg.input`` y publica un fichero por año de ``trade_date``.
 
-    Si la versión ya existe, solo la verifica (sin reescribir). Para crearla
-    exige un árbol git limpio (la salida debe ser reproducible desde ``commit``).
+    Si la versión ya existe, solo la verifica (mismas entradas y parámetros) sin
+    reescribir. Crearla exige árbol git limpio (``store.publish_or_verify``).
     """
-    out_dir = out_root / SOURCE / cfg.version
-    mpath = _manifest_path(manifest_dir, cfg.version)
-    if out_dir.exists():
-        return _verify_existing(out_dir, mpath, cfg)
-    if mpath.exists():
-        raise RawIntegrityError(f"{mpath} existe pero falta {out_dir}")
-    if commit.endswith("-dirty"):
-        raise RawIntegrityError(f"árbol git dirty ({commit}): commitea antes de normalizar")
-
     src = raw_root / cfg.input.rel_path
     if not src.is_file():
         raise RawIntegrityError(f"la entrada {src} no existe")
-    if _sha256(src) != cfg.input.sha256:
+    data = src.read_bytes()  # se hashea y se decodifica el mismo buffer
+    if hashlib.sha256(data).hexdigest() != cfg.input.sha256:
         raise RawIntegrityError(f"sha256 de {cfg.input.rel_path} distinto de config/darwinex.yaml")
+    spec = LayerSpec(out_root, manifest_dir, SOURCE, cfg.version)
+    params = cfg.model_dump(mode="json", by_alias=True, exclude={"version"})
 
-    out, stats = normalize_bars(parse_csv(src.read_text(encoding="utf-8")), cfg)
+    def build() -> tuple[dict[str, pl.DataFrame], dict[str, Any]]:
+        out, stats = normalize_bars(parse_csv(data.decode("utf-8", errors="strict")), cfg)
+        frames = {
+            f"{year}.parquet": part
+            for (year,), part in out.group_by(pl.col("trade_date").dt.year(), maintain_order=True)
+        }
+        extra = {
+            "rows_in": stats.rows_in,
+            "rows_out": stats.rows_out,
+            "dropped": stats.dropped,
+            "bar_start_utc_min": str(out["bar_start_utc"].min()),
+            "bar_start_utc_max": str(out["bar_start_utc"].max()),
+        }
+        return frames, extra
 
-    out_dir.parent.mkdir(parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(dir=out_dir.parent, prefix=f".staging-{cfg.version}-"))
-    outputs: dict[str, str] = {}
-    for (year,), part in out.group_by(pl.col("trade_date").dt.year(), maintain_order=True):
-        name = f"{year}.parquet"
-        path = staging / name
-        part.write_parquet(path, compression="zstd", statistics=True)
-        os.chmod(path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-        outputs[name] = _sha256(path)
-    os.rename(staging, out_dir)  # falla si out_dir ya existe (no vacío): nunca sobrescribe
-
-    manifest = {
-        "source": SOURCE,
-        "version": cfg.version,
-        "input_rel_path": cfg.input.rel_path,
-        "input_sha256": cfg.input.sha256,
-        "parent_rel_path": cfg.input.parent_rel_path,
-        "code_commit": commit,
-        "polars_version": pl.__version__,
-        "rows_in": stats.rows_in,
-        "rows_out": stats.rows_out,
-        "dropped": stats.dropped,
-        "bar_start_utc_min": out["bar_start_utc"].min().isoformat(),  # type: ignore[union-attr]
-        "bar_start_utc_max": out["bar_start_utc"].max().isoformat(),  # type: ignore[union-attr]
-        "outputs": dict(sorted(outputs.items())),
-    }
-    mpath.parent.mkdir(parents=True, exist_ok=True)
-    mpath.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return NormalizeResult(created=True, outputs=dict(sorted(outputs.items())), stats=stats)
+    pub = publish_or_verify(
+        spec, {cfg.input.rel_path: cfg.input.sha256}, params, build, commit=commit
+    )
+    man = pub.manifest
+    stats = DropStats(rows_in=man["rows_in"], rows_out=man["rows_out"], dropped=man["dropped"])
+    return NormalizeResult(created=pub.created, outputs=pub.outputs, stats=stats)

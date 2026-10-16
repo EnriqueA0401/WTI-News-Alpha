@@ -7,11 +7,14 @@ import hashlib
 import json
 import os
 import stat
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import polars as pl
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from wti_news_alpha.config import CONFIG_DIR, DarwinexConfig, load_darwinex_config
 from wti_news_alpha.errors import CalendarError, RawIntegrityError, SchemaError
@@ -147,7 +150,7 @@ def test_ambiguous_ny_time_raises(cfg: DarwinexConfig) -> None:
 
 def test_invalid_datetime_text_raises(cfg: DarwinexConfig) -> None:
     with pytest.raises(SchemaError, match="fecha/hora"):
-        _norm(cfg, _row("2018-01-08", "01:00"))
+        _norm(cfg, _row("2018.02.30", "01:00"))  # formato válido, fecha imposible
 
 
 def test_end_timestamp_convention_not_implemented(cfg: DarwinexConfig) -> None:
@@ -240,13 +243,17 @@ def test_no_filling_of_missing_minutes(cfg: DarwinexConfig) -> None:
 def test_output_schema_validated(cfg: DarwinexConfig) -> None:
     out, _ = _norm(cfg, _row("2018.01.08", "02:00"))
     assert out.columns == dwx.OUTPUT_SCHEMA.names()
-    dwx.validate_output(out)
+    dwx.validate_output(out, cfg)
     with pytest.raises(SchemaError, match="esquema"):
-        dwx.validate_output(out.with_columns(tick_volume=pl.lit(-1, dtype=pl.Int64)))
+        dwx.validate_output(out.with_columns(tick_volume=pl.lit(-1, dtype=pl.Int64)), cfg)
     with pytest.raises(SchemaError, match="available_at"):
-        dwx.validate_output(out.with_columns(available_at=pl.col("bar_start_utc")))
+        dwx.validate_output(out.with_columns(available_at=pl.col("bar_start_utc")), cfg)
     with pytest.raises(SchemaError, match="trade_date"):
-        dwx.validate_output(out.with_columns(trade_date=pl.lit(date(2019, 1, 1))))
+        dwx.validate_output(out.with_columns(trade_date=pl.lit(date(2019, 1, 1))), cfg)
+    # 2018-01-08 02:00 servidor = 2018-01-07 19:00 ET → trade_date 2018-01-08;
+    # el día anterior es incoherente.
+    with pytest.raises(SchemaError, match="trade_date"):
+        dwx.validate_output(out.with_columns(trade_date=pl.lit(date(2018, 1, 7))), cfg)
 
 
 # ---------------------------------------------------------------- ejecución completa
@@ -288,18 +295,16 @@ def test_run_writes_readonly_outputs_and_manifest(tmp_path: Path, cfg: DarwinexC
     for p in base.iterdir():
         assert not os.stat(p).st_mode & stat.S_IWUSR
     assert pl.read_parquet(base / "2019.parquet").height == 2
-    man = json.loads(
-        (
-            tmp_path / "manifests" / "normalized" / "darwinex_xti_m1" / f"{c.version}.json"
-        ).read_text()
-    )
-    assert man["input_sha256"] == c.input.sha256
+    mpath = tmp_path / "manifests" / "normalized" / "darwinex_xti_m1" / f"{c.version}.json"
+    man = json.loads(mpath.read_text())
+    assert man["inputs"] == {c.input.rel_path: c.input.sha256}
+    assert man["params"]["server_offset_vs_new_york_hours"]["value"] == 7
     assert man["rows_in"] == 3
     assert man["rows_out"] == 3
     assert man["dropped"] == {}
     assert man["code_commit"] == "abc123"
     assert set(man["outputs"]) == {"2018.parquet", "2019.parquet"}
-    assert man["bar_start_utc_min"] == "2018-12-31T00:00:00+00:00"
+    assert man["bar_start_utc_min"] == "2018-12-31 00:00:00+00:00"
 
 
 def test_second_run_verifies_and_does_not_rewrite(tmp_path: Path, cfg: DarwinexConfig) -> None:
@@ -308,35 +313,17 @@ def test_second_run_verifies_and_does_not_rewrite(tmp_path: Path, cfg: DarwinexC
     second = _run(tmp_path, c)
     assert second.created is False
     assert second.outputs == first.outputs
+    assert second.stats == first.stats
 
 
-def test_altered_output_detected(tmp_path: Path, cfg: DarwinexConfig) -> None:
+def test_changed_config_same_version_refused(tmp_path: Path, cfg: DarwinexConfig) -> None:
+    # Regresión (revisión adversarial, hallazgo 1): cambiar el desfase sin cambiar la versión.
     c = _setup_raw(tmp_path, cfg, TWO_YEARS)
     _run(tmp_path, c)
-    p = tmp_path / "normalized" / "darwinex_xti_m1" / c.version / "2018.parquet"
-    os.chmod(p, stat.S_IRUSR | stat.S_IWUSR)
-    p.write_bytes(b"x")
-    with pytest.raises(RawIntegrityError, match=r"2018\.parquet"):
-        _run(tmp_path, c)
-
-
-def test_output_without_manifest_detected(tmp_path: Path, cfg: DarwinexConfig) -> None:
-    c = _setup_raw(tmp_path, cfg, TWO_YEARS)
-    _run(tmp_path, c)
-    (tmp_path / "manifests" / "normalized" / "darwinex_xti_m1" / f"{c.version}.json").unlink()
-    with pytest.raises(RawIntegrityError, match="sin manifiesto"):
-        _run(tmp_path, c)
-
-
-def test_manifest_from_other_input_detected(tmp_path: Path, cfg: DarwinexConfig) -> None:
-    c = _setup_raw(tmp_path, cfg, TWO_YEARS)
-    _run(tmp_path, c)
-    mpath = tmp_path / "manifests" / "normalized" / "darwinex_xti_m1" / f"{c.version}.json"
-    man = json.loads(mpath.read_text())
-    man["input_sha256"] = "0" * 64
-    mpath.write_text(json.dumps(man))
-    with pytest.raises(RawIntegrityError, match="otra entrada"):
-        _run(tmp_path, c)
+    data = c.model_dump(by_alias=True)
+    data["server_offset_vs_new_york_hours"]["value"] = 6
+    with pytest.raises(RawIntegrityError, match="otros parámetros"):
+        _run(tmp_path, DarwinexConfig.model_validate(data))
 
 
 def test_input_checksum_mismatch_raises(tmp_path: Path, cfg: DarwinexConfig) -> None:
@@ -370,20 +357,110 @@ def test_dirty_tree_refused(tmp_path: Path, cfg: DarwinexConfig) -> None:
         )
 
 
-def test_manifest_without_output_detected(tmp_path: Path, cfg: DarwinexConfig) -> None:
-    c = _setup_raw(tmp_path, cfg, TWO_YEARS)
-    _run(tmp_path, c)
-    base = tmp_path / "normalized" / "darwinex_xti_m1" / c.version
-    for p in base.iterdir():
-        p.unlink()
-    base.rmdir()
-    with pytest.raises(RawIntegrityError, match="falta"):
-        _run(tmp_path, c)
+# ---------------------------------------------------------------- revisión adversarial
 
 
-def test_extra_output_file_detected(tmp_path: Path, cfg: DarwinexConfig) -> None:
-    c = _setup_raw(tmp_path, cfg, TWO_YEARS)
-    _run(tmp_path, c)
-    (tmp_path / "normalized" / "darwinex_xti_m1" / c.version / "2020.parquet").write_bytes(b"x")
-    with pytest.raises(RawIntegrityError, match="manifiesto"):
-        _run(tmp_path, c)
+@pytest.mark.parametrize(
+    "row",
+    [
+        "2018.01.08,02:00,50.0,inf,49.9,50.05,10,0.04",
+        "2018.01.08,02:00,50.0,50.1,49.9,50.05,10,inf",
+        "2018.01.08,02:00,NaN,50.1,49.9,50.05,10,0.04",
+    ],
+)
+def test_non_finite_rejected(cfg: DarwinexConfig, row: str) -> None:
+    with pytest.raises(SchemaError, match="no finito"):
+        _norm(cfg, row)
+
+
+def test_non_finite_rejected_even_in_dropped_bar(cfg: DarwinexConfig) -> None:
+    with pytest.raises(SchemaError, match="no finito"):
+        _norm(
+            _relaxed(cfg),
+            _row("2018.01.08", "02:00"),
+            "2018.01.09,00:30,NaN,50.1,49.9,50.0,10,0.04",
+        )
+
+
+@pytest.mark.parametrize(
+    ("d", "t", "match"),
+    [
+        ("18.01.08", "02:00", "YYYY.MM.DD"),
+        ("2018.1.8", "02:00", "YYYY.MM.DD"),
+        ("2018.01.08", "2:0", "HH:MM"),
+        ("2018.01.08", " 02:00", "HH:MM"),
+        ("2009.12.31", "02:00", "rango plausible"),
+        ("2026.10.17", "02:00", "rango plausible"),
+    ],
+)
+def test_strict_datetime_format(cfg: DarwinexConfig, d: str, t: str, match: str) -> None:
+    with pytest.raises(SchemaError, match=match):
+        _norm(cfg, _row(d, t))
+
+
+def test_drop_threshold_boundary_is_inclusive(cfg: DarwinexConfig) -> None:
+    # Exactamente max_drop_fraction (0,5) se acepta; por encima, error.
+    out, stats = _norm(_relaxed(cfg), _row("2018.01.08", "02:00"), _row("2018.01.09", "00:30"))
+    assert out.height == 1
+    assert stats.dropped == {"daily_break": 1}
+
+
+@pytest.mark.parametrize(
+    ("srv", "kept"),
+    [
+        (("2018.01.12", "23:59"), True),  # vie 16:59 ET: última barra válida
+        (("2018.01.15", "00:59"), False),  # dom 17:59 ET: aún cerrado
+        (("2018.01.15", "01:00"), True),  # dom 18:00 ET: apertura
+    ],
+)
+def test_week_boundaries(cfg: DarwinexConfig, srv: tuple[str, str], kept: bool) -> None:
+    out, _ = _norm(_relaxed(cfg), _row("2018.01.12", "02:00"), _row(*srv))
+    assert (out.filter(pl.col("source_line") == 3).height == 1) is kept
+
+
+@pytest.mark.parametrize(
+    ("srv", "expected"),
+    [
+        (("2018.03.12", "01:00"), date(2018, 3, 12)),  # dom 18:00 EDT tras el salto
+        (("2018.11.05", "01:00"), date(2018, 11, 5)),  # dom 18:00 EST tras la vuelta
+        (("2018.03.10", "00:59"), None),  # vie 17:59 EST: fuera
+    ],
+)
+def test_trade_date_in_dst_weeks(
+    cfg: DarwinexConfig, srv: tuple[str, str], expected: date | None
+) -> None:
+    out, _ = _norm(_relaxed(cfg), _row("2018.03.09", "02:00"), _row(*srv))
+    got = out.filter(pl.col("source_line") == 3)["trade_date"].to_list()
+    assert got == ([] if expected is None else [expected])
+
+
+def _relaxed_full() -> DarwinexConfig:
+    data = load_darwinex_config(CONFIG_DIR).model_dump(by_alias=True)
+    data["max_drop_fraction"]["value"] = 0.999999
+    return DarwinexConfig.model_validate(data)
+
+
+RELAXED_FULL = _relaxed_full()
+
+
+@settings(max_examples=150, deadline=None)
+@given(st.datetimes(min_value=datetime(2015, 1, 1), max_value=datetime(2026, 9, 30)))
+def test_property_utc_consistent_with_ny_and_trade_date(server: datetime) -> None:
+    # Propiedad: si la barra se conserva, UTC → NY devuelve hora servidor - 7 h y la barra cae
+    # en su ventana de trade_date; si no, se descarta por pausa/fin de semana o falla por DST.
+    server = server.replace(second=0, microsecond=0)
+    anchor = _row("2014.12.30", "02:00")  # mar 2014-12-30 02:00 servidor: barra válida previa
+    row = _row(server.strftime("%Y.%m.%d"), server.strftime("%H:%M"))
+    try:
+        out, stats = dwx.normalize_bars(dwx.parse_csv(_csv(anchor, row)), RELAXED_FULL)
+    except CalendarError:
+        return
+    target = out.filter(pl.col("source_line") == 3)
+    if target.height == 0:
+        assert sum(stats.dropped.values()) == 1
+        return
+    ny = target["bar_start_utc"][0].astimezone(ZoneInfo("America/New_York")).replace(tzinfo=None)
+    assert ny == server - timedelta(hours=7)
+    td = target["trade_date"][0]
+    assert datetime.combine(td - timedelta(days=1), time(18)) <= ny < datetime.combine(td, time(17))
+    assert td.weekday() < 5

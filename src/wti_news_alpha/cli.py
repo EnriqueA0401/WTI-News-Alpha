@@ -12,13 +12,14 @@ from wti_news_alpha.config import (
     CONFIG_DIR,
     load_capture_config,
     load_darwinex_config,
+    load_eia_wpsr_config,
     load_gdelt_config,
     load_project_config,
 )
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
-from wti_news_alpha.normalization import darwinex
+from wti_news_alpha.normalization import darwinex, eia_wpsr
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
 app = typer.Typer(no_args_is_help=True, help="WTI News Alpha", pretty_exceptions_show_locals=False)
@@ -116,6 +117,28 @@ def normalize_darwinex() -> None:
     typer.echo(
         f"{cfg.version} {action}: {result.stats.rows_out}/{result.stats.rows_in} barras · "
         f"descartadas {result.stats.dropped} · {len(result.outputs)} ficheros"
+    )
+
+
+@normalize_app.command("eia-wpsr")
+def normalize_eia_wpsr() -> None:
+    """Calendario y valores WPSR point-in-time (FASE_02_fundamentales.md §A). Idempotente."""
+    cfg = load_eia_wpsr_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("normalize_eia_wpsr", logger, commit, version=cfg.version) as res:
+        pub = eia_wpsr.run_normalize(
+            raw_root=REPO_ROOT / "data" / "raw",
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            commit=commit,
+        )
+        res.update(created=pub.created, time_status=pub.manifest["time_status_counts"])
+    action = "creada" if pub.created else "verificada (ya existía)"
+    typer.echo(
+        f"{cfg.version} {action}: {pub.manifest['n_releases']} publicaciones · "
+        f"{pub.manifest['n_values']} valores · horas {pub.manifest['time_status_counts']}"
     )
 
 

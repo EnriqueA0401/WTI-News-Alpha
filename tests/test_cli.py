@@ -13,6 +13,7 @@ from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, ProbeResult
 from wti_news_alpha.normalization import darwinex
+from wti_news_alpha.normalization.store import Published
 
 runner = CliRunner()
 
@@ -107,3 +108,17 @@ def test_normalize_darwinex(monkeypatch: pytest.MonkeyPatch, created: bool, word
     assert result.exit_code == 0, result.output
     assert word in result.output
     assert "9/10" in result.output
+
+
+def test_normalize_eia_wpsr(monkeypatch: pytest.MonkeyPatch) -> None:
+    man = {"n_releases": 3, "n_values": 30, "time_status_counts": {"d8_standard": 3}}
+
+    def fake(**_: object) -> Published:
+        return Published(created=True, outputs={}, manifest=man)
+
+    monkeypatch.setattr(cli.eia_wpsr, "run_normalize", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["normalize", "eia-wpsr"])
+    assert result.exit_code == 0, result.output
+    assert "3 publicaciones" in result.output

@@ -9,7 +9,7 @@ El valor se guarda como ``unsafe_value`` (clave YAML ``value``) y el código de
 
 import math
 import re
-from datetime import time
+from datetime import date, time
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
@@ -296,11 +296,44 @@ class DarwinexConfig(_Strict):
     daily_break_start_et: Param[WallTime]
     daily_break_end_et: Param[WallTime]
     max_drop_fraction: Param[UnitFraction]
+    plausible_server_range: Param[tuple[date, date]]
 
 
 def load_darwinex_config(config_dir: Path = CONFIG_DIR) -> DarwinexConfig:
     """Carga ``config/darwinex.yaml``."""
     return load_yaml_model(config_dir / "darwinex.yaml", DarwinexConfig)
+
+
+class WpsrInputs(_Strict):
+    archive_index: NonEmptyStr
+    fred_release_dates: NonEmptyStr
+    schedule: NonEmptyStr
+    archive_pages_glob: NonEmptyStr
+
+
+class WpsrRedefinition(_Strict):
+    series_id: NonEmptyStr
+    before_week_ending: date
+
+
+class EiaWpsrConfig(_Strict):
+    """Calendario y valores WPSR point-in-time (``config/eia_wpsr.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    inputs: WpsrInputs
+    series: dict[NonEmptyStr, NonEmptyStr] = Field(min_length=1)
+    first_release_date: Param[date]
+    min_lag_days: Param[PositiveInt]
+    max_lag_days: Param[PositiveInt]
+    known_shared_releases: Param[list[date]]
+    standard_release_time_et: Param[WallTime]
+    rpit_time_et: Param[WallTime]
+    redefinition: Param[WpsrRedefinition]
+
+
+def load_eia_wpsr_config(config_dir: Path = CONFIG_DIR) -> EiaWpsrConfig:
+    """Carga ``config/eia_wpsr.yaml``."""
+    return load_yaml_model(config_dir / "eia_wpsr.yaml", EiaWpsrConfig)
 
 
 class CaptureConfig(_Strict):

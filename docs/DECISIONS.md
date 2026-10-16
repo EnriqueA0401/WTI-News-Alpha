@@ -242,3 +242,23 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   3. noticias con `first_available_at`.
   Después, la puerta G1.
 - **Extracción del CSV de Darwinex** registrada en `manifests/darwinex_extract.jsonl`: miembro del RAR, sha256 del padre y del hijo. Re-extraer con `bsdtar -xO` reproduce el sha256.
+
+## ADR-020 — Aplicación de D7–D9 al calendario WPSR y publicador común de capas normalizadas (2026-10-16)
+- **Contexto:** el usuario ya decidió las reglas (ADR-014 D7, D8, D9). Falta concretarlas sobre las fuentes F1 sin inventar reglas nuevas.
+- **Decisiones técnicas (aplicación, no reglas nuevas):**
+  1. **Semana → primera publicación:** la primera fecha del índice del archivo ≥ viernes + 5 días.
+     - Validado sobre los datos reales: 612 publicaciones 2015–2026, todas con ≥ 1 semana; retraso máximo de 12 días.
+     - Solo 2022-06-29 y 2023-11-15 reciben 2 semanas: son las semanas sin publicación propia de F1.
+     - Las 41 páginas "week ending" del archivo coinciden y las 14 excepciones oficiales también.
+  2. **"Miércoles normal" (D8)** = miércoles con retraso de 5 días que no está en la tabla de excepciones.
+     - Evidencia: en dic-2024 → nov-2026 todas las excepciones oficiales son no-miércoles, incluidas las semanas de Thanksgiving, Juneteenth y 4 de julio.
+  3. **Fecha publicada solo en el archivo** (2020-01-03, que no está en FRED 212): se trata como fecha no verificada → 18:00 ET del siguiente laborable (R-PIT 2).
+     - "Laborable" = lunes a viernes. No hay un calendario federal verificado: opm.gov da 403.
+  4. **Publicador común** (`normalization/store.py`):
+     - directorio por versión, escrito una vez y en solo lectura;
+     - manifiesto atómico con sha256 de entradas y salidas y con los parámetros de configuración;
+     - cambiar la configuración exige una versión nueva.
+     - Por eso el precio pasa a `dwx-xti-m1-v2`, con los mismos cálculos más las validaciones de la revisión adversarial. La v1 se conserva.
+- **Consecuencias:**
+  - Las publicaciones desplazadas de 2015–2024 pierden la reacción intradía (18:00 ET), como ya se aceptó en D9.
+  - Todo valor WPSR lleva `revision_risk` (D7). WCESTUS1 antes de 2016-10-07 lleva además `known_redefinition`.

@@ -1,0 +1,47 @@
+# Calendario y valores WPSR point-in-time (docs/plans/FASE_02_fundamentales.md §A).
+version: eia-wpsr-v1
+inputs:
+  archive_index: "eia/web/wpsr_archive_index_2026-10-15.html"
+  fred_release_dates: "fred/api/release_212/dates_2015.json"
+  schedule: "eia/web/wpsr_schedule_2026-10-15.html"
+  archive_pages_glob: "eia/web/archive/wpsr_*.php.html"
+series:
+  WCESTUS1: "eia/api/seriesid_WCESTUS1_2015-2026.json"
+  W_EPC0_SAX_YCUOK_MBBL: "eia/api/seriesid_W_EPC0_SAX_YCUOK_MBBL.W_full.json"
+  WCSSTUS1: "eia/api/seriesid_WCSSTUS1.W_full.json"
+  WGTSTUS1: "eia/api/seriesid_WGTSTUS1.W_full.json"
+  WDISTUS1: "eia/api/seriesid_WDISTUS1.W_full.json"
+  WPULEUS3: "eia/api/seriesid_WPULEUS3.W_full.json"
+  WCRFPUS2: "eia/api/seriesid_WCRFPUS2.W_full.json"
+  WCRIMUS2: "eia/api/seriesid_WCRIMUS2.W_full.json"
+  WCREXUS2: "eia/api/seriesid_WCREXUS2.W_full.json"
+  WCRRIUS2: "eia/api/seriesid_WCRRIUS2.W_full.json"
+  WRPUPUS2: "eia/api/seriesid_WRPUPUS2.W_full.json"
+first_release_date:
+  value: "2015-01-07"
+  status: approved
+  source_ref: "FRED release 212 empieza en 2015 (2.ª fuente de fechas, reports/f1/eia.md §3.3)"
+min_lag_days:
+  value: 5
+  status: approved
+  source_ref: "ADR-020: primera publicación = primera fecha >= viernes + 5 días; validado contra 41 páginas 'week ending' y 14 excepciones oficiales"
+max_lag_days:
+  value: 12
+  status: approved
+  source_ref: "ADR-020 (retraso máximo observado: 12 días en las semanas sin publicación propia)"
+known_shared_releases:
+  value: ["2022-06-29", "2023-11-15"]
+  status: approved
+  source_ref: "reports/f1/eia.md §3.3: semanas 2022-06-17 y 2023-11-03 sin publicación propia"
+standard_release_time_et:
+  value: "10:30"
+  status: approved
+  source_ref: "ADR-014 D8 (miércoles normales; riesgo declarado)"
+rpit_time_et:
+  value: "18:00"
+  status: approved
+  source_ref: "ADR-014 D9 / R-PIT 1-2 (reports/F1_source_audit.md §3)"
+redefinition:
+  value: {series_id: WCESTUS1, before_week_ending: "2016-10-07"}
+  status: approved
+  source_ref: "reports/f1/eia.md §4 (redefinición de existencias comerciales en la publicación 2016-10-13)"

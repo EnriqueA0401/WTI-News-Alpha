@@ -41,9 +41,9 @@ Pasar las barras M1 de Darwinex (hora servidor) a una tabla normalizada en UTC, 
    - Una hora NY inexistente o ambigua (cambios de horario) lanza `CalendarError`. El mercado está cerrado a esas horas; hoy hay 0 casos.
 2. **Sello = inicio de barra.** Evidencia en F1:
    - la primera barra semanal es domingo 18:00 ET (apertura);
-   - la última del viernes es 16:59 ET;
-   - no hay barras 17:01–17:59.
-3. **Pausa diaria:** las barras con hora NY en [17:00, 18:00) se descartan con motivo `daily_break`. Hoy hay 6, todas a las 17:00 en 2018.
+   - el viernes cierra a las 16:5x ET (última barra habitual 16:54 ET; revisión adversarial);
+   - no hay barras 17:01–17:59 (las 6 barras de las 17:00 son de un solo tick, O=H=L=C).
+3. **Pausa diaria:** las barras con hora NY en [17:00, 18:00) se descartan con motivo `daily_break`. En los datos reales: 4 `daily_break` + 2 `outside_week` (viernes 17:00), todas de 2018.
    - Fuera de sesión (sábado; domingo antes de 18:00; viernes desde 17:00) → motivo `outside_week`.
    - Si el descarte supera `max_drop_fraction` → `SchemaError`.
 4. **Validación dura (lanza `SchemaError`):**
@@ -86,3 +86,25 @@ Pasar las barras M1 de Darwinex (hora servidor) a una tabla normalizada en UTC, 
 - `make check` en verde.
 - Revisión adversarial resuelta.
 - Ejecución sobre el fichero real con informe de conteos en `reports/f2/darwinex_normalized.md`.
+
+## Revisión adversarial (2026-10-16)
+9 hallazgos, ninguno crítico. Corregidos en `dwx-xti-m1-v2` (la v1 queda publicada e inmutable), con test de regresión:
+1. **(alto)** Un cambio de configuración con la misma versión se ignoraba. Ahora el manifiesto guarda los parámetros y la verificación falla si difieren (publicador común `normalization/store.py`).
+2. Se rechazan NaN e infinito, también en barras que se iban a descartar.
+3. `validate_output` comprueba la ventana exacta de `trade_date` y que caiga de lunes a viernes.
+4. El formato de fecha y hora es estricto (regex) y hay un rango plausible configurable.
+5. El fichero se lee una vez: se hashea y se decodifica el mismo buffer.
+6. Atomicidad y permisos:
+   - manifiesto atómico y de solo lectura;
+   - directorio 0555;
+   - staging abandonado → error;
+   - JSON ilegible → `RawIntegrityError`.
+7. Se corrigen las descripciones del plan.
+8. Tests añadidos:
+   - propiedades con hypothesis;
+   - límites de semana y de umbral;
+   - `trade_date` en semanas de cambio de horario;
+   - CLI.
+9. **(info)** Los cierres anticipados por festivo aparecen como minutos sin barra; se tratan en F4/F6.
+
+- Riesgo aceptado (bajo): si el proceso muere entre publicar el directorio y escribir el manifiesto, la siguiente ejecución falla de forma ruidosa ("existe sin manifiesto"). Recuperación manual documentada: borrar ese directorio de la capa normalizada (no es raw).

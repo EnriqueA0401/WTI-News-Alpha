@@ -1,7 +1,9 @@
 # Capa normalizada de precio Darwinex XTIUSD M1 (docs/plans/FASE_02_precio.md).
 # Los valores inferidos de los datos (no hay documentación del bróker) tienen estado
 # approved: el usuario los aceptó al aprobar G0 (ADR-019).
-version: dwx-xti-m1-v1
+# v1 (2026-10-16) queda publicada con el manifiesto antiguo; v2 = mismo cálculo con
+# validaciones de la revisión adversarial y manifiesto con parámetros (ADR-020).
+version: dwx-xti-m1-v2
 input:
   rel_path: "darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv"
   sha256: ab0ede34a6d63b5075a506813490dce646531f6b65fef945367075a468e668aa
@@ -26,3 +28,7 @@ max_drop_fraction:
   value: 0.0001
   status: approved
   source_ref: "docs/plans/FASE_02_precio.md (umbral de descarte; hoy 6 de 1,96 M barras)"
+plausible_server_range:
+  value: ["2010-01-01", "2026-10-16"]
+  status: approved
+  source_ref: "Revisión adversarial F2-precio: fechas fuera de [2010, fecha de extracción] son errores de formato"
