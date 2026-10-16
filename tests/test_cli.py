@@ -122,3 +122,18 @@ def test_normalize_eia_wpsr(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(cli.app, ["normalize", "eia-wpsr"])
     assert result.exit_code == 0, result.output
     assert "3 publicaciones" in result.output
+
+
+def test_normalize_cftc_cot(monkeypatch: pytest.MonkeyPatch) -> None:
+    man = {"n_rows": 614, "time_status_counts": {"rule_date": 614}}
+
+    def fake(**_: object) -> Published:
+        return Published(created=False, outputs={}, manifest=man)
+
+    monkeypatch.setattr(cli.cftc_cot, "run_normalize", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["normalize", "cftc-cot"])
+    assert result.exit_code == 0, result.output
+    assert "614 semanas" in result.output
+    assert "verificada" in result.output

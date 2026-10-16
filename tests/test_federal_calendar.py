@@ -156,7 +156,8 @@ def test_closure_out_of_range_raises() -> None:
 
 @given(st.dates(min_value=D("2014-01-01"), max_value=D("2026-11-30")), st.integers(1, 5))
 def test_property_nth_business_day(start: date, n: int) -> None:
-    cal = fc.FederalCalendar.build(2014, 2026, {})
+    closures = {D("2018-12-05"): "eo_closure", D("2025-12-24"): "eo_closure"}
+    cal = fc.FederalCalendar.build(2014, 2026, closures)
     out = cal.nth_business_day_after(start, n)
     assert out > start
     assert cal.is_business_day(out)

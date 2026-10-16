@@ -351,6 +351,7 @@ class CftcCotConfig(_Strict):
     inputs: CotInputs
     first_as_of: Param[date]
     release_business_day: Param[PositiveInt]
+    official_release_time_et: Param[WallTime]
     rpit_time_et: Param[WallTime]
     api_first_as_of: Param[date]
     api_created_at_margin_minutes: Param[Annotated[int, Strict(), Field(ge=0, le=240)]]

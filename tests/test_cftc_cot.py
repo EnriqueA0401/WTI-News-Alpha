@@ -5,19 +5,28 @@ Ficheros SINTÉTICOS con el formato CFTC; fechas reales calculadas a mano.
 
 import io
 import json
+import re
 import zipfile
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import polars as pl
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from test_federal_calendar import STATUTE as STATUTE_TEXT
 from wti_news_alpha.config import CONFIG_DIR, CftcCotConfig, load_cftc_cot_config
-from wti_news_alpha.errors import RawIntegrityError, SchemaError, UnverifiedValueError
+from wti_news_alpha.errors import (
+    NaiveTimestampError,
+    RawIntegrityError,
+    SchemaError,
+    UnverifiedValueError,
+)
 from wti_news_alpha.ingestion.rawstore import ManifestEntry, RawStore, _sha256
 from wti_news_alpha.normalization import cftc_cot as cot
 from wti_news_alpha.normalization.federal_calendar import FederalCalendar
+from wti_news_alpha.timeutils import ny_wall_to_utc
 
 D = date.fromisoformat
 COLS = list(cot.POSITION_COLUMNS)
@@ -165,12 +174,22 @@ def test_rule_date_with_holiday_is_unconfirmed(cfg: CftcCotConfig, cal: FederalC
 
 
 def test_verified_release(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
-    # Cierre 2018-19: as-of 2018-12-24 publicado el vie 2019-02-01 → 18:00 EST.
-    assert _avail(cfg, cal, "2018-12-24") == (
-        D("2019-02-01"),
-        datetime(2019, 2, 1, 23, 0, tzinfo=UTC),
+    # Publicación prematura 2015-07-03; la oficial completa, lun 2015-07-06 → 18:00 EDT.
+    assert _avail(cfg, cal, "2015-06-30") == (
+        D("2015-07-06"),
+        datetime(2015, 7, 6, 22, 0, tzinfo=UTC),
         "verified_release",
     )
+
+
+def test_catch_up_first_and_last_are_expected(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    # Revisión adversarial: 2019-02-01 y 2019-03-08 también eran fechas "previstas".
+    assert _avail(cfg, cal, "2018-12-24") == (
+        D("2019-02-01"),
+        datetime(2019, 2, 4, 23, 0, tzinfo=UTC),
+        "catch_up_expected_rpit",
+    )
+    assert _avail(cfg, cal, "2019-03-05")[2] == "catch_up_expected_rpit"  # type: ignore[index]
 
 
 def test_catch_up_weeks_use_expected_date_plus_business_day(
@@ -185,7 +204,7 @@ def test_catch_up_weeks_use_expected_date_plus_business_day(
     # as-of 2019-01-29 → previsto mar 2019-02-19 → mié 20 (lunes 18 festivo no influye).
     assert _avail(cfg, cal, "2019-01-29")[1] == datetime(2019, 2, 20, 23, 0, tzinfo=UTC)  # type: ignore[index]
     # Tras la puesta al día vuelve la regla normal.
-    assert _avail(cfg, cal, "2019-03-05")[2] == "rule_date"  # type: ignore[index]
+    assert _avail(cfg, cal, "2019-03-12")[2] == "rule_date"  # type: ignore[index]
 
 
 def test_catch_up_week_without_expected_date_raises(
@@ -200,7 +219,7 @@ def test_catch_up_week_without_expected_date_raises(
 def test_repository_config_is_approved() -> None:
     c = load_cftc_cot_config(CONFIG_DIR)
     assert c.api_created_at_margin_minutes.require("m") == 0
-    assert len(c.catch_up_expected_releases.require("e")) == 9
+    assert len(c.catch_up_expected_releases.require("e")) == 11
 
 
 def test_api_created_at_with_margin(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
@@ -285,6 +304,10 @@ def test_run_end_to_end(tmp_path: Path, cfg: CftcCotConfig) -> None:
         "statute": "federal_calendar/usc.htm",
         "closure_eos": "federal_calendar/eos.json",
     }
+    # Datos sintéticos con huecos: sin fechas configuradas dentro de su rango.
+    data["verified_releases"]["value"] = {}
+    data["catch_up_expected_releases"]["value"] = {}
+    data["catch_up_window"]["value"] = (D("2010-01-05"), D("2010-01-05"))
     c = CftcCotConfig.model_validate(data)
     res = cot.run_normalize(
         raw_root=tmp_path / "raw",
@@ -387,3 +410,130 @@ def test_run_duplicate_as_of_across_zips_raises(tmp_path: Path, cfg: CftcCotConf
 def test_monday_as_of_with_announcement_allowed(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
     # 2020-12-21 (lunes): datos del lunes por el cierre del 24-dic, anunciado → 2020-12-28.
     assert _avail(cfg, cal, "2020-12-21")[2] == "verified_release"  # type: ignore[index]
+
+
+def test_run_config_date_without_data_raises(tmp_path: Path, cfg: CftcCotConfig) -> None:
+    store = RawStore(tmp_path / "raw", tmp_path / "manifests", "c")
+    rows = [("2015-06-23", "067651"), ("2015-07-07", "067651")]  # falta el as-of 2015-06-30
+    _write_raw(store, "cftc", "cftc/history/fut_disagg_txt_2015.zip", _zip(_txt(rows)))
+    _write_raw(store, "cftc", "cftc/socrata/sys.json", b"[]")
+    _write_raw(store, "federal_calendar", "federal_calendar/usc.htm", STATUTE_TEXT.encode())
+    eos = json.dumps({"count": 0, "results": []}).encode()
+    _write_raw(store, "federal_calendar", "federal_calendar/eos.json", eos)
+    with pytest.raises(SchemaError, match="sin as-of"):
+        cot.run_normalize(
+            raw_root=tmp_path / "raw",
+            out_root=tmp_path / "n",
+            manifest_dir=tmp_path / "manifests",
+            cfg=_cfg_inputs(cfg),
+            commit="abc",
+        )
+
+
+# ---------------------------------------------------------------- revisión adversarial
+
+
+def test_naive_created_at_raises() -> None:
+    rows = [
+        {
+            ":created_at": "2024-03-08T20:30:10.000",
+            "id": "240305067651F",
+            "report_date_as_yyyy_mm_dd": "2024-03-05T00:00:00.000",
+        }
+    ]
+    with pytest.raises(NaiveTimestampError):
+        cot.parse_created_at(json.dumps(rows), "067651")
+
+
+def test_api_created_before_official_rule_raises(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    # Regla: vie 2024-03-08 15:30 EST = 20:30 UTC; created_at a las 20:29 → anómalo.
+    created = {D("2024-03-05"): datetime(2024, 3, 8, 20, 29, tzinfo=UTC)}
+    with pytest.raises(SchemaError, match="anterior a la regla"):
+        _avail(cfg, cal, "2024-03-05", created)
+
+
+def test_monday_as_of_keeps_rule_date(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    # as-of lun 2017-07-03 (martes 4 festivo) → mié 5, jue 6, vie 7 = regla; sin desplazamiento.
+    assert _avail(cfg, cal, "2017-07-03") == (
+        D("2017-07-07"),
+        datetime(2017, 7, 7, 22, 0, tzinfo=UTC),
+        "rule_date",
+    )
+
+
+def test_inauguration_week_is_unconfirmed_shift(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    # as-of mar 2017-01-17: vie 20 Inauguration Day → regla lun 23; desplazamiento → mar 24 18:00.
+    assert _avail(cfg, cal, "2017-01-17") == (
+        D("2017-01-23"),
+        datetime(2017, 1, 24, 23, 0, tzinfo=UTC),
+        "rule_date_unconfirmed_shift",
+    )
+
+
+@settings(max_examples=100, deadline=None)
+@given(
+    st.sets(st.dates(min_value=D("2015-01-06"), max_value=D("2022-09-27")), min_size=1, max_size=30)
+)
+def test_property_rule_rows_not_before_rule_date(days: set[date]) -> None:
+    # Martes de la ventana anterior a la API: available_at ≥ 18:00 ET de la fecha de la regla
+    # y monótono en el as-of.
+    c = _approved(load_cftc_cot_config(CONFIG_DIR))
+    calendar = FederalCalendar.build(2014, 2026, {D("2018-12-05"): "eo_closure"})
+    tuesdays = sorted(
+        {d - timedelta(days=(d.weekday() - 1) % 7) for d in days}
+        - set(c.verified_releases.require("v"))
+    )
+    lo, hi = c.catch_up_window.require("w")
+    tuesdays = [t for t in tuesdays if t >= D("2015-01-06") and not lo <= t <= hi]
+    if not tuesdays:
+        return
+    rows = cot.release_rows(tuesdays, {}, calendar, c)
+    for r in rows.iter_rows(named=True):
+        rule = calendar.nth_business_day_after(r["as_of_date"], 3)
+        assert r["available_at"] >= ny_wall_to_utc(rule, time(18))
+    assert rows["available_at"].is_sorted()
+
+
+REAL = Path(__file__).resolve().parents[1] / "data" / "raw"
+
+
+@pytest.mark.skipif(not (REAL / "cftc" / "history").exists(), reason="raw no disponible")
+def test_real_data_build_and_cross_checks() -> None:
+    c = load_cftc_cot_config(CONFIG_DIR)
+    zips = {
+        p.relative_to(REAL).as_posix(): p.read_bytes()
+        for p in sorted(REAL.glob(c.inputs.zips_glob))
+    }
+    frames, extra = cot._build(
+        zips,
+        (REAL / c.inputs.socrata_systemfields).read_text(encoding="utf-8"),
+        (REAL / c.inputs.statute).read_text(encoding="utf-8"),
+        (REAL / c.inputs.closure_eos).read_text(encoding="utf-8"),
+        c,
+    )
+    df = frames["cot.parquet"]
+    assert df.height == extra["n_rows"] >= 600
+    # Calendario oficial 2026 (cftc/schedule): toda fecha de publicación de 2026 de los datos
+    # coincide con una fecha oficial.
+    text = re.sub(
+        r"\s+",
+        " ",
+        re.sub(
+            r"<[^>]+>",
+            " ",
+            (REAL / "cftc/schedule/release_schedule_index.htm").read_text(
+                encoding="utf-8", errors="replace"
+            ),
+        ),
+    )
+    block = text.split("2026 Release Schedule", 1)[1].split("*Delayed", 1)[0]
+    months = [date(2026, m, 1).strftime("%B") for m in range(1, 13)]
+    parts = re.split(r"\b(" + "|".join(months) + r")\b", block)
+    official = {
+        date(2026, months.index(m) + 1, int(x))
+        for m, ds in zip(parts[1::2], parts[2::2], strict=True)
+        for x in re.findall(r"\b\d{2}\b", ds)
+    }
+    got_2026 = {d for d in df["release_date"].to_list() if d.year == 2026}
+    assert got_2026
+    assert got_2026 <= official

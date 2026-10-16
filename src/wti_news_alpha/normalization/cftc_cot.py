@@ -21,7 +21,7 @@ import sys
 import zipfile
 from collections import Counter
 from collections.abc import Sequence
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +29,7 @@ import polars as pl
 
 from wti_news_alpha import timeutils
 from wti_news_alpha.config import CftcCotConfig
-from wti_news_alpha.errors import RawIntegrityError, SchemaError
+from wti_news_alpha.errors import NaiveTimestampError, RawIntegrityError, SchemaError
 from wti_news_alpha.ingestion.rawstore import RawStore
 from wti_news_alpha.normalization import federal_calendar
 from wti_news_alpha.normalization.federal_calendar import (
@@ -113,7 +113,10 @@ def parse_created_at(text: str, code: str) -> dict[date, datetime]:
         as_of = date.fromisoformat(r["report_date_as_yyyy_mm_dd"][:10])
         if as_of in out:
             raise SchemaError(f"created_at duplicado para el as-of {as_of}")
-        out[as_of] = datetime.fromisoformat(r[":created_at"].replace("Z", "+00:00"))
+        ts = datetime.fromisoformat(r[":created_at"].replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            raise NaiveTimestampError(f"created_at sin zona horaria para el as-of {as_of}")
+        out[as_of] = ts
     return out
 
 
@@ -129,10 +132,19 @@ def _row(as_of: date, release: date, avail: datetime, status: str) -> dict[str, 
     }
 
 
-def _api_row(
-    a: date, created: dict[date, datetime], verified: dict[date, date], margin: timedelta
+def _api_row(  # noqa: PLR0913, PLR0917 - todo lo que fija la hora es explícito
+    a: date,
+    created: dict[date, datetime],
+    verified: dict[date, date],
+    margin: timedelta,
+    rule: date,
+    official: time,
 ) -> dict[str, Any]:
-    """Fila de un as-of con hora real de la API (``:created_at`` + margen)."""
+    """Fila de un as-of con hora real de la API (``:created_at`` + margen).
+
+    Sin publicación verificada, ``created_at`` no puede ser anterior a la regla
+    oficial (fecha y hora de 15:30 ET): si lo es, el dato es anómalo y se falla.
+    """
     if a not in created:
         raise SchemaError(f"as-of {a} sin created_at en la API")
     ts = created[a]
@@ -141,6 +153,10 @@ def _api_row(
         raise SchemaError(f"as-of {a}: created_at {ts} antes de cerrar las posiciones")
     if a in verified and verified[a] != local:
         raise SchemaError(f"as-of {a}: created_at {local} ≠ publicación verificada {verified[a]}")
+    if a not in verified and ts < ny_wall_to_utc(rule, official):
+        raise SchemaError(
+            f"as-of {a}: created_at {ts} anterior a la regla oficial ({rule} {official})"
+        )
     return _row(a, local, ts + margin, "api_created_at")
 
 
@@ -153,6 +169,7 @@ def release_rows(
     """Una fila por as-of conservado: ``as_of_date, release_date, available_at, time_status``."""
     n_bday = cfg.release_business_day.require("release_business_day")
     rpit = cfg.rpit_time_et.require("rpit_time_et")
+    official = cfg.official_release_time_et.require("official_release_time_et")
     api_first = cfg.api_first_as_of.require("api_first_as_of")
     margin = timedelta(
         minutes=cfg.api_created_at_margin_minutes.require("api_created_at_margin_minutes")
@@ -172,12 +189,20 @@ def release_rows(
             nxt = cal.nth_business_day_after(expected[a], 1)
             rows.append(_row(a, expected[a], ny_wall_to_utc(nxt, rpit), "catch_up_expected_rpit"))
         elif a >= api_first:
-            rows.append(_api_row(a, created, verified, margin))
+            rule = cal.nth_business_day_after(a, n_bday)
+            rows.append(_api_row(a, created, verified, margin, rule, official))
         elif a in verified:
             rows.append(_row(a, verified[a], ny_wall_to_utc(verified[a], rpit), "verified_release"))
         else:
             rule = cal.nth_business_day_after(a, n_bday)
-            if cal.non_business_weekdays_between(a, rule):
+            # Un as-of en lunes existe porque el martes es festivo: ese festivo ya está en la
+            # regla (confirmado por la tabla 2025 y la API), no es un desplazamiento.
+            shifts = [
+                d
+                for d in cal.non_business_weekdays_between(a, rule)
+                if not (a.weekday() == _MONDAY and d == a + timedelta(days=1))
+            ]
+            if shifts:
                 nxt = cal.nth_business_day_after(rule, 1)
                 rows.append(_row(a, rule, ny_wall_to_utc(nxt, rpit), "rule_date_unconfirmed_shift"))
             else:
@@ -218,7 +243,17 @@ def _build(
     last_year = pos["as_of_date"].max().year + 1  # type: ignore[union-attr]
     cal = FederalCalendar.build(first.year - 1, last_year, closures)
     created = parse_created_at(sys_text, cfg.contract_code)
-    rel = release_rows(pos["as_of_date"].to_list(), created, cal, cfg)
+    as_ofs = set(pos["as_of_date"].to_list())
+    configured = set(cfg.verified_releases.require("verified_releases")) | set(
+        cfg.catch_up_expected_releases.require("catch_up_expected_releases")
+    )
+    lo, hi = min(as_ofs), max(as_ofs)
+    unused = sorted(d for d in configured - as_ofs if lo <= d <= hi)  # p. ej. una errata
+    if unused:
+        raise SchemaError(f"fechas de configuración sin as-of en los datos: {unused}")
+    rel = release_rows(sorted(as_ofs), created, cal, cfg)
+    if rel.height != pos.height:
+        raise SchemaError(f"calendario de publicación: {pos.height} as-of → {rel.height} filas")
     out = (
         pos.join(rel, on="as_of_date", how="inner", validate="1:1")
         .with_columns(revision_risk=pl.lit(True))

@@ -300,3 +300,24 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - Fechas previstas calculadas a mano en `config/cftc_cot.yaml`.
   - Riesgo aceptado: si la CFTC se retrasó más que lo previsto, esas semanas estarían disponibles antes de tiempo. Se recomendaba excluirlas.
 - Ambos parámetros pasan a `approved`. `cftc-cot-v1` puede publicarse.
+
+## ADR-023 — Revisión adversarial del COT y del calendario federal (2026-10-16)
+7 hallazgos, ninguno crítico. Comprobaciones superadas:
+- las 210 horas de la API son ≥ regla y ≥ 15:30 ET;
+- la regla coincide 52/52 con el calendario oficial 2026 y 12/13 con la tabla 2025 (la 13.ª usa la API, que es más tardía);
+- columnas zip = API en 614 × 14 celdas.
+
+Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
+1. **2019-02-01 y el primer informe normal (as-of 2019-03-05) también eran fechas "previstas"** (PR 7864-19: "expects").
+   - Pasan al tratamiento de la puesta al día: fecha prevista + 1 día hábil, 18:00 ET.
+   - Es la decisión del usuario de ADR-022 extendida a esas 2 semanas, lo que la hace más conservadora.
+2. `created_at` sin zona horaria → `NaiveTimestampError`.
+3. Una fila de la API sin publicación verificada no puede ser anterior a la regla oficial (fecha y 15:30 ET) → error.
+4. **Riesgo residual (bajo, aceptado):** solo se modelan los cierres por orden ejecutiva. Los cierres de OPM por nieve en DC no están. Ejemplo: el cierre de OPM del 2025-01-06 no retrasó el COT.
+5. Un as-of en lunes (martes festivo) no se trata como desplazamiento: el festivo ya está en la regla. Lo confirman la tabla 2025 y la API 2023-07-07.
+6. Fechas de configuración sin as-of en los datos → error. También se comprueba que no se pierden filas en el join.
+7. Tests añadidos:
+   - casos a mano (Inauguration Day 2017, lunes 2017-07-03);
+   - propiedades;
+   - datos reales contra el calendario oficial 2026;
+   - calendario federal con cierres.

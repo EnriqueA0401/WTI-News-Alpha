@@ -1,6 +1,7 @@
 # COT Disaggregated Futures Only, NYMEX WTI 067651, point-in-time
 # (docs/plans/FASE_02_fundamentales.md §B; reglas ADR-014 D9 / R-PIT).
-version: cftc-cot-v1
+# v1 no se llegó a publicar; v2 incorpora la revisión adversarial (ADR-023).
+version: cftc-cot-v2
 contract_code: "067651"
 inputs:
   zips_glob: "cftc/history/fut_disagg_txt_*.zip"
@@ -15,6 +16,10 @@ release_business_day:
   value: 3
   status: verified
   source_ref: "cftc/pages/about_cot.htm: 'the third business day after the as of date'; contrastada 41/41 (2026), 13/13 (2025), 4/4 anuncios (reports/f1/cftc.md §3)"
+official_release_time_et:
+  value: "15:30"
+  status: verified
+  source_ref: "cftc/pages/about_cot.htm: 'released every Friday at 3:30 p.m. Eastern time'"
 rpit_time_et:
   value: "18:00"
   status: approved
@@ -30,7 +35,6 @@ api_created_at_margin_minutes:
 verified_releases:
   value:
     "2015-06-30": "2015-07-06"   # anuncio 2015-07-06 (publicación prematura e incompleta el 07-03)
-    "2018-12-24": "2019-02-01"   # PR 7864-19 (cierre del gobierno)
     "2020-12-21": "2020-12-28"   # anuncio (festivo extra del 24-dic)
     "2021-06-15": "2021-06-21"   # anuncio (Juneteenth 2021)
     "2023-01-31": "2023-02-24"   # incidente ION (anuncios + PR 8662-23)
@@ -44,14 +48,15 @@ verified_releases:
   status: verified
   source_ref: "reports/f1/cftc.md §3 (tabla de excepciones verificadas)"
 catch_up_window:
-  value: ["2018-12-31", "2019-02-26"]
+  value: ["2018-12-24", "2019-03-05"]
   status: approved
-  source_ref: "PR 7864-19: puesta al día tras el cierre 2018-19 (fechas reales no verificadas)"
+  source_ref: "PR 7864-19: puesta al día tras el cierre 2018-19 (fechas reales no verificadas). Incluye el primero (02-01, también 'expects') y el primer informe normal (03-08), que dependen de que el calendario previsto se cumpliera (revisión adversarial, ADR-023)"
 catch_up_expected_releases:
   # Calendario previsto por la CFTC (PR 7864-19): tras el 2019-02-01, "uno el martes y otro
   # el viernes" hasta ponerse al día. Calculado a mano. Disponible = 18:00 ET del siguiente
   # día hábil federal (R-PIT 2). Decisión del usuario 2026-10-16 (ADR-022).
   value:
+    "2018-12-24": "2019-02-01"
     "2018-12-31": "2019-02-05"
     "2019-01-08": "2019-02-08"
     "2019-01-15": "2019-02-12"
@@ -61,5 +66,6 @@ catch_up_expected_releases:
     "2019-02-12": "2019-02-26"
     "2019-02-19": "2019-03-01"
     "2019-02-26": "2019-03-05"
+    "2019-03-05": "2019-03-08"
   status: approved
   source_ref: "PR 7864-19 (cftc/press/7864-19.htm) + decisión del usuario 2026-10-16 (ADR-022)"
