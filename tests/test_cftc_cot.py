@@ -382,3 +382,8 @@ def test_run_duplicate_as_of_across_zips_raises(tmp_path: Path, cfg: CftcCotConf
             cfg=_cfg_inputs(cfg),
             commit="abc",
         )
+
+
+def test_monday_as_of_with_announcement_allowed(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    # 2020-12-21 (lunes): datos del lunes por el cierre del 24-dic, anunciado → 2020-12-28.
+    assert _avail(cfg, cal, "2020-12-21")[2] == "verified_release"  # type: ignore[index]

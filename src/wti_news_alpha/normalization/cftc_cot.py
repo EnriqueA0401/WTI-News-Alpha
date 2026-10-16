@@ -162,8 +162,9 @@ def release_rows(
     expected = cfg.catch_up_expected_releases.require("catch_up_expected_releases")
     rows = []
     for a in sorted(as_ofs):
-        if a.weekday() == _MONDAY and cal.is_business_day(a + timedelta(days=1)):
-            raise SchemaError(f"as-of en lunes {a} sin martes festivo")
+        monday_ok = not cal.is_business_day(a + timedelta(days=1)) or a in verified
+        if a.weekday() == _MONDAY and not monday_ok:  # p. ej. 2020-12-21 (anunciado)
+            raise SchemaError(f"as-of en lunes {a} sin martes festivo ni anuncio verificado")
         in_catch_up = cu_lo <= a <= cu_hi and a not in verified
         if in_catch_up and a not in expected:
             raise SchemaError(f"as-of {a} en la puesta al día sin fecha prevista")
