@@ -1,11 +1,14 @@
 # Captura prospectiva de disponibilidad (D12, docs/plans/FASE_02_capture.md).
-# Cada 5 min registra cuándo aparecen ficheros GDELT, el WPSR de la EIA y el COT de la CFTC.
+# Registra cuándo aparecen ficheros GDELT, el WPSR de la EIA y el COT de la CFTC.
+# GitHub solo lanza el cron cada pocas horas (medido 2026-10-16): cada ejecución hace un
+# bucle de ~5,5 h que comprueba cada 5 min (ADR-027). El cron horario la relanza y la
+# concurrencia encadena las ejecuciones sin solaparlas.
 # Las observaciones se guardan en la rama huérfana `capture-data` (append-only).
 # Para pararla: Actions → capture → "Disable workflow".
 name: capture
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "7 * * * *"
   workflow_dispatch: {}
 permissions:
   contents: write
@@ -15,7 +18,7 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -39,23 +42,31 @@ jobs:
             echo "git ls-remote falló (código $rc): no se crea una rama vacía"
             exit 1
           fi
-      - name: Capturar
-        id: cap
-        continue-on-error: true
-        run: uv run --no-sync wna capture run --data-dir capture-data --run-id "${{ github.run_id }}-${{ github.run_attempt }}" --commit "${{ github.sha }}"
-      - name: Guardar observaciones
-        if: always()
+      - name: Capturar en bucle (cada 5 min durante ~5,5 h)
+        env:
+          RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+          SHA: ${{ github.sha }}
+          LOOP_SECONDS: "19800"
         run: |
-          set -euo pipefail
-          cd capture-data
-          git add -A
-          if git diff --cached --quiet; then
-            echo "sin cambios"
-            exit 0
-          fi
-          git commit -q -m "capture: run ${{ github.run_id }}"
-          git push origin HEAD:capture-data
-      - name: Fallar si alguna fuente falló
-        if: steps.cap.outcome == 'failure'
-        run: exit 1
- 
+          set -uo pipefail
+          end=$(( $(date +%s) + LOOP_SECONDS ))
+          i=0
+          fails=0
+          while [ "$(date +%s)" -lt "$end" ]; do
+            i=$((i + 1))
+            if ! uv run --no-sync wna capture run --data-dir capture-data --run-id "$RUN-$i" --commit "$SHA"; then
+              fails=$((fails + 1))
+            fi
+            (
+              set -e
+              cd capture-data
+              git add -A
+              if ! git diff --cached --quiet; then
+                git commit -q -m "capture: run $RUN iter $i"
+                git push -q origin HEAD:capture-data
+              fi
+            ) || { echo "no se pudo guardar las observaciones"; exit 1; }
+            sleep $(( 300 - $(date +%s) % 300 ))
+          done
+          echo "iteraciones=$i fallos=$fails"
+          if [ "$fails" -gt 0 ]; then exit 1; fi

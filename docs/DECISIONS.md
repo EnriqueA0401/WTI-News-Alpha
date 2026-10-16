@@ -373,3 +373,11 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - hash del código calculado al inicio;
   - test de propiedades y de determinismo.
   - Los ficheros mensuales se parten por `source_file_ts`: para seleccionar por disponibilidad hay que filtrar por `first_available_at`.
+
+## ADR-027 — G1 aprobada y captura en vivo en bucle largo (usuario, 2026-10-16)
+- **G1 aprobada** por el usuario sobre `reports/G1_cierre.md`. Se pasa a F3: noticias → eventos.
+- **Captura en vivo:** el cron de GitHub de cada 5 min solo se ejecutó 7 veces el 2026-10-16, cada 3–4 h. Hubo saltos de ficheros GDELT de hasta 4,5 h.
+  - El usuario elige un **bucle largo**: cada ejecución del workflow dura unas 5,5 h y comprueba cada 5 min, guardando y subiendo las observaciones en cada vuelta.
+  - Un cron horario la relanza y la concurrencia (`cancel-in-progress: false`) encadena las ejecuciones sin solaparlas.
+  - Es gratis en un repo público. Los límites de GitHub son 6 h por job y 72 h de cola.
+- **Riesgo:** en F1 el cron no se disparó con un workflow subido por la app hasta que el usuario hizo un commit del fichero. Si tras el cambio no hay ejecuciones programadas, el usuario debe volver a guardar el workflow en GitHub. Mientras tanto se lanza una ejecución manual.
