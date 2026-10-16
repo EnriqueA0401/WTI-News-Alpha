@@ -10,7 +10,8 @@ Invariantes (``available_at`` en UTC):
 - Resto: regla oficial "3.er día hábil federal tras el as-of". Sin festivos ni
   cierres en medio → 18:00 ET de ese día (R-PIT 1). Con desplazamiento no
   confirmado → 18:00 ET del siguiente día hábil (R-PIT 2).
-- La puesta al día de 2019 (fechas no verificadas) se excluye y se cuenta.
+- Puesta al día de 2019 (fechas reales no verificadas): fecha prevista por la
+  CFTC (PR 7864-19) y 18:00 ET del siguiente día hábil federal (R-PIT 2, ADR-022).
 - Sin vintages: ``revision_risk`` siempre verdadero.
 """
 
@@ -128,6 +129,21 @@ def _row(as_of: date, release: date, avail: datetime, status: str) -> dict[str, 
     }
 
 
+def _api_row(
+    a: date, created: dict[date, datetime], verified: dict[date, date], margin: timedelta
+) -> dict[str, Any]:
+    """Fila de un as-of con hora real de la API (``:created_at`` + margen)."""
+    if a not in created:
+        raise SchemaError(f"as-of {a} sin created_at en la API")
+    ts = created[a]
+    local = ts.astimezone(NEW_YORK).date()
+    if local <= a:
+        raise SchemaError(f"as-of {a}: created_at {ts} antes de cerrar las posiciones")
+    if a in verified and verified[a] != local:
+        raise SchemaError(f"as-of {a}: created_at {local} ≠ publicación verificada {verified[a]}")
+    return _row(a, local, ts + margin, "api_created_at")
+
+
 def release_rows(
     as_ofs: Sequence[date],
     created: dict[date, datetime],
@@ -142,25 +158,20 @@ def release_rows(
         minutes=cfg.api_created_at_margin_minutes.require("api_created_at_margin_minutes")
     )
     verified = cfg.verified_releases.require("verified_releases")
-    excl_lo, excl_hi = cfg.excluded_as_of.require("excluded_as_of")
+    cu_lo, cu_hi = cfg.catch_up_window.require("catch_up_window")
+    expected = cfg.catch_up_expected_releases.require("catch_up_expected_releases")
     rows = []
     for a in sorted(as_ofs):
         if a.weekday() == _MONDAY and cal.is_business_day(a + timedelta(days=1)):
             raise SchemaError(f"as-of en lunes {a} sin martes festivo")
-        if excl_lo <= a <= excl_hi and a not in verified:
-            continue
-        if a >= api_first:
-            if a not in created:
-                raise SchemaError(f"as-of {a} sin created_at en la API")
-            ts = created[a]
-            local = ts.astimezone(NEW_YORK).date()
-            if local <= a:
-                raise SchemaError(f"as-of {a}: created_at {ts} antes de cerrar las posiciones")
-            if a in verified and verified[a] != local:
-                raise SchemaError(
-                    f"as-of {a}: created_at {local} ≠ publicación verificada {verified[a]}"
-                )
-            rows.append(_row(a, local, ts + margin, "api_created_at"))
+        in_catch_up = cu_lo <= a <= cu_hi and a not in verified
+        if in_catch_up and a not in expected:
+            raise SchemaError(f"as-of {a} en la puesta al día sin fecha prevista")
+        if in_catch_up:
+            nxt = cal.nth_business_day_after(expected[a], 1)
+            rows.append(_row(a, expected[a], ny_wall_to_utc(nxt, rpit), "catch_up_expected_rpit"))
+        elif a >= api_first:
+            rows.append(_api_row(a, created, verified, margin))
         elif a in verified:
             rows.append(_row(a, verified[a], ny_wall_to_utc(verified[a], rpit), "verified_release"))
         else:
@@ -207,7 +218,6 @@ def _build(
     cal = FederalCalendar.build(first.year - 1, last_year, closures)
     created = parse_created_at(sys_text, cfg.contract_code)
     rel = release_rows(pos["as_of_date"].to_list(), created, cal, cfg)
-    n0 = pos.height
     out = (
         pos.join(rel, on="as_of_date", how="inner", validate="1:1")
         .with_columns(revision_risk=pl.lit(True))
@@ -216,7 +226,6 @@ def _build(
     require_utc_column(out, "available_at")
     extra = {
         "n_rows": out.height,
-        "excluded_as_of": n0 - out.height,
         "before_window": n_before,
         "time_status_counts": dict(sorted(Counter(out["time_status"].to_list()).items())),
         "first_as_of": str(out["as_of_date"].min()),

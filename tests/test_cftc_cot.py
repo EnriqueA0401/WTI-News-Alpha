@@ -24,9 +24,9 @@ COLS = list(cot.POSITION_COLUMNS)
 
 
 def _approved(cfg: CftcCotConfig) -> CftcCotConfig:
+    # Fija un margen de 5 min para que el test de margen sea informativo.
     data = cfg.model_dump(by_alias=True)
-    for k in ("api_created_at_margin_minutes", "excluded_as_of"):
-        data[k]["status"] = "approved"
+    data["api_created_at_margin_minutes"]["value"] = 5
     return CftcCotConfig.model_validate(data)
 
 
@@ -173,9 +173,34 @@ def test_verified_release(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
     )
 
 
-def test_catch_up_weeks_excluded(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
-    assert _avail(cfg, cal, "2019-01-15") is None
-    assert _avail(cfg, cal, "2019-03-05") is not None
+def test_catch_up_weeks_use_expected_date_plus_business_day(
+    cfg: CftcCotConfig, cal: FederalCalendar
+) -> None:
+    # as-of 2019-01-15 → previsto mar 2019-02-12 → disponible mié 13, 18:00 EST = 23:00 UTC.
+    assert _avail(cfg, cal, "2019-01-15") == (
+        D("2019-02-12"),
+        datetime(2019, 2, 13, 23, 0, tzinfo=UTC),
+        "catch_up_expected_rpit",
+    )
+    # as-of 2019-01-29 → previsto mar 2019-02-19 → mié 20 (lunes 18 festivo no influye).
+    assert _avail(cfg, cal, "2019-01-29")[1] == datetime(2019, 2, 20, 23, 0, tzinfo=UTC)  # type: ignore[index]
+    # Tras la puesta al día vuelve la regla normal.
+    assert _avail(cfg, cal, "2019-03-05")[2] == "rule_date"  # type: ignore[index]
+
+
+def test_catch_up_week_without_expected_date_raises(
+    cfg: CftcCotConfig, cal: FederalCalendar
+) -> None:
+    data = cfg.model_dump(by_alias=True)
+    del data["catch_up_expected_releases"]["value"][D("2019-01-15")]
+    with pytest.raises(SchemaError, match="sin fecha prevista"):
+        _avail(CftcCotConfig.model_validate(data), cal, "2019-01-15")
+
+
+def test_repository_config_is_approved() -> None:
+    c = load_cftc_cot_config(CONFIG_DIR)
+    assert c.api_created_at_margin_minutes.require("m") == 0
+    assert len(c.catch_up_expected_releases.require("e")) == 9
 
 
 def test_api_created_at_with_margin(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
@@ -206,9 +231,11 @@ def test_created_at_before_as_of_raises(cfg: CftcCotConfig, cal: FederalCalendar
         _avail(cfg, cal, "2024-03-05", created)
 
 
-def test_unapproved_params_block(cal: FederalCalendar) -> None:
+def test_unapproved_params_block(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    data = cfg.model_dump(by_alias=True)
+    data["api_created_at_margin_minutes"]["status"] = "proposed"
     with pytest.raises(UnverifiedValueError):
-        cot.release_rows([D("2018-11-27")], {}, cal, load_cftc_cot_config(CONFIG_DIR))
+        cot.release_rows([D("2018-11-27")], {}, cal, CftcCotConfig.model_validate(data))
 
 
 # ---------------------------------------------------------------- integración
@@ -278,7 +305,6 @@ def test_run_end_to_end(tmp_path: Path, cfg: CftcCotConfig) -> None:
         "rule_date": 1,
         "rule_date_unconfirmed_shift": 1,
     }
-    assert res.manifest["excluded_as_of"] == 0
 
 
 def test_monday_as_of_requires_tuesday_holiday(cfg: CftcCotConfig, cal: FederalCalendar) -> None:

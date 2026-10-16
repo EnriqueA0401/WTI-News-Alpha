@@ -355,7 +355,8 @@ class CftcCotConfig(_Strict):
     api_first_as_of: Param[date]
     api_created_at_margin_minutes: Param[Annotated[int, Strict(), Field(ge=0, le=240)]]
     verified_releases: Param[dict[date, date]]
-    excluded_as_of: Param[tuple[date, date]]
+    catch_up_window: Param[tuple[date, date]]
+    catch_up_expected_releases: Param[dict[date, date]]
 
 
 def load_cftc_cot_config(config_dir: Path = CONFIG_DIR) -> CftcCotConfig:

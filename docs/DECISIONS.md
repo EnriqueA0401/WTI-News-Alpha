@@ -292,3 +292,11 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
 - **COT (`cftc-cot-v1`, código listo, sin publicar):** dos parámetros de hora quedan en `proposed` hasta que decida el usuario:
   - margen sobre `created_at` de la API (desde oct-2022);
   - exclusión de la puesta al día de 2019 (as-of 2018-12-31 → 2019-02-26).
+
+## ADR-022 — Decisiones del usuario sobre la hora del COT (2026-10-16)
+- **Margen sobre `:created_at` de la API (as-of desde 2022-10-04):** **+0 min**. Se usa la hora exacta en que la CFTC subió la fila.
+  - Riesgo aceptado: el tiempo que tarda en propagarse un dato desde la API hasta el mercado. La propuesta era +5 min.
+- **Puesta al día tras el cierre de 2018-19** (as-of 2018-12-31 → 2019-02-26, 9 semanas): se usa **el calendario previsto** por la CFTC (PR 7864-19: uno el martes y otro el viernes desde el 2019-02-01) **+ 1 día hábil** (18:00 ET, R-PIT 2).
+  - Fechas previstas calculadas a mano en `config/cftc_cot.yaml`.
+  - Riesgo aceptado: si la CFTC se retrasó más que lo previsto, esas semanas estarían disponibles antes de tiempo. Se recomendaba excluirlas.
+- Ambos parámetros pasan a `approved`. `cftc-cot-v1` puede publicarse.
