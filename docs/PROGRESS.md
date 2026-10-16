@@ -1,5 +1,7 @@
 # Progreso
 
+> Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
+
 **Fase actual:** F1 terminada. Decisiones G0 tomadas (ADR-014). Precio: Darwinex. **G0 no se cierra hasta auditar los datos de Darwinex, y para eso hacen falta las credenciales del usuario.** Piloto GDELT GKG 2024–2025 terminado.
 
 ## Hecho
@@ -20,7 +22,8 @@
     - 9,0 GB en disco.
     - Re-ejecución: 731 días verificados sin red.
   - Evidencia D6: 2 de 68.493 ficheros se publicaron más de 15 min después de su nombre (máximo +35,7 min).
-- `make check` en verde (206 tests, cobertura de ramas 99 %).
+- D12: captura prospectiva (`ingestion/capture.py`, `wna capture run`, `.github/workflows/capture.yml`, ADR-016). Prueba real local OK. Hallazgo: GDELT anuncia GKG que aún dan 404.
+- `make check` en verde (234 tests, cobertura de ramas 99 %).
 
 ## Pendiente
 - Credenciales de Darwinex guardadas en la sesión (`~/.config/wna/secrets.env`, fuera del repo). **Bloqueo:** el FTP de Darwinex (tickdata.darwinex.com:21) no es accesible desde el entorno: el DNS resuelve, pero la conexión TCP agota el tiempo; el entorno solo deja salir HTTPS por el proxy. El acceso a la red del entorno ya es "Completo". Por el túnel del proxy (CONNECT) se abre la conexión, pero el servidor no completa el saludo FTP y la corta (3 intentos, 2026-10-16). Opción viable: el usuario descarga los ficheros en su ordenador y los sube.

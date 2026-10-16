@@ -1,0 +1,53 @@
+# Captura prospectiva de disponibilidad (D12, docs/plans/FASE_02_capture.md).
+# Cada 5 min registra cuándo aparecen ficheros GDELT, el WPSR de la EIA y el COT de la CFTC.
+# Las observaciones se guardan en la rama huérfana `capture-data` (append-only).
+# Para pararla: Actions → capture → "Disable workflow".
+name: capture
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: capture
+  cancel-in-progress: false
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Instalar dependencias
+        run: uv sync --locked --no-dev --python 3.12
+      - name: Preparar la rama capture-data
+        run: |
+          set -euo pipefail
+          git config --global user.name "wna-capture-bot"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin capture-data > /dev/null; then
+            git fetch --depth=1 origin capture-data
+            git worktree add -B capture-data capture-data FETCH_HEAD
+          else
+            git worktree add --orphan -b capture-data capture-data
+          fi
+      - name: Capturar
+        id: cap
+        continue-on-error: true
+        run: uv run --no-sync wna capture run --data-dir capture-data --run-id "${{ github.run_id }}" --commit "${{ github.sha }}"
+      - name: Guardar observaciones
+        if: always()
+        run: |
+          set -euo pipefail
+          cd capture-data
+          git add -A
+          if git diff --cached --quiet; then
+            echo "sin cambios"
+            exit 0
+          fi
+          git commit -q -m "capture: run ${{ github.run_id }}"
+          git push origin HEAD:capture-data
+      - name: Fallar si alguna fuente falló
+        if: steps.cap.outcome == 'failure'
+        run: exit 1

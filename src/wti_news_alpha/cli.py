@@ -5,11 +5,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
+import httpx
 import typer
 
 from wti_news_alpha.config import CONFIG_DIR, load_gdelt_config, load_project_config
 from wti_news_alpha.errors import PhaseNotImplementedError
-from wti_news_alpha.ingestion import gdelt_gkg
+from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
@@ -19,6 +20,30 @@ app.add_typer(sources_app, name="sources")
 ingest_app = typer.Typer(no_args_is_help=True, help="Ingesta de fuentes (F2)")
 app.add_typer(ingest_app, name="ingest")
 GDELT_INDEX_REL = "gdelt/index/masterfilelist_20261015.txt"
+capture_app = typer.Typer(no_args_is_help=True, help="Captura prospectiva (D12)")
+app.add_typer(capture_app, name="capture")
+
+
+@capture_app.command("run")
+def capture_run(
+    data_dir: Annotated[Path, typer.Option(help="Carpeta de observaciones (rama capture-data)")],
+    run_id: Annotated[str, typer.Option(help="Identificador de la ejecución")] = "local",
+    commit: Annotated[str | None, typer.Option(help="Versión de código (por defecto, git)")] = None,
+) -> None:
+    """Registra la primera aparición de datos GDELT, WPSR y COT (código 1 si falla una fuente)."""
+    with httpx.Client(timeout=60, headers={"User-Agent": capture.USER_AGENT}) as client:
+        result = capture.run_capture(
+            data_dir,
+            client,
+            now=lambda: datetime.now(tz=UTC),
+            commit=commit or current_commit(),
+            run_id=run_id,
+        )
+    typer.echo(f"nuevas observaciones: {result.n_new}")
+    for err in result.errors:
+        typer.echo(f"ERROR {err}")
+    if result.errors:
+        raise typer.Exit(code=1)
 
 
 @sources_app.command("check")

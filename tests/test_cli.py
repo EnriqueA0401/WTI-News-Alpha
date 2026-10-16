@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 from wti_news_alpha import cli
 from wti_news_alpha.config import SourceSpec
 from wti_news_alpha.errors import PhaseNotImplementedError
-from wti_news_alpha.ingestion import gdelt_gkg
+from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, ProbeResult
 
 runner = CliRunner()
@@ -75,3 +75,18 @@ def test_ingest_gdelt_gkg_ok(monkeypatch: pytest.MonkeyPatch) -> None:
     args = ["ingest", "gdelt-gkg", "--start", "2024-01-01", "--end", "2024-01-02"]
     result = runner.invoke(cli.app, args)
     assert result.exit_code == 0, result.output
+
+
+@pytest.mark.parametrize(("errors", "code"), [([], 0), (["gdelt: boom"], 1)])
+def test_capture_run_exit_code(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, errors: list[str], code: int
+) -> None:
+    def fake(*_: object, **__: object) -> capture.CaptureResult:
+        return capture.CaptureResult(n_new=2, errors=errors)
+
+    monkeypatch.setattr(cli.capture, "run_capture", fake)
+    result = runner.invoke(
+        cli.app, ["capture", "run", "--data-dir", str(tmp_path), "--commit", "abc"]
+    )
+    assert result.exit_code == code
+    assert "nuevas observaciones: 2" in result.output

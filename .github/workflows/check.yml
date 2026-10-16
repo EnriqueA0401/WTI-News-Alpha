@@ -1,6 +1,7 @@
 name: check
 on:
   push:
+    branches-ignore: [capture-data]
   pull_request:
 jobs:
   check:

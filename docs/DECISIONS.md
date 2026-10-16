@@ -143,3 +143,18 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - Yahoo (CL=F, serie continua) sí responde, pero sus términos de uso son dudosos → **requiere decisión del usuario** (CLAUDE.md §4).
   - Alternativa sin coste ni dudas: contrastar con el spot DCOILWTICO (FRED), que no es el futuro.
 - **Decisión del usuario:** contrastar solo hasta el 2024-04-05 con la EIA. Desde 2024-04-06 los datos de Darwinex quedan **sin contraste externo**; es una limitación declarada en los informes (parte del periodo principal 2020–2026).
+
+## ADR-016 — Captura prospectiva con GitHub Actions (aceptada: D12, usuario 2026-10-15)
+- **Decisión:** el workflow `capture` corre cada 5 min y registra la primera aparición de:
+  - ficheros GDELT: anunciado en `lastupdate.txt` y disponible de verdad;
+  - el WPSR de la EIA: semana de `table1.csv`, `Last-Modified` y ventana de publicación de la URL firmada de CloudFront;
+  - el COT de CL de la CFTC: `report_date` y `:created_at`.
+- Todo sin claves. Se guarda en la rama huérfana `capture-data` (append-only).
+- La disponibilidad real queda acotada por `(previous_check_utc, observed_at_utc]`.
+- **Hallazgo en la primera prueba (2026-10-16 00:30–00:45 UTC):** `lastupdate.txt` anunció los GKG de 00:30 y 00:45 mientras el fichero daba 404 (>5 min). Por eso se separan los eventos "anunciado" y "disponible".
+  - Consecuencia para F3/F4: la hora de anuncio no garantiza que el fichero exista.
+  - La disponibilidad histórica sigue la regla D6 (+15 min) y lo verifica esta captura.
+- **Riesgos:**
+  - el cron de GitHub se retrasa;
+  - GitHub desactiva los programados tras 60 días sin actividad;
+  - el repo es público, así que las observaciones también (solo metadatos de fuentes públicas).
