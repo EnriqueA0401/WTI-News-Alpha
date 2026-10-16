@@ -14,7 +14,7 @@ import pytest
 
 from test_federal_calendar import STATUTE as STATUTE_TEXT
 from wti_news_alpha.config import CONFIG_DIR, CftcCotConfig, load_cftc_cot_config
-from wti_news_alpha.errors import SchemaError, UnverifiedValueError
+from wti_news_alpha.errors import RawIntegrityError, SchemaError, UnverifiedValueError
 from wti_news_alpha.ingestion.rawstore import ManifestEntry, RawStore, _sha256
 from wti_news_alpha.normalization import cftc_cot as cot
 from wti_news_alpha.normalization.federal_calendar import FederalCalendar
@@ -284,3 +284,75 @@ def test_run_end_to_end(tmp_path: Path, cfg: CftcCotConfig) -> None:
 def test_monday_as_of_requires_tuesday_holiday(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
     with pytest.raises(SchemaError, match="lunes"):
         _avail(cfg, cal, "2018-11-26")
+
+
+def test_verified_release_not_after_as_of_raises(cfg: CftcCotConfig, cal: FederalCalendar) -> None:
+    data = cfg.model_dump(by_alias=True)
+    data["verified_releases"]["value"] = {"2018-11-27": "2018-11-27"}
+    with pytest.raises(SchemaError, match="no posterior"):
+        _avail(CftcCotConfig.model_validate(data), cal, "2018-11-27")
+
+
+def test_parse_created_at_ignores_other_rows() -> None:
+    rows = [
+        {
+            ":created_at": "2026-10-09T19:30:07Z",
+            "id": "261006067651C",
+            "report_date_as_yyyy_mm_dd": "2026-10-06T00:00:00.000",
+        },
+        {
+            ":created_at": "2026-10-09T19:30:07Z",
+            "id": "26100606765AF",
+            "report_date_as_yyyy_mm_dd": "2026-10-06T00:00:00.000",
+        },
+    ]
+    assert cot.parse_created_at(json.dumps(rows), "067651") == {}
+
+
+def _cfg_inputs(cfg: CftcCotConfig) -> CftcCotConfig:
+    data = cfg.model_dump(by_alias=True)
+    data["inputs"] = {
+        "zips_glob": "cftc/history/fut_disagg_txt_*.zip",
+        "socrata_systemfields": "cftc/socrata/sys.json",
+        "statute": "federal_calendar/usc.htm",
+        "closure_eos": "federal_calendar/eos.json",
+    }
+    return CftcCotConfig.model_validate(data)
+
+
+def test_run_without_zips_raises(tmp_path: Path, cfg: CftcCotConfig) -> None:
+    with pytest.raises(RawIntegrityError, match="no hay ficheros"):
+        cot.run_normalize(
+            raw_root=tmp_path,
+            out_root=tmp_path / "n",
+            manifest_dir=tmp_path / "m",
+            cfg=_cfg_inputs(cfg),
+            commit="abc",
+        )
+
+
+def test_run_duplicate_as_of_across_zips_raises(tmp_path: Path, cfg: CftcCotConfig) -> None:
+    store = RawStore(tmp_path / "raw", tmp_path / "manifests", "c")
+    for y in ("2018", "2019"):
+        _write_raw(
+            store,
+            "cftc",
+            f"cftc/history/fut_disagg_txt_{y}.zip",
+            _zip(_txt([("2018-11-27", "067651")])),
+        )
+    _write_raw(store, "cftc", "cftc/socrata/sys.json", b"[]")
+    _write_raw(store, "federal_calendar", "federal_calendar/usc.htm", STATUTE_TEXT.encode())
+    _write_raw(
+        store,
+        "federal_calendar",
+        "federal_calendar/eos.json",
+        json.dumps({"count": 0, "results": []}).encode(),
+    )
+    with pytest.raises(SchemaError, match="repetidos"):
+        cot.run_normalize(
+            raw_root=tmp_path / "raw",
+            out_root=tmp_path / "n",
+            manifest_dir=tmp_path / "manifests",
+            cfg=_cfg_inputs(cfg),
+            commit="abc",
+        )

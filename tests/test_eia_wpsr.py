@@ -4,11 +4,13 @@ HTML/JSON SINTÉTICOS con el formato de las fuentes; fechas reales donde se cita
 """
 
 import json
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import polars as pl
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from wti_news_alpha.config import CONFIG_DIR, EiaWpsrConfig, load_eia_wpsr_config
 from wti_news_alpha.errors import RawIntegrityError, SchemaError
@@ -256,7 +258,8 @@ def test_wednesday_with_long_lag_is_not_standard(cfg: EiaWpsrConfig) -> None:
     # Miércoles con retraso de 12 días (semana sin publicación propia) y la semana nueva con 5.
     assign = {D("2022-06-17"): D("2022-06-29"), D("2022-06-24"): D("2022-06-29")}
     got = _times(cfg, assign, {D("2022-06-29")})
-    assert got[D("2022-06-29")][1] == "d8_standard"
+    # Revisión adversarial (hallazgo 2): publicación compartida = semana desplazada → R-PIT.
+    assert got[D("2022-06-29")][1] == "rpit_date_verified"
     # Si la única semana tiene retraso 12 (miércoles) → no es calendario normal.
     got2 = _times(cfg, {D("2022-06-17"): D("2022-06-29")}, {D("2022-06-29")})
     assert got2[D("2022-06-29")][1] == "rpit_date_verified"
@@ -466,5 +469,117 @@ def test_values_table_available_before_week_raises(cfg: EiaWpsrConfig) -> None:
     releases = w.release_table(assign, {D("2016-10-05")}, [], cfg).with_columns(
         available_at=pl.lit(datetime(2016, 9, 1, tzinfo=UTC)).cast(pl.Datetime("us", "UTC"))
     )
-    with pytest.raises(SchemaError, match="antes del cierre"):
+    with pytest.raises(SchemaError, match="antes de su publicación"):
         w.values_table(series, assign, releases, cfg)
+
+
+# ---------------------------------------------------------------- revisión adversarial (v2)
+
+REAL = Path(__file__).resolve().parents[1] / "data" / "raw" / "eia" / "web"
+
+
+def test_schedule_irregular_rows_parsed() -> None:
+    # Fila con <td class="message-updated"> y filas <tr> sin clase (formato real).
+    html = (
+        '<table class="basic-table schedule"><thead><tr><th scope="col">h</th></tr></thead><tbody>'
+        '<tr class="past-holiday"><th scope="row">December 19, 2025</th>'
+        '<td class="message-updated">December 29, 2025</td><td>Monday</td><td>5:00 p.m.</td>'
+        "<td>Christmas</td></tr>"
+        '<tr><th scope="row">October 9, 2026</th><td>October 15, 2026</td><td>Thursday</td>'
+        "<td>12:00 p.m.</td><td>Columbus Day</td></tr></tbody></table>"
+    )
+    out = w.parse_schedule_exceptions(html)
+    assert [e.release_date for e in out] == [D("2025-12-29"), D("2026-10-15")]
+    assert out[0].release_time_et == time(17, 0)
+
+
+def test_schedule_unparsed_row_raises() -> None:
+    html = _schedule(("December 27, 2024", "January 2, 2025", "Thursday", "11:00 a.m."))
+    html += '<p><th scope="row">stray</th></p>'
+    with pytest.raises(SchemaError, match="cabeceras"):
+        w.parse_schedule_exceptions(html)
+
+
+def test_schedule_row_with_missing_cell_raises() -> None:
+    html = (
+        '<table class="schedule"><tbody><tr><th scope="row">December 27, 2024</th>'
+        "<td>January 2, 2025</td><td>Thursday</td><td>11:00 a.m.</td></tr></tbody></table>"
+    )
+    with pytest.raises(SchemaError, match="celdas"):
+        w.parse_schedule_exceptions(html)
+
+
+@pytest.mark.parametrize("t", ["13:00 p.m.", "0:00 a.m.", "11:60 a.m."])
+def test_schedule_time_out_of_range_raises(t: str) -> None:
+    with pytest.raises(SchemaError, match="fuera de rango"):
+        w.parse_schedule_exceptions(
+            _schedule(("December 27, 2024", "January 2, 2025", "Thursday", t))
+        )
+
+
+@pytest.mark.skipif(
+    not (REAL / "wpsr_schedule_2026-10-15.html").exists(), reason="raw no disponible"
+)
+def test_real_schedule_has_14_exceptions() -> None:
+    out = w.parse_schedule_exceptions(
+        (REAL / "wpsr_schedule_2026-10-15.html").read_text(encoding="utf-8")
+    )
+    assert len(out) == 14
+    assert w.ScheduleException(D("2025-12-19"), D("2025-12-29"), time(17, 0)) in out
+
+
+def test_duplicate_exceptions_raise(cfg: EiaWpsrConfig) -> None:
+    with pytest.raises(SchemaError, match="duplicadas"):
+        w.release_table({D("2024-12-27"): D("2025-01-02")}, {D("2025-01-02")}, EXC + EXC, cfg)
+
+
+def test_wednesday_exception_overrides_d8(cfg: EiaWpsrConfig) -> None:
+    exc = [w.ScheduleException(D("2025-11-21"), D("2025-11-26"), time(12, 0))]
+    df = w.release_table({D("2025-11-21"): D("2025-11-26")}, {D("2025-11-26")}, exc, cfg)
+    row = df.row(0, named=True)
+    assert row["time_status"] == "official_exception"
+    assert row["available_at"] == datetime(2025, 11, 26, 17, 0, tzinfo=UTC)
+
+
+def test_page_release_date_mismatch_raises() -> None:
+    html = "<b>Release Date:</b>&nbsp; January 8, 2015 | week ending January 2, 2015"
+    with pytest.raises(SchemaError, match="Release Date"):
+        w.validate_against_pages({D("2015-01-02"): D("2015-01-07")}, {D("2015-01-07"): html})
+    ok = "<b>Release Date:</b>&nbsp; January 7, 2015 | week ending January 2, 2015"
+    assert w.validate_against_pages({D("2015-01-02"): D("2015-01-07")}, {D("2015-01-07"): ok}) == {
+        "checked": 1,
+        "without_week_ending": 0,
+    }
+
+
+def test_index_year_mismatch_raises() -> None:
+    html = '<a href="/petroleum/supply/weekly/archive/2016/2015_01_07/wpsr.php">x</a>'
+    with pytest.raises(SchemaError, match="año"):
+        w.parse_archive_index(html)
+
+
+def test_values_released_too_early_raises(cfg: EiaWpsrConfig) -> None:
+    series = pl.DataFrame(
+        {"series_id": ["X"], "week_ending": [D("2016-09-30")], "value": [1.0], "units": ["MBBL"]}
+    )
+    assign = {D("2016-09-30"): D("2016-10-03")}  # retraso 3 < 5
+    releases = w.release_table(assign, {D("2016-10-03")}, [], cfg)
+    with pytest.raises(SchemaError, match="antes de su publicación"):
+        w.values_table(series, assign, releases, cfg)
+
+
+@settings(max_examples=200, deadline=None)
+@given(
+    st.lists(st.integers(0, 3), min_size=2, max_size=40),
+    st.dates(min_value=D("2015-01-02"), max_value=D("2025-01-03")),
+)
+def test_property_assignment(extra_delays: list[int], start: date) -> None:
+    # Semanas consecutivas (viernes) y una publicación por semana con retraso 5..8 días,
+    # creciente para no adelantar a la siguiente: la asignación debe recuperar cada par.
+    first_friday = start + timedelta(days=(4 - start.weekday()) % 7)
+    weeks = [first_friday + timedelta(weeks=i) for i in range(len(extra_delays))]
+    releases = [wk + timedelta(days=5 + d) for wk, d in zip(weeks, extra_delays, strict=True)]
+    got = w.assign_first_release(weeks, releases, min_lag=5, max_lag=12, shared=set())
+    assert got == dict(zip(weeks, releases, strict=True))
+    assert all(r >= wk + timedelta(days=5) for wk, r in got.items())
+    assert list(got.values()) == sorted(got.values())

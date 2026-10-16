@@ -1,5 +1,7 @@
 # Calendario y valores WPSR point-in-time (docs/plans/FASE_02_fundamentales.md §A).
-version: eia-wpsr-v1
+# v1 (2026-10-16) se conserva; v2 corrige la revisión adversarial (ADR-020 bis):
+# parser HTML de excepciones, publicaciones compartidas a R-PIT, validaciones.
+version: eia-wpsr-v2
 inputs:
   archive_index: "eia/web/wpsr_archive_index_2026-10-15.html"
   fred_release_dates: "fred/api/release_212/dates_2015.json"

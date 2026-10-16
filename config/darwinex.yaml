@@ -3,7 +3,8 @@
 # approved: el usuario los aceptó al aprobar G0 (ADR-019).
 # v1 (2026-10-16) queda publicada con el manifiesto antiguo; v2 = mismo cálculo con
 # validaciones de la revisión adversarial y manifiesto con parámetros (ADR-020).
-version: dwx-xti-m1-v2
+# v3: mismo cálculo; manifiesto con hash del código (publicador común).
+version: dwx-xti-m1-v3
 input:
   rel_path: "darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv"
   sha256: ab0ede34a6d63b5075a506813490dce646531f6b65fef945367075a468e668aa

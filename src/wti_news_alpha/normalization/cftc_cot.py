@@ -16,6 +16,7 @@ Invariantes (``available_at`` en UTC):
 
 import io
 import json
+import sys
 import zipfile
 from collections import Counter
 from collections.abc import Sequence
@@ -25,15 +26,22 @@ from typing import Any
 
 import polars as pl
 
+from wti_news_alpha import timeutils
 from wti_news_alpha.config import CftcCotConfig
 from wti_news_alpha.errors import RawIntegrityError, SchemaError
 from wti_news_alpha.ingestion.rawstore import RawStore
+from wti_news_alpha.normalization import federal_calendar
 from wti_news_alpha.normalization.federal_calendar import (
     FederalCalendar,
     check_statute,
     parse_closure_eos,
 )
-from wti_news_alpha.normalization.store import LayerSpec, Published, publish_or_verify
+from wti_news_alpha.normalization.store import (
+    LayerSpec,
+    Published,
+    code_hashes,
+    publish_or_verify,
+)
 from wti_news_alpha.timeutils import NEW_YORK, ny_wall_to_utc, require_utc_column
 
 SOURCE = "cftc_cot"
@@ -170,7 +178,11 @@ def release_rows(
             "time_status": pl.Utf8(),
         }
     )
-    return pl.DataFrame(rows, schema=schema)
+    out = pl.DataFrame(rows, schema=schema)
+    bad = out.filter(pl.col("release_date") <= pl.col("as_of_date"))
+    if bad.height:
+        raise SchemaError(f"publicación no posterior al as-of: {bad['as_of_date'].to_list()[:3]}")
+    return out
 
 
 # ---------------------------------------------------------------- ejecución
@@ -202,8 +214,6 @@ def _build(
         .sort("as_of_date")
     )
     require_utc_column(out, "available_at")
-    if out.filter(pl.col("release_date") <= pl.col("as_of_date")).height:
-        raise SchemaError("publicación no posterior al as-of")
     extra = {
         "n_rows": out.height,
         "excluded_as_of": n0 - out.height,
@@ -238,5 +248,10 @@ def run_normalize(
     spec = LayerSpec(out_root, manifest_dir, SOURCE, cfg.version)
     params = cfg.model_dump(mode="json", by_alias=True, exclude={"version"})
     return publish_or_verify(
-        spec, hashes, params, lambda: _build(zips, sys_text, statute, eos, cfg), commit=commit
+        spec,
+        hashes,
+        params,
+        lambda: _build(zips, sys_text, statute, eos, cfg),
+        commit=commit,
+        code=code_hashes(sys.modules[__name__], federal_calendar, timeutils),
     )

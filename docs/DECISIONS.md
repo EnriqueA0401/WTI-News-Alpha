@@ -262,3 +262,33 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
 - **Consecuencias:**
   - Las publicaciones desplazadas de 2015–2024 pierden la reacción intradía (18:00 ET), como ya se aceptó en D9.
   - Todo valor WPSR lleva `revision_risk` (D7). WCESTUS1 antes de 2016-10-07 lleva además `known_redefinition`.
+
+## ADR-021 — Revisión adversarial del WPSR y calendario federal para el COT (2026-10-16)
+- **Revisión adversarial del WPSR (`eia-wpsr-v1`):** 10 hallazgos, sin fugas en la salida publicada. Corregidos en `eia-wpsr-v2`; la v1 se conserva.
+  1. **(alto)** El parser de la tabla de excepciones perdía 3 de 14 filas: una celda con clase y dos filas `<tr>` sin clase. Ahora se usa un parser HTML y falla si el número de filas no coincide con las cabeceras.
+     - La publicación del lunes 2025-12-29 pasa de 18:00 (R-PIT) a 17:00 ET (oficial).
+  2. **(alto)** Las 2 publicaciones compartidas (2022-06-29 y 2023-11-15) recibían 10:30 ET. Incluyen una semana desplazada, así que ahora van a R-PIT (18:00 ET). Aplica D8: "festivos y desplazados → R-PIT".
+     - Por eso "miércoles normal" exige una sola semana con retraso de 5 días (corrige ADR-020 §2).
+  3. El publicador guarda el hash del código de transformación. Cambiar el código sin cambiar la versión → error.
+     - Si el manifiesto existe sin directorio, se reconstruye y solo se publica si reproduce los hashes.
+     - Campos extra reservados → error.
+  4. Tests de propiedades (hypothesis) de la asignación semana → publicación, más un test con el calendario real (14 excepciones).
+  5. Guardia anti-leakage más fuerte:
+     - `release_date ≥ semana + 5 días`;
+     - `available_at` (fecha NY) ≥ `release_date`.
+  6. Validaciones de entrada:
+     - hora de 12 h en rango;
+     - excepciones duplicadas → error;
+     - "Release Date" de cada página comparada con su fecha;
+     - año de la carpeta del índice coherente.
+  7. El manifiesto cuenta las filas descartadas por serie y motivo.
+  - Por el punto 3 (código en el manifiesto) el precio pasa a `dwx-xti-m1-v3`, con el mismo cálculo.
+- **Calendario federal** (`normalization/federal_calendar.py`):
+  - festivos de 5 U.S.C. 6103, contrastados con el texto oficial (govinfo);
+  - cierres por orden ejecutiva del Federal Register 2014–2025 (9 órdenes).
+  - Hay 4 cierres que la regla de F1 no tenía: 24-dic de 2018, 2019 y 2024, y 24/26-dic-2025. En F1 adelantaban fechas (dirección de leakage).
+  - Domingo → lunes y el medio día de 2015-12-24 cuentan como no hábiles (conservador).
+  - Incluye Inauguration Day (área de Washington, sede de CFTC y EIA).
+- **COT (`cftc-cot-v1`, código listo, sin publicar):** dos parámetros de hora quedan en `proposed` hasta que decida el usuario:
+  - margen sobre `created_at` de la API (desde oct-2022);
+  - exclusión de la puesta al día de 2019 (as-of 2018-12-31 → 2019-02-26).

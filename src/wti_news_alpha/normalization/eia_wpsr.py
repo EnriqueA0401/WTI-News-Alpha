@@ -19,30 +19,35 @@ Invariantes:
 
 import json
 import re
+import sys
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
 import polars as pl
 
+from wti_news_alpha import timeutils
 from wti_news_alpha.config import EiaWpsrConfig
 from wti_news_alpha.errors import RawIntegrityError, SchemaError
 from wti_news_alpha.ingestion.rawstore import RawStore
-from wti_news_alpha.normalization.store import LayerSpec, Published, publish_or_verify
+from wti_news_alpha.normalization.store import (
+    LayerSpec,
+    Published,
+    code_hashes,
+    publish_or_verify,
+)
 from wti_news_alpha.timeutils import ny_wall_to_utc, require_utc_column
 
 SOURCE = "eia_wpsr"
 _FRIDAY, _WEDNESDAY = 4, 2
-_INDEX_RE = re.compile(r"/petroleum/supply/weekly/archive/\d{4}/(\d{4})_(\d{2})_(\d{2})/")
-_ROW_RE = re.compile(
-    r'<tr class="[^"]*">\s*<th scope="row">([^<]+)</th>\s*<td>([^<]+)</td>\s*'
-    r"<td>([^<]+)</td>\s*<td>([^<]+)</td>",
-)
+_INDEX_RE = re.compile(r"/petroleum/supply/weekly/archive/(\d{4})/(\d{4})_(\d{2})_(\d{2})/")
 _TIME_RE = re.compile(r"^(\d{1,2}):(\d{2})\s*([ap])\.m\.$")
 _WEEK_ENDING_RE = re.compile(r"week ending ([A-Z][a-z]+ \d{1,2}, \d{4})")
+_RELEASE_DATE_RE = re.compile(r"Release Date: ([A-Z][a-z]+ \d{1,2}, \d{4})")
 _DATE_FMT = "%B %d, %Y"
 _UTC = pl.Datetime("us", "UTC")
 
@@ -52,7 +57,11 @@ _UTC = pl.Datetime("us", "UTC")
 
 def parse_archive_index(html: str) -> list[date]:
     """Fechas de publicación (carpetas ``archive/YYYY/YYYY_MM_DD/``), ordenadas y únicas."""
-    days = sorted({date(int(y), int(m), int(d)) for y, m, d in _INDEX_RE.findall(html)})
+    found = _INDEX_RE.findall(html)
+    bad = [f for f in found if f[0] != f[1]]
+    if bad:
+        raise SchemaError(f"índice WPSR: año de carpeta incoherente {bad[:3]}")
+    days = sorted({date(int(y), int(m), int(d)) for _, y, m, d in found})
     if not days:
         raise SchemaError("índice del archivo WPSR sin publicaciones")
     return days
@@ -85,14 +94,65 @@ def _parse_12h(text: str) -> time:
     m = _TIME_RE.match(text.strip())
     if not m:
         raise SchemaError(f"hora ilegible en el calendario: {text!r}")
-    hour = int(m.group(1)) % 12 + (12 if m.group(3) == "p" else 0)
-    return time(hour, int(m.group(2)))
+    h12, minute = int(m.group(1)), int(m.group(2))
+    if not 1 <= h12 <= 12 or minute > 59:
+        raise SchemaError(f"hora fuera de rango en el calendario: {text!r}")
+    return time(h12 % 12 + (12 if m.group(3) == "p" else 0), minute)
+
+
+class _TableRows(HTMLParser):
+    """Filas (texto de cada celda) del ``<tbody>`` de la tabla ``schedule``."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.rows: list[list[str]] = []
+        self.n_row_headers = 0
+        self._in_table = self._in_body = False
+        self._cell: list[str] | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        a = dict(attrs)
+        if tag == "table" and "schedule" in (a.get("class") or "").split():
+            self._in_table = True
+        elif self._in_table and tag == "tbody":
+            self._in_body = True
+        elif self._in_body and tag == "tr":
+            self.rows.append([])
+        elif self._in_body and tag in {"td", "th"}:
+            self.n_row_headers += tag == "th" and a.get("scope") == "row"
+            self._cell = []
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"td", "th"} and self._cell is not None and self.rows:
+            self.rows[-1].append(" ".join("".join(self._cell).split()))
+            self._cell = None
+        elif tag == "tbody":
+            self._in_body = False
+        elif tag == "table":
+            self._in_table = False
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell.append(data)
 
 
 def parse_schedule_exceptions(html: str) -> list[ScheduleException]:
-    """Tabla oficial de excepciones (semana, fecha alternativa, día, hora ET)."""
+    """Tabla oficial de excepciones (semana, fecha alternativa, día, hora ET).
+
+    Toda fila del ``<tbody>`` debe parsearse (5 celdas); si no, ``SchemaError``.
+    """
+    parser = _TableRows()
+    parser.feed(html)
+    rows = [r for r in parser.rows if r]
+    if len(rows) != parser.n_row_headers or html.count('scope="row"') != len(rows):
+        raise SchemaError(
+            f"calendario WPSR: {len(rows)} filas vs {html.count('scope="row"')} cabeceras de fila"
+        )
     out = []
-    for we, rd, day, t in _ROW_RE.findall(html):
+    for cells in rows:
+        if len(cells) != 5:
+            raise SchemaError(f"fila del calendario con {len(cells)} celdas: {cells}")
+        we, rd, day, t, _holiday = cells
         ex = ScheduleException(_parse_long_date(we), _parse_long_date(rd), _parse_12h(t))
         if ex.release_date.strftime("%A") != day.strip():
             raise SchemaError(f"día de la semana incoherente en el calendario: {rd} {day}")
@@ -105,6 +165,13 @@ def parse_schedule_exceptions(html: str) -> list[ScheduleException]:
 def parse_week_ending_page(html: str) -> date | None:
     """'week ending <fecha>' de una página del archivo, o ``None`` si no aparece."""
     m = _WEEK_ENDING_RE.search(html)
+    return _parse_long_date(m.group(1)) if m else None
+
+
+def parse_release_date_page(html: str) -> date | None:
+    """'Release Date: <fecha>' de una página del archivo, o ``None`` si no aparece."""
+    text = " ".join(re.sub(r"<[^>]+>", " ", html).replace("&nbsp;", " ").split())
+    m = _RELEASE_DATE_RE.search(text)
     return _parse_long_date(m.group(1)) if m else None
 
 
@@ -209,18 +276,22 @@ def release_table(
     by_release: dict[date, list[date]] = {}
     for w, r in assign.items():
         by_release.setdefault(r, []).append(w)
+    dup = [d for d, n in Counter(e.release_date for e in exceptions).items() if n > 1]
+    if dup:
+        raise SchemaError(f"excepciones oficiales duplicadas para {dup}")
     exc = {e.release_date: e for e in exceptions}
     rows: list[dict[str, Any]] = []
     for r in sorted(by_release):
         weeks = by_release[r]
         lag = min((r - w).days for w in weeks)
+        max_lag = max((r - w).days for w in weeks)
         if r in exc:
             if exc[r].week_ending not in weeks:
                 raise SchemaError(f"excepción oficial {r}: semana {exc[r].week_ending} ∉ {weeks}")
             avail, status = ny_wall_to_utc(r, exc[r].release_time_et), "official_exception"
         elif r not in fred_dates:
             avail, status = ny_wall_to_utc(_next_weekday(r), rpit), "rpit_date_unverified"
-        elif r.weekday() == _WEDNESDAY and lag == min_lag:
+        elif r.weekday() == _WEDNESDAY and max_lag == min_lag:  # una sola semana, calendario normal
             avail, status = ny_wall_to_utc(r, standard), "d8_standard"
         else:
             avail, status = ny_wall_to_utc(r, rpit), "rpit_date_verified"
@@ -251,6 +322,9 @@ def validate_against_pages(
     """Comprueba la asignación con las páginas del archivo (fecha de publicación → HTML)."""
     checked = without = 0
     for rd, html in sorted(pages.items()):
+        stated = parse_release_date_page(html)
+        if stated is not None and stated != rd:
+            raise SchemaError(f"página {rd}: 'Release Date' dice {stated}")
         we = parse_week_ending_page(html)
         if we is None:
             without += 1
@@ -288,8 +362,14 @@ def values_table(
         & (pl.col("week_ending") < redef.before_week_ending),
     ).sort("series_id", "week_ending")
     require_utc_column(out, "available_at")
-    if out.filter(pl.col("available_at").dt.date() < pl.col("week_ending")).height:
-        raise SchemaError("valor disponible antes del cierre de su semana")
+    min_lag = cfg.min_lag_days.require("min_lag_days")
+    ny_date = pl.col("available_at").dt.convert_time_zone("America/New_York").dt.date()
+    early = out.filter(
+        (pl.col("release_date") < pl.col("week_ending") + timedelta(days=min_lag))
+        | (ny_date < pl.col("release_date"))
+    )
+    if early.height:
+        raise SchemaError(f"{early.height} valores disponibles antes de su publicación")
     return out
 
 
@@ -367,9 +447,20 @@ def _build(inp: _Inputs, cfg: EiaWpsrConfig) -> tuple[dict[str, pl.DataFrame], d
         raise SchemaError(f"excepciones oficiales que no están en el índice: {missing_exc}")
 
     rel_df = release_table(assign, fred, in_index, cfg)
-    values = values_table(
-        series.filter(pl.col("week_ending").is_in(list(assign))), assign, rel_df, cfg
+    in_window = pl.col("week_ending").is_in(list(assign))
+    kept = series.filter(in_window)
+    dropped_rows = (
+        series.filter(~in_window)
+        .with_columns(
+            reason=pl.when(pl.col("week_ending") > hi)
+            .then(pl.lit("after_last_release"))
+            .otherwise(pl.lit("before_window"))
+        )
+        .group_by("series_id", "reason")
+        .len()
+        .sort("series_id", "reason")
     )
+    values = values_table(kept, assign, rel_df, cfg)
     extra = {
         "n_releases": rel_df.height,
         "n_values": values.height,
@@ -378,6 +469,9 @@ def _build(inp: _Inputs, cfg: EiaWpsrConfig) -> tuple[dict[str, pl.DataFrame], d
             # semanas del tramo previo (desde ``lo``) publicadas antes de la ventana
             "before_window": sum(1 for r in assign_all.values() if r < first),
             "after_last_release": len(after),
+        },
+        "dropped_rows_by_series": {
+            f"{sid}|{reason}": int(n) for sid, reason, n in dropped_rows.iter_rows()
         },
         "pages": pages_stats,
         "first_release": str(min(window_releases)),
@@ -394,4 +488,11 @@ def run_normalize(
     inp = _load_inputs(store, cfg)
     spec = LayerSpec(out_root, manifest_dir, SOURCE, cfg.version)
     params = cfg.model_dump(mode="json", by_alias=True, exclude={"version"})
-    return publish_or_verify(spec, inp.hashes, params, lambda: _build(inp, cfg), commit=commit)
+    return publish_or_verify(
+        spec,
+        inp.hashes,
+        params,
+        lambda: _build(inp, cfg),
+        commit=commit,
+        code=code_hashes(sys.modules[__name__], timeutils),
+    )

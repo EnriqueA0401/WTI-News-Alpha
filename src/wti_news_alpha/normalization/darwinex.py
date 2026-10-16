@@ -16,6 +16,7 @@ Invariantes:
 
 import hashlib
 import io
+import sys
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
@@ -25,9 +26,10 @@ import pandera.errors as pa_errors
 import pandera.polars as pa
 import polars as pl
 
+from wti_news_alpha import timeutils
 from wti_news_alpha.config import DarwinexConfig
 from wti_news_alpha.errors import CalendarError, RawIntegrityError, SchemaError
-from wti_news_alpha.normalization.store import LayerSpec, publish_or_verify
+from wti_news_alpha.normalization.store import LayerSpec, code_hashes, publish_or_verify
 from wti_news_alpha.timeutils import require_utc_column
 
 SOURCE = "darwinex_xti_m1"
@@ -303,7 +305,12 @@ def run_normalize(
         return frames, extra
 
     pub = publish_or_verify(
-        spec, {cfg.input.rel_path: cfg.input.sha256}, params, build, commit=commit
+        spec,
+        {cfg.input.rel_path: cfg.input.sha256},
+        params,
+        build,
+        commit=commit,
+        code=code_hashes(sys.modules[__name__], timeutils),
     )
     man = pub.manifest
     stats = DropStats(rows_in=man["rows_in"], rows_out=man["rows_out"], dropped=man["dropped"])
