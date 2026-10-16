@@ -1,0 +1,169 @@
+{
+  "source": "fred_alfred",
+  "version": "fred-alfred-v2",
+  "by_series": {
+    "DGS10": {
+      "n_rows": 3340,
+      "n_obs": 3337,
+      "n_null": 140,
+      "n_clipped": 260,
+      "n_vintage_before_obs": 0,
+      "n_floored_by_schedule": 3
+    },
+    "DGS2": {
+      "n_rows": 3338,
+      "n_obs": 3337,
+      "n_null": 140,
+      "n_clipped": 260,
+      "n_vintage_before_obs": 0,
+      "n_floored_by_schedule": 3
+    },
+    "DTWEXBGS": {
+      "n_rows": 15717,
+      "n_obs": 3333,
+      "n_null": 152,
+      "n_clipped": 0,
+      "n_vintage_before_obs": 0,
+      "n_floored_by_schedule": 0
+    },
+    "T10YIE": {
+      "n_rows": 3339,
+      "n_obs": 3337,
+      "n_null": 139,
+      "n_clipped": 260,
+      "n_vintage_before_obs": 0,
+      "n_floored_by_schedule": 1820
+    },
+    "VIXCLS": {
+      "n_rows": 3343,
+      "n_obs": 3337,
+      "n_null": 90,
+      "n_clipped": 261,
+      "n_vintage_before_obs": 32,
+      "n_floored_by_schedule": 32
+    }
+  },
+  "n_rows": 29077,
+  "hidden_same_instant_vintages": 0,
+  "inputs": {
+    "federal_calendar/fr_closing_eos_2014plus_20261016.json": "de6e4dc7a23c525e380559737fa262b04fc5ffbe0a3e7bc522eb4d7cca00be7e",
+    "federal_calendar/usc5_6103_2023.htm": "0c3ef0793a5a8106354d3d3f3d4dc0e9aa9de7803325d01ca95048ff9c4cd806",
+    "fred/api/DGS10/vintages_rt2015_20261016.json": "21fa1e292e4d9bb891aa274e6e0d1801a7f0b6144d4c8709a0ed55a7084744e5",
+    "fred/api/DGS10/vintages_rt2016_20261016.json": "eb9d1a964f8ee9381bc299525f66e6f4e68553d3b1c4326ef996bdcbeb564bf7",
+    "fred/api/DGS10/vintages_rt2017_20261016.json": "f07be7e6a5ddbbce00eeb4e220d3009494565e2f00a5872df7220ccd2723db7c",
+    "fred/api/DGS10/vintages_rt2018_20261016.json": "c9479e2d1df485b161b4d9eb16b966fe83cdf2a44b9ca5997695899690e8f4ce",
+    "fred/api/DGS10/vintages_rt2019_20261016.json": "ebfe8744f03ab028d388f10ab486507a16802941775cdb9ad7cea1af908db935",
+    "fred/api/DGS10/vintages_rt2020_20261016.json": "00a6efdec630c05e86c4991f3bf0a197d5844021a13105fbbbbda5f91705d6fa",
+    "fred/api/DGS10/vintages_rt2021_20261016.json": "8ce735c35db3b2c110d55186401cb7649b190c9413190846636b593cfdb52aca",
+    "fred/api/DGS10/vintages_rt2022_20261016.json": "5e3f0b01777d3a135d0105c99398e3e33fbbbbaad863bf83fa3af938df75c06f",
+    "fred/api/DGS10/vintages_rt2023_20261016.json": "ed2c308e972d8126b63f982c5d437440b7777982b8094c506de7e4a256f47fc3",
+    "fred/api/DGS10/vintages_rt2024_20261016.json": "4bc3c83c3ace7c5c04d34a7ee98ae354a3ea9040323c22a05547fa0db892d72e",
+    "fred/api/DGS10/vintages_rt2025_20261016.json": "0d817ac9b97d947a422676b3b21f29e600075c7af6a74f6d3b05c822f909f23a",
+    "fred/api/DGS10/vintages_rt2026_20261016.json": "0eaf9f6b50f60e14c1af6a859510499568ee91c263bd13732d91124353ff2acf",
+    "fred/api/DGS2/vintages_rt2015_20261016.json": "928fcaef250e2e4a0e99d681f7ba56c2306c884cae9ba6377730605eea14ef59",
+    "fred/api/DGS2/vintages_rt2016_20261016.json": "710197ec7a56a18a2a7230d28a8f194fbf9837a4bb40f7d76ca2b24d6ef82d64",
+    "fred/api/DGS2/vintages_rt2017_20261016.json": "0312f850925c03dece8633858704c4ac4c1c6436f0c0f76aa1a1d98496a7b3fe",
+    "fred/api/DGS2/vintages_rt2018_20261016.json": "769777eefeee464f2ae374455b30a2ae9c77c9ec089301f82b5a301a332e16af",
+    "fred/api/DGS2/vintages_rt2019_20261016.json": "576805a8c766769682209c2e5650cd81d11cd7dde6b6756b2d7865fb61844755",
+    "fred/api/DGS2/vintages_rt2020_20261016.json": "a374379a0c5f2f32353ff4b3968f2353d0dcb0c9b4a4763341b428d677d867e8",
+    "fred/api/DGS2/vintages_rt2021_20261016.json": "cd4e7525ba4f2284f71d77e3c096aa0a13bca7c7aa2564629a604f2d79f5e41a",
+    "fred/api/DGS2/vintages_rt2022_20261016.json": "0d6990c1df3c7e06b994d345ab5a67ea6df55e3b2ff6276197c4b531cf6e2b02",
+    "fred/api/DGS2/vintages_rt2023_20261016.json": "155d3b32cad00405c1585c0b9e78360f175074b3f7753d9175f0a016ea7ec339",
+    "fred/api/DGS2/vintages_rt2024_20261016.json": "0aa37afff989577add31d4513edc1be6b307e366fe13f9399b29070813deef03",
+    "fred/api/DGS2/vintages_rt2025_20261016.json": "c30d6d617ef9a1aea2874fe2422fa27f73cc9256647163cb91ef51b51cc4c67a",
+    "fred/api/DGS2/vintages_rt2026_20261016.json": "caca8c8f633fd33c62313b1098a7fb47aeda6a7bcf553caacf4be38d843439c1",
+    "fred/api/DTWEXBGS/vintages_rt2019_20261016.json": "74484ba532367cec658d465edca73c8b2f5c0d5afe8983c9135654a4cef6c2db",
+    "fred/api/DTWEXBGS/vintages_rt2020_20261016.json": "2ebb4c78cfa76e989419f9c69be257077fafc2bb9e0abe660ddf8c16e1f2894a",
+    "fred/api/DTWEXBGS/vintages_rt2021_20261016.json": "477f6b013d98a4108f6a8f94858073e8262146d0cf542b17a81c5f58839bfe60",
+    "fred/api/DTWEXBGS/vintages_rt2022_20261016.json": "8db5d101005b8c4d7875841a682751212b031af01ad6191edfb377291ca40773",
+    "fred/api/DTWEXBGS/vintages_rt2023_20261016.json": "621fe87c125e68aab42585fbf865194a40b968bff3d02fa959c83a1148a50ed0",
+    "fred/api/DTWEXBGS/vintages_rt2024_20261016.json": "15a4d5fa8f599b587ed3fef3fec683e25c4150f86c02db0c79f90f3c0b9c66d1",
+    "fred/api/DTWEXBGS/vintages_rt2025_20261016.json": "06e3c905517b1e2f655a7c89cb0ad0bab0a13f281735873d8ef4bb2e4a083584",
+    "fred/api/DTWEXBGS/vintages_rt2026_20261016.json": "27d0b68f3f2992815f8a9f6aca48b6eb2c84b6d5fd2cab452e7da3ec58cb988f",
+    "fred/api/T10YIE/vintages_rt2015_20261016.json": "89488cd929cdb40e02f50cdc66986b295aac699123449874aeaa3ab909cadb0f",
+    "fred/api/T10YIE/vintages_rt2016_20261016.json": "ae05783598da5458dd6c7d8be879ac7635ab61b234f3079011be5ebc0f5b4287",
+    "fred/api/T10YIE/vintages_rt2017_20261016.json": "3d872eefd5bf3883b9e8cbfa46bad34f863d787c312a8c99e6aeb228a29e0457",
+    "fred/api/T10YIE/vintages_rt2018_20261016.json": "9e516efa00377196d1080ec13484aab960870c058357e3d28e15e06b1c29d8a8",
+    "fred/api/T10YIE/vintages_rt2019_20261016.json": "d1cee510f8b77287e787151363b26eb5185509cff186f97859ce8773ca07b5df",
+    "fred/api/T10YIE/vintages_rt2020_20261016.json": "ba9f855204df6669e8c32b5a264b8c7ff2425a9c3b8b350e6f56d42f4a9b03c5",
+    "fred/api/T10YIE/vintages_rt2021_20261016.json": "05d26de6e28b601b8e1337d8c7466a94dc785b1c33f6daf5a23434900dfd6d73",
+    "fred/api/T10YIE/vintages_rt2022_20261016.json": "d900193930504b5b3949b20d13ef0f7324c3ea0849159eb6593e9af4bed255c3",
+    "fred/api/T10YIE/vintages_rt2023_20261016.json": "76eaa3cb9d10ce49897c0e52b6e65658367e52e1957c60c47a2b3289f51e7e9a",
+    "fred/api/T10YIE/vintages_rt2024_20261016.json": "bc1cade6cf88e30265fb005577c4d99a84e356da9206bd6e5141243ee9ad8a4a",
+    "fred/api/T10YIE/vintages_rt2025_20261016.json": "1508ffaf25a5b01371abdd60e09ee3dab6175d8a1c676fbd5656166388d94871",
+    "fred/api/T10YIE/vintages_rt2026_20261016.json": "aa470184b51e7c8d299aac6e5c556b225ac9b6972732d994c2959cd3b74880e8",
+    "fred/api/VIXCLS/vintages_rt2015_20261016.json": "1e818eed88f22b5c2898c60611c4f9d243142b926bc6cbf04a361413e573f00b",
+    "fred/api/VIXCLS/vintages_rt2016_20261016.json": "692e4cbf35128f58398969e02370d66ffa9aee8398e00c2f36f114da0c051bd0",
+    "fred/api/VIXCLS/vintages_rt2017_20261016.json": "5638c1998b9457bfb0b8e04bc1da23529f5517921fed2fda5f63b93764b9a176",
+    "fred/api/VIXCLS/vintages_rt2018_20261016.json": "b68c356c243f51cdc834cef21cf7fcc6c189093499ec11bec0023724435d97a5",
+    "fred/api/VIXCLS/vintages_rt2019_20261016.json": "dd203c41ceb65701000b19198d48e1ed1bd4d5efb27bbc9d7f58d9c514f79ba9",
+    "fred/api/VIXCLS/vintages_rt2020_20261016.json": "5d6589fc76cf9a67db855bda1db99a7ee0964dc191d7f04e406b74cf26390fda",
+    "fred/api/VIXCLS/vintages_rt2021_20261016.json": "9cfa4ddd5d93666c32156181dda1149cd7b9037da2810eead2131f9a3e167f64",
+    "fred/api/VIXCLS/vintages_rt2022_20261016.json": "8c8c91d288182f6f91695b66dd5b03f0f58d26efa315d046d66a610688cc1de2",
+    "fred/api/VIXCLS/vintages_rt2023_20261016.json": "389efb76ee7a85c4ac0ec9661311b23a4fd58f38fd75c755d1b49f23ec5befe9",
+    "fred/api/VIXCLS/vintages_rt2024_20261016.json": "cc5a1f5c705407d80a88498ed296bc61b2ebdc495b2b6a76971f830579312294",
+    "fred/api/VIXCLS/vintages_rt2025_20261016.json": "350284d915b9a24f8f60fc58e7ab79e841a7d19868db900c567fe5c01ce1e16d",
+    "fred/api/VIXCLS/vintages_rt2026_20261016.json": "5781a676c3a14f85f5de6224da7b33100cdd7f5d0ce30f7abff451d5f9c9bee5"
+  },
+  "params": {
+    "available_rule": {
+      "note": "",
+      "source_ref": "ADR-014 D9 / R-PIT 4: ALFRED (vintage sin hora) → 00:00 ET del día siguiente a la fecha de vintage",
+      "status": "approved",
+      "value": "next_day_midnight_et"
+    },
+    "calendar_inputs": {
+      "closure_eos": "federal_calendar/fr_closing_eos_2014plus_20261016.json",
+      "statute": "federal_calendar/usc5_6103_2023.htm"
+    },
+    "first_vintage": {
+      "note": "",
+      "source_ref": "reports/f1/fred.md §2 (vintagedates.json)",
+      "status": "verified",
+      "value": {
+        "DTWEXBGS": "2019-02-04"
+      }
+    },
+    "official_release_time_et": {
+      "note": "",
+      "source_ref": "data/raw/fred/official/fed_h15_2026-10-15.html y fed_h10_2026-10-15.html (páginas vigentes)",
+      "status": "verified",
+      "value": "16:15:00"
+    },
+    "release_schedule": {
+      "note": "",
+      "source_ref": "reports/f1/fred.md §4: H.15 'posted daily Monday through Friday at 4:15pm' (dato del día d en d+1 hábil); H.10 'On Mondays at 4:15 p.m. ... previous business week; si el lunes es festivo, el siguiente hábil'. T10YIE: 'no antes que H.15' (§6)",
+      "status": "verified",
+      "value": {
+        "DGS10": "h15",
+        "DGS2": "h15",
+        "DTWEXBGS": "h10",
+        "T10YIE": "h15",
+        "VIXCLS": "none"
+      }
+    },
+    "series": {
+      "note": "",
+      "source_ref": "reports/f1/fred.md §6; DTWEXBGS solo desde su primera vintage 2019-02-04 (ADR-014 D10)",
+      "status": "approved",
+      "value": [
+        "DGS10",
+        "DGS2",
+        "T10YIE",
+        "VIXCLS",
+        "DTWEXBGS"
+      ]
+    },
+    "series_glob": "fred/api/{series}/vintages_rt*_20261016.json"
+  },
+  "code": {
+    "wti_news_alpha.normalization.federal_calendar": "61f37a9cb9b2228b108eb83572271e46b0cff11737c8846cca53139f2cabdb23",
+    "wti_news_alpha.normalization.fred_alfred": "b8b66efc03dc794a9c8398ca7a714f89adeeb14b26735763b47cbba7229a2bb4",
+    "wti_news_alpha.timeutils": "d65e20af12d9ce62bbe7c8264a88151c20374e0149200f3a6aeffe6885a22a68"
+  },
+  "outputs": {
+    "vintages.parquet": "7757818267d25a80fdf2ee58f2b17b71898019e5bb8653fb856a3fcb6ccab268"
+  },
+  "code_commit": "7ac81862adb957064a85a6f2a673dbf8015b1e11",
+  "polars_version": "2.0.0"
+}
