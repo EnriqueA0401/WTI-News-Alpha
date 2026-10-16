@@ -12,7 +12,12 @@ import polars as pl
 import pytest
 
 from wti_news_alpha.errors import RawIntegrityError, SchemaError
-from wti_news_alpha.normalization.store import LayerSpec, code_hashes, publish_or_verify
+from wti_news_alpha.normalization.store import (
+    LayerSpec,
+    code_hashes,
+    publish_or_verify,
+    publish_or_verify_streaming,
+)
 
 INPUTS = {"a/b.json": "1" * 64}
 PARAMS = {"offset": 7, "day": date(2015, 1, 7)}
@@ -194,10 +199,53 @@ def test_recovery_with_different_output_raises(tmp_path: Path) -> None:
     assert not spec.out_dir.exists()
 
 
-def test_code_hashes_includes_store() -> None:
+def test_code_hashes() -> None:
     out = code_hashes(json)
-    assert set(out) == {"json", "wti_news_alpha.normalization.store"}
+    assert set(out) == {"json"}
     assert all(len(v) == 64 for v in out.values())
+
+
+def test_publisher_hash_ignored_for_old_manifests(tmp_path: Path) -> None:
+    # Manifiestos anteriores incluían el hash del publicador: no forma parte de la identidad.
+    spec = _spec(tmp_path)
+    old = {**CODE, "wti_news_alpha.normalization.store": "f" * 64}
+    publish_or_verify(spec, INPUTS, PARAMS, _build, commit="c", code=old)
+    again = publish_or_verify(spec, INPUTS, PARAMS, _build, commit="c", code=CODE)
+    assert not again.created
+
+
+def test_streaming_writer(tmp_path: Path) -> None:
+    spec = _spec(tmp_path)
+
+    def writer(staging: Path) -> dict[str, Any]:
+        for i in range(3):
+            pl.DataFrame({"a": [i]}).write_parquet(staging / f"p{i}.parquet")
+        return {"parts": 3}
+
+    pub = publish_or_verify_streaming(spec, INPUTS, PARAMS, writer, commit="c", code=CODE)
+    assert sorted(pub.outputs) == ["p0.parquet", "p1.parquet", "p2.parquet"]
+    assert pub.manifest["parts"] == 3
+
+
+@pytest.mark.parametrize("name", ["bad.csv", "Upper.parquet"])
+def test_streaming_writer_bad_names(tmp_path: Path, name: str) -> None:
+    spec = _spec(tmp_path)
+
+    def writer(staging: Path) -> dict[str, Any]:
+        (staging / name).write_bytes(b"x")
+        return {}
+
+    with pytest.raises(SchemaError, match="staging"):
+        publish_or_verify_streaming(spec, INPUTS, PARAMS, writer, commit="c", code=CODE)
+    assert not spec.out_dir.exists()
+    assert not spec.manifest_path.exists()
+
+
+def test_streaming_writer_nothing_written(tmp_path: Path) -> None:
+    with pytest.raises(SchemaError, match="ninguna"):
+        publish_or_verify_streaming(
+            _spec(tmp_path), INPUTS, PARAMS, lambda _: {}, commit="c", code=CODE
+        )
 
 
 def test_code_hashes_module_without_file_raises() -> None:

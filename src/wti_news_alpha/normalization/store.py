@@ -19,7 +19,6 @@ import os
 import re
 import shutil
 import stat
-import sys
 import tempfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -34,6 +33,7 @@ from wti_news_alpha.errors import RawIntegrityError, SchemaError
 _DIR_MODE = stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 _NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_]*\.parquet$")
 Builder = Callable[[], tuple[dict[str, pl.DataFrame], dict[str, Any]]]
+Writer = Callable[[Path], dict[str, Any]]
 
 
 def sha256_file(path: Path) -> str:
@@ -78,14 +78,22 @@ _RESERVED = frozenset(
 
 
 def code_hashes(*modules: ModuleType) -> dict[str, str]:
-    """sha256 del fuente de los módulos que transforman los datos (más este publicador)."""
+    """sha256 del fuente de los módulos que transforman los datos.
+
+    El propio publicador no transforma datos: no forma parte de la identidad del
+    código (los manifiestos antiguos que lo incluyen se comparan sin él).
+    """
     out: dict[str, str] = {}
-    for mod in (*modules, sys.modules[__name__]):
+    for mod in modules:
         src = getattr(mod, "__file__", None)
         if src is None:
             raise RawIntegrityError(f"módulo sin fichero fuente: {mod.__name__}")
         out[mod.__name__] = sha256_file(Path(src))
     return dict(sorted(out.items()))
+
+
+def _code_identity(code: Mapping[str, str]) -> dict[str, str]:
+    return {k: v for k, v in code.items() if k != __name__}
 
 
 def _read_manifest(mpath: Path) -> dict[str, Any]:
@@ -113,7 +121,7 @@ def _check_same_origin(
             f"{name}: la versión {spec.version} se generó con otros parámetros "
             "(cambia la versión en la configuración)"
         )
-    if man["code"] != dict(code):
+    if _code_identity(man["code"]) != _code_identity(code):
         raise RawIntegrityError(
             f"{name}: la versión {spec.version} se generó con otro código "
             "(cambia la versión en la configuración)"
@@ -157,6 +165,33 @@ def publish_or_verify(  # noqa: PLR0913 - todo lo que determina la salida es exp
     Si un fallo previo dejó el manifiesto sin directorio, se reconstruye y solo
     se publica si los hashes coinciden con el manifiesto (recuperación determinista).
     """
+
+    def writer(staging: Path) -> dict[str, Any]:
+        frames, extra = build()
+        bad = [n for n in frames if not _NAME_RE.match(n)]
+        if bad:
+            raise SchemaError(f"nombres de salida no válidos: {bad}")
+        for name in sorted(frames):
+            frames[name].write_parquet(staging / name, compression="zstd", statistics=True)
+        return extra
+
+    return publish_or_verify_streaming(spec, inputs, params, writer, commit=commit, code=code)
+
+
+def publish_or_verify_streaming(  # noqa: PLR0913 - todo lo que determina la salida es explícito
+    spec: LayerSpec,
+    inputs: Mapping[str, str],
+    params: Mapping[str, Any],
+    writer: Writer,
+    *,
+    commit: str,
+    code: Mapping[str, str],
+) -> Published:
+    """Como ``publish_or_verify``, pero ``writer(staging)`` escribe los Parquet él mismo.
+
+    Permite escribir por partes sin tener toda la capa en memoria. Tras escribir,
+    cada fichero del staging debe tener un nombre válido (``*.parquet``).
+    """
     if spec.out_dir.exists():
         return _verify(spec, inputs, params, code)
     stale = sorted(spec.out_dir.parent.glob(f".staging-{spec.version}-*"))
@@ -168,20 +203,20 @@ def publish_or_verify(  # noqa: PLR0913 - todo lo que determina la salida es exp
     if previous is not None:
         _check_same_origin(previous, spec, inputs, params, code)
 
-    frames, extra = build()
-    bad = [n for n in frames if not _NAME_RE.match(n)]
-    if bad:
-        raise SchemaError(f"nombres de salida no válidos: {bad}")
-    clash = sorted(_RESERVED & set(extra))
-    if clash:
-        raise SchemaError(f"campos extra reservados en el manifiesto: {clash}")
     spec.out_dir.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(dir=spec.out_dir.parent, prefix=f".staging-{spec.version}-"))
     try:
+        extra = writer(staging)
+        clash = sorted(_RESERVED & set(extra))
+        if clash:
+            raise SchemaError(f"campos extra reservados en el manifiesto: {clash}")
+        names = sorted(p.name for p in staging.iterdir())
+        bad = [n for n in names if not _NAME_RE.match(n) or not (staging / n).is_file()]
+        if bad or not names:
+            raise SchemaError(f"salidas no válidas en staging: {bad or 'ninguna'}")
         outputs: dict[str, str] = {}
-        for name in sorted(frames):
+        for name in names:
             path = staging / name
-            frames[name].write_parquet(path, compression="zstd", statistics=True)
             os.chmod(path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
             outputs[name] = sha256_file(path)
         if previous is None:
