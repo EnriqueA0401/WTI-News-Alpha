@@ -1,0 +1,155 @@
+{
+  "source": "eia_wpsr",
+  "version": "eia-wpsr-v1",
+  "n_releases": 612,
+  "n_values": 6754,
+  "time_status_counts": {
+    "d8_standard": 523,
+    "official_exception": 11,
+    "rpit_date_unverified": 1,
+    "rpit_date_verified": 77
+  },
+  "excluded_weeks": {
+    "before_window": 2,
+    "after_last_release": 0
+  },
+  "pages": {
+    "checked": 41,
+    "without_week_ending": 1
+  },
+  "first_release": "2015-01-07",
+  "last_release": "2026-10-07",
+  "inputs": {
+    "eia/api/seriesid_WCESTUS1_2015-2026.json": "e690b7bc46612d23825ff3a195d9613ec55e5ddca60f52fd5078be1ea7d4123b",
+    "eia/api/seriesid_WCREXUS2.W_full.json": "4ebb4e309d66eed3a4ec4db6e6d27c9169c5c5ed2f5862a45cb2a23a4f2b7000",
+    "eia/api/seriesid_WCRFPUS2.W_full.json": "bbf5a0fa3bcf02b9b7f26b2c9556a7791788e9442b75b96b6377a86f8680a0be",
+    "eia/api/seriesid_WCRIMUS2.W_full.json": "15305aba0e3202697a579f3dd655f85619f77aef0ba1389e5773f75cbdee308e",
+    "eia/api/seriesid_WCRRIUS2.W_full.json": "41060bfd63314467ef3ac0e609bb306f45324ff1cb0e07a5119c84af4b3b278e",
+    "eia/api/seriesid_WCSSTUS1.W_full.json": "443ff379fe445954aaf65eff8d7ef4c04862132264f927fde47b376379715fde",
+    "eia/api/seriesid_WDISTUS1.W_full.json": "f2373c6bac145e820a01bdc34c140e0ce199b55ec73c09d284c8de3853493c2d",
+    "eia/api/seriesid_WGTSTUS1.W_full.json": "1379222d5b8434fcb48422906f752f8135558a32699b4e43a3508947aa79f8fd",
+    "eia/api/seriesid_WPULEUS3.W_full.json": "e554a6303a010935f0a1706ea95b3845ea3e13123a11024e39116f51d450412c",
+    "eia/api/seriesid_WRPUPUS2.W_full.json": "9851919b271cba996e1a270f7cd9e6296521145c42ee3c89f346f6583b521213",
+    "eia/api/seriesid_W_EPC0_SAX_YCUOK_MBBL.W_full.json": "f02ad03625fd44441038cdd93f1a3718ee7aefe7517b49d872db17ec254beb92",
+    "eia/web/archive/wpsr_2015_01_07.php.html": "c0acdbe5a144b6af1835b236d6f814a32b1c9e38194cb19844925d00b87e1240",
+    "eia/web/archive/wpsr_2015_01_22.php.html": "4982b1b6c1ec88571b5e879273c25ea99b1fb9ea404a9bff8d63ded3755f63ba",
+    "eia/web/archive/wpsr_2015_02_19.php.html": "24e74135d2dabb866ddcce6bcad7be402e6ea7ce64259c8c78e886b665c39c54",
+    "eia/web/archive/wpsr_2015_05_28.php.html": "93205e3d2acb54956c205ea5d5053e7a725be004bd5ab8d07fff8e0dec7eb0f8",
+    "eia/web/archive/wpsr_2015_07_08.php.html": "dc1f46879d8746bce1b9c20d9eb713fc8b19993bf51a0e9f1a3a6ad992750f7e",
+    "eia/web/archive/wpsr_2015_09_10.php.html": "2b0ee57928507ef1c77053076373a6cf6f60d7ee9a3e94fe4ae99da259a96076",
+    "eia/web/archive/wpsr_2015_11_25.php.html": "4ab20365315b116ee512054c962c2e5424ed11d8d9ebb24dc85507c3e1254291",
+    "eia/web/archive/wpsr_2015_12_30.php.html": "9db614f2c9fb36353763e59ac09678050b462e8812bbf675194f3898025b2c50",
+    "eia/web/archive/wpsr_2016_06_15.php.html": "64b730d7e96d3c9d0a03e8fbbda9003d05b4db6a6312ef8bd6b6b88fda9b4567",
+    "eia/web/archive/wpsr_2016_10_05.php.html": "6e9892a57ceace11b61c87f97ba3b63d340d9d0033b8928e16dacb9ddf01b1ef",
+    "eia/web/archive/wpsr_2016_10_13.php.html": "de008a5f2e0d622b1351c64ba35ec8cac6d334d3264d560068ad38d63cc4bc94",
+    "eia/web/archive/wpsr_2016_10_19.php.html": "4b1d78a835f149de0332e294747bdb88a61612adebcac5b3d9855e2837744109",
+    "eia/web/archive/wpsr_2016_10_26.php.html": "3b11b2dd93336bcab83e9482dd82c426bb9a7fb02cb40c3e106069ecf74f4742",
+    "eia/web/archive/wpsr_2016_11_02.php.html": "da597754cc5ec96656663ad98430d9dfbda56ded881fa6303aeff585aaaf3bf4",
+    "eia/web/archive/wpsr_2016_11_09.php.html": "3e427d0067da823546d8183cfd9677ab5e412d468dd55983b5231e158c5db1e1",
+    "eia/web/archive/wpsr_2016_12_07.php.html": "6d1b66a45ff0bbe8757843798ee089def9681e42e1bc49261894397d56c52c39",
+    "eia/web/archive/wpsr_2016_12_21.php.html": "9fb10ba4456390e97ab9e32edbe769cdb10b349c74c91a48dab099a2e202fa00",
+    "eia/web/archive/wpsr_2017_01_11.php.html": "2f8b675505396bfcbfd4bdf9864584faf0a2835ccda085519197707917440120",
+    "eia/web/archive/wpsr_2017_03_15.php.html": "ddd141499a3ccb35d2bf4a2882fa1f0ae44ee36016d8c7034e031252ba7d24ea",
+    "eia/web/archive/wpsr_2017_06_14.php.html": "1a2d8e942b283ed5b007eeaa284d161821bfff23150f27d0ac06643ca1b44ec5",
+    "eia/web/archive/wpsr_2018_06_13.php.html": "ae95b1086ad091ac0ba3b53a7a41f0d8021bdb5055573d070b79cdf1b20f6144",
+    "eia/web/archive/wpsr_2019_01_04.php.html": "45db88a00ddb77e493b46f951b713f716490142ce5a308c7aa9d38933d5bea83",
+    "eia/web/archive/wpsr_2019_01_24.php.html": "da856b7f34fa3da01bbba6ec7c86ae80820477a8253a9a98c0a9ae0be132dd76",
+    "eia/web/archive/wpsr_2019_02_21.php.html": "9bdfe486f0f55f3c310bef1532aad7b4bdc1caf9d42e746ae6b79fefc2596258",
+    "eia/web/archive/wpsr_2019_05_30.php.html": "255ca034aa2ebc6c4e7c25dd450b0cb594be3d2ed42a4cbd8c7e62a533aa93a4",
+    "eia/web/archive/wpsr_2019_07_03.php.html": "4d26a8ab3cb4662e16035b94c0fce9e897cff5c41a535798aa9f86ace32c6e7d",
+    "eia/web/archive/wpsr_2019_09_05.php.html": "946db40bcc5169eac8044929dcd6bdfdb82d70de18b2d77af7bf43db4bb53f2b",
+    "eia/web/archive/wpsr_2019_11_27.php.html": "30d29ae0553ad60ff12c73487b18a430f9dc73fa590c401317e23dda61778bb5",
+    "eia/web/archive/wpsr_2019_12_27.php.html": "e1a904e6fbda929e954a212de34b27c142ae405049bd21670eb7cc163a067154",
+    "eia/web/archive/wpsr_2022_06_15.php.html": "c196a7c09ea3c003a691d741c85659e16536b0475d7f78689355be0308e70624",
+    "eia/web/archive/wpsr_2022_06_29.php.html": "dbdd5f6900d0b8d6928ff7d1d5830fa6ef03580938478fbf151bce1af9fa0daa",
+    "eia/web/archive/wpsr_2023_01_05.php.html": "b8e080086d9bf2f4dae44b9b19f35704adc1b2c1721bf92dcc421665b3d1bd8e",
+    "eia/web/archive/wpsr_2023_01_19.php.html": "23a320abc543a66145ea7546b9ad16308fb4645c2f9a3ba5396a666a3828edc8",
+    "eia/web/archive/wpsr_2023_02_23.php.html": "ae696c2e3d51d702a19cb5b8a816939cc86f9abda4121183be99862d8244ec78",
+    "eia/web/archive/wpsr_2023_06_01.php.html": "dfd7228c522207e43a3149e5aeba623b89fbd38d7c3cb8dca38887619c8e1464",
+    "eia/web/archive/wpsr_2023_07_06.php.html": "0da1c3dd3dd34495ea62031ba898f8bcaa1dfccf10badf55de31037d75eea669",
+    "eia/web/archive/wpsr_2023_09_07.php.html": "59430951261618d088e3527279e7918fbdd90b520c58f50bc54cc53da542e68d",
+    "eia/web/archive/wpsr_2023_11_15.php.html": "7f008f7a3bc16b49e6112c9adae25758cd6a2f896037bc5389a751b8cf1889e0",
+    "eia/web/archive/wpsr_2023_11_22.php.html": "590b3918493e8d63435d1d8aa4e3fe27052282acb591bc4c373e31992e63e8da",
+    "eia/web/archive/wpsr_2023_12_28.php.html": "43c6cb87510a808906c33196d450c3233c7b30d22ab2f2e6a27820513f4c6034",
+    "eia/web/archive/wpsr_2025_12_29.php.html": "d8a1b26d42cea3dfd7f0a7c5f6f93bf97fe27140ec3e61cee34818befcb2a786",
+    "eia/web/archive/wpsr_2025_12_31.php.html": "cb8fdff38ea4d72fd959581305054cdd960e991037fd672c4473a273120e57fc",
+    "eia/web/wpsr_archive_index_2026-10-15.html": "224fb0a8303a4ece46e68c1c23183d09ac7197581e940713527cef5c0d70efa2",
+    "eia/web/wpsr_schedule_2026-10-15.html": "fe50afa140a44beb96a4ed957544d064faf721ac1d8cf6a3b72916fde63fa2f2",
+    "fred/api/release_212/dates_2015.json": "21d37cc709f19c800fec19301bb97fa7d9c5e8bb454fa4b73aaf2e551973bc96"
+  },
+  "params": {
+    "first_release_date": {
+      "note": "",
+      "source_ref": "FRED release 212 empieza en 2015 (2.ª fuente de fechas, reports/f1/eia.md §3.3)",
+      "status": "approved",
+      "value": "2015-01-07"
+    },
+    "inputs": {
+      "archive_index": "eia/web/wpsr_archive_index_2026-10-15.html",
+      "archive_pages_glob": "eia/web/archive/wpsr_*.php.html",
+      "fred_release_dates": "fred/api/release_212/dates_2015.json",
+      "schedule": "eia/web/wpsr_schedule_2026-10-15.html"
+    },
+    "known_shared_releases": {
+      "note": "",
+      "source_ref": "reports/f1/eia.md §3.3: semanas 2022-06-17 y 2023-11-03 sin publicación propia",
+      "status": "approved",
+      "value": [
+        "2022-06-29",
+        "2023-11-15"
+      ]
+    },
+    "max_lag_days": {
+      "note": "",
+      "source_ref": "ADR-020 (retraso máximo observado: 12 días en las semanas sin publicación propia)",
+      "status": "approved",
+      "value": 12
+    },
+    "min_lag_days": {
+      "note": "",
+      "source_ref": "ADR-020: primera publicación = primera fecha >= viernes + 5 días; validado contra 41 páginas 'week ending' y 14 excepciones oficiales",
+      "status": "approved",
+      "value": 5
+    },
+    "redefinition": {
+      "note": "",
+      "source_ref": "reports/f1/eia.md §4 (redefinición de existencias comerciales en la publicación 2016-10-13)",
+      "status": "approved",
+      "value": {
+        "before_week_ending": "2016-10-07",
+        "series_id": "WCESTUS1"
+      }
+    },
+    "rpit_time_et": {
+      "note": "",
+      "source_ref": "ADR-014 D9 / R-PIT 1-2 (reports/F1_source_audit.md §3)",
+      "status": "approved",
+      "value": "18:00:00"
+    },
+    "series": {
+      "WCESTUS1": "eia/api/seriesid_WCESTUS1_2015-2026.json",
+      "WCREXUS2": "eia/api/seriesid_WCREXUS2.W_full.json",
+      "WCRFPUS2": "eia/api/seriesid_WCRFPUS2.W_full.json",
+      "WCRIMUS2": "eia/api/seriesid_WCRIMUS2.W_full.json",
+      "WCRRIUS2": "eia/api/seriesid_WCRRIUS2.W_full.json",
+      "WCSSTUS1": "eia/api/seriesid_WCSSTUS1.W_full.json",
+      "WDISTUS1": "eia/api/seriesid_WDISTUS1.W_full.json",
+      "WGTSTUS1": "eia/api/seriesid_WGTSTUS1.W_full.json",
+      "WPULEUS3": "eia/api/seriesid_WPULEUS3.W_full.json",
+      "WRPUPUS2": "eia/api/seriesid_WRPUPUS2.W_full.json",
+      "W_EPC0_SAX_YCUOK_MBBL": "eia/api/seriesid_W_EPC0_SAX_YCUOK_MBBL.W_full.json"
+    },
+    "standard_release_time_et": {
+      "note": "",
+      "source_ref": "ADR-014 D8 (miércoles normales; riesgo declarado)",
+      "status": "approved",
+      "value": "10:30:00"
+    }
+  },
+  "outputs": {
+    "releases.parquet": "15ce44d32923a5414de25767d16b5d5dedea30563f4e94cd71e823eade650fe2",
+    "values.parquet": "b9654395e2bacbd28038a765767d1b1d0b09f796226827e447a50ee17c262dc5"
+  },
+  "code_commit": "c5669362adb59efbeb7d6769874a83aee3c99500",
+  "polars_version": "2.0.0"
+}
