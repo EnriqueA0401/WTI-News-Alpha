@@ -381,3 +381,11 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - Un cron horario la relanza y la concurrencia (`cancel-in-progress: false`) encadena las ejecuciones sin solaparlas.
   - Es gratis en un repo público. Los límites de GitHub son 6 h por job y 72 h de cola.
 - **Riesgo:** en F1 el cron no se disparó con un workflow subido por la app hasta que el usuario hizo un commit del fichero. Si tras el cambio no hay ejecuciones programadas, el usuario debe volver a guardar el workflow en GitHub. Mientras tanto se lanza una ejecución manual.
+
+## ADR-028 — Muestra auditada de G2: Claude propone y el usuario revisa (usuario, 2026-10-16)
+- **Decisión:** para los 200–300 titulares del piloto, Claude propone la etiqueta y el usuario la confirma o corrige en una página sencilla. Las etiquetas finales son del usuario.
+- **Riesgo aceptado:** sesgo de anclaje hacia la propuesta.
+- **Mitigación:**
+  - la propuesta de Claude se hace leyendo cada titular, independiente de las reglas que se evalúan;
+  - se guardan por separado la propuesta y la etiqueta final;
+  - se reporta el % de correcciones.
