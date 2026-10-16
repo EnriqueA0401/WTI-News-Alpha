@@ -1,0 +1,49 @@
+# COT Disaggregated Futures Only, NYMEX WTI 067651, point-in-time
+# (docs/plans/FASE_02_fundamentales.md §B; reglas ADR-014 D9 / R-PIT).
+version: cftc-cot-v1
+contract_code: "067651"
+inputs:
+  zips_glob: "cftc/history/fut_disagg_txt_*.zip"
+  socrata_systemfields: "cftc/socrata/72hh-3qpy_067651_systemfields.json"
+  statute: "federal_calendar/usc5_6103_2023.htm"
+  closure_eos: "federal_calendar/fr_closing_eos_2014plus_20261016.json"
+first_as_of:
+  value: "2015-01-06"
+  status: approved
+  source_ref: "Ventana de estudio desde 2015 (ADR-014 D4, ADR-018)"
+release_business_day:
+  value: 3
+  status: verified
+  source_ref: "cftc/pages/about_cot.htm: 'the third business day after the as of date'; contrastada 41/41 (2026), 13/13 (2025), 4/4 anuncios (reports/f1/cftc.md §3)"
+rpit_time_et:
+  value: "18:00"
+  status: approved
+  source_ref: "ADR-014 D9 / R-PIT 1-2 (reports/F1_source_audit.md §3)"
+api_first_as_of:
+  value: "2022-10-04"
+  status: approved
+  source_ref: "reports/f1/cftc.md §3: :created_at válido desde el lanzamiento de la API (oct-2022); las cargas previas no reflejan la publicación"
+api_created_at_margin_minutes:
+  value: 5
+  status: proposed
+  source_ref: "R-PIT 3 ('hora real + margen pequeño'): margen pendiente de decisión del usuario"
+verified_releases:
+  value:
+    "2015-06-30": "2015-07-06"   # anuncio 2015-07-06 (publicación prematura e incompleta el 07-03)
+    "2018-12-24": "2019-02-01"   # PR 7864-19 (cierre del gobierno)
+    "2020-12-21": "2020-12-28"   # anuncio (festivo extra del 24-dic)
+    "2021-06-15": "2021-06-21"   # anuncio (Juneteenth 2021)
+    "2023-01-31": "2023-02-24"   # incidente ION (anuncios + PR 8662-23)
+    "2023-02-07": "2023-03-03"
+    "2023-02-14": "2023-03-08"
+    "2023-02-21": "2023-03-10"
+    "2023-02-28": "2023-03-14"
+    "2023-03-07": "2023-03-16"
+    "2023-03-14": "2023-03-21"
+    "2025-01-07": "2025-01-13"   # anuncio (cierre del 9-ene-2025)
+  status: verified
+  source_ref: "reports/f1/cftc.md §3 (tabla de excepciones verificadas)"
+excluded_as_of:
+  value: ["2018-12-31", "2019-02-26"]
+  status: proposed
+  source_ref: "Puesta al día de 2019 (PR 7864-19: 'uno el martes y otro el viernes'), fechas reales no verificadas: pendiente de decisión del usuario"

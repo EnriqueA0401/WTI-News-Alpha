@@ -336,6 +336,33 @@ def load_eia_wpsr_config(config_dir: Path = CONFIG_DIR) -> EiaWpsrConfig:
     return load_yaml_model(config_dir / "eia_wpsr.yaml", EiaWpsrConfig)
 
 
+class CotInputs(_Strict):
+    zips_glob: NonEmptyStr
+    socrata_systemfields: NonEmptyStr
+    statute: NonEmptyStr
+    closure_eos: NonEmptyStr
+
+
+class CftcCotConfig(_Strict):
+    """COT point-in-time (``config/cftc_cot.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    contract_code: Annotated[str, StringConstraints(pattern=r"^[0-9A-Z]{6}$")]
+    inputs: CotInputs
+    first_as_of: Param[date]
+    release_business_day: Param[PositiveInt]
+    rpit_time_et: Param[WallTime]
+    api_first_as_of: Param[date]
+    api_created_at_margin_minutes: Param[Annotated[int, Strict(), Field(ge=0, le=240)]]
+    verified_releases: Param[dict[date, date]]
+    excluded_as_of: Param[tuple[date, date]]
+
+
+def load_cftc_cot_config(config_dir: Path = CONFIG_DIR) -> CftcCotConfig:
+    """Carga ``config/cftc_cot.yaml``."""
+    return load_yaml_model(config_dir / "cftc_cot.yaml", CftcCotConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 
