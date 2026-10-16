@@ -8,7 +8,12 @@ from typing import Annotated
 import httpx
 import typer
 
-from wti_news_alpha.config import CONFIG_DIR, load_gdelt_config, load_project_config
+from wti_news_alpha.config import (
+    CONFIG_DIR,
+    load_capture_config,
+    load_gdelt_config,
+    load_project_config,
+)
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
@@ -31,14 +36,22 @@ def capture_run(
     commit: Annotated[str | None, typer.Option(help="Versión de código (por defecto, git)")] = None,
 ) -> None:
     """Registra la primera aparición de datos GDELT, WPSR y COT (código 1 si falla una fuente)."""
-    with httpx.Client(timeout=60, headers={"User-Agent": capture.USER_AGENT}) as client:
+    cfg = load_capture_config(CONFIG_DIR)
+    version = commit or current_commit()
+    logger = get_logger()
+    with (
+        run_step("capture", logger, version, run_id=run_id) as res,
+        httpx.Client(timeout=cfg.http_timeout_s, headers={"User-Agent": cfg.user_agent}) as client,
+    ):
         result = capture.run_capture(
             data_dir,
             client,
+            cfg,
             now=lambda: datetime.now(tz=UTC),
-            commit=commit or current_commit(),
+            commit=version,
             run_id=run_id,
         )
+        res.update(n_new=result.n_new, errors=result.errors)
     typer.echo(f"nuevas observaciones: {result.n_new}")
     for err in result.errors:
         typer.echo(f"ERROR {err}")

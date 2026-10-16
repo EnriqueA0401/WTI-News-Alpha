@@ -1,0 +1,15 @@
+# Captura prospectiva de disponibilidad (D12, ADR-016). Parámetros operativos; todas las fuentes son públicas y sin clave.
+gdelt_lastupdate_url: https://data.gdeltproject.org/gdeltv2/lastupdate.txt
+gdelt_file_prefix: https://data.gdeltproject.org/gdeltv2/
+# Minutos entre ficheros GDELT: un salto mayor entre el último fichero visto y el nuevo se registra como "gap".
+gdelt_slot_minutes: 15
+# Un fichero anunciado que sigue en 404 se deja de vigilar (y se registra "expired") tras estas horas.
+gdelt_pending_expiry_hours: 24
+eia_table1_url: https://ir.eia.gov/wpsr/table1.csv
+cftc_url: https://publicreporting.cftc.gov/resource/72hh-3qpy.json
+# Código CFTC del WTI NYMEX (F1, reports/f1/cftc.md).
+cftc_contract_code: "067651"
+user_agent: WTI-News-Alpha research capture (non-commercial)
+http_timeout_s: 60.0
+# Ítems recordados por fuente para no re-registrarlos (≈ 8 h de GDELT).
+max_seen: 200

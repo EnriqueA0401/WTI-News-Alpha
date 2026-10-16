@@ -159,3 +159,26 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - el cron de GitHub se retrasa;
   - GitHub desactiva los programados tras 60 días sin actividad;
   - el repo es público, así que las observaciones también (solo metadatos de fuentes públicas).
+- **Revisión adversarial (2026-10-16, 11 hallazgos), todos corregidos con test de regresión:**
+  1. **(alto)** un formato inesperado en una fuente tiraba toda la ejecución. Ahora se registra como error de esa fuente y las demás siguen.
+  2. **Cotas:**
+     - `observed_at_utc` pasa a ser la respuesta recibida (cota superior);
+     - se añade `request_started_utc`;
+     - `previous_check_utc` es el inicio del chequeo anterior con éxito;
+     - `lower_bound_valid` es falso cuando no hay chequeo previo, o cuando un `|available` se ve en la misma ejecución que su anuncio (el fichero puede existir antes de anunciarse: se observó unos 50 s antes).
+  3. **Ficheros GDELT pendientes:** los anunciados con 404 se siguen comprobando hasta que existen, o hasta 24 h (`|expired`). Los saltos de ficheros se registran como `gap|desde|hasta`.
+  4. **Claves con los campos que cambian:**
+     - GDELT: `|listed|<md5>`;
+     - EIA: `semana|Last-Modified|DateGreaterThan`;
+     - COT: `report_date|created_at`.
+  5. **Política CloudFront:** se guarda como `cf_policy_date_greater_than_utc` y `cf_policy_date_less_than_utc`. Su significado (¿hora de publicación?) no está verificado: en la semana festiva valía 12:00 ET, y el `Last-Modified` del fichero era anterior.
+  6. **Ficheros y estado:**
+     - mes del fichero = mes de cada observación;
+     - estado validado con pydantic;
+     - URLs y límites en `config/capture.yaml`;
+     - log `run_step`.
+  7. **Workflow:**
+     - un fallo de `git ls-remote` ya no crea una rama vacía;
+     - `run_id` incluye el intento.
+- **Riesgo aceptado (bajo):** si una ejecución muere entre escribir observaciones y estado, la siguiente puede repetir ítems. Aguas abajo se toma la primera aparición.
+- **Pendiente de verificar:** que el cron programado de GitHub se dispare. A las 01:27 UTC aún no había corrido ninguno.

@@ -13,7 +13,7 @@
 
 ## Salidas
 - Rama huérfana `capture-data` (solo la escribe el bot):
-  - `observations/YYYY-MM.jsonl`: una línea cuando aparece un ítem nuevo o cambia;
+  - `observations/YYYY-MM.jsonl`: una línea cuando aparece un ítem nuevo. La clave incluye los campos que cambian, así que un cambio también crea un ítem;
   - `state.json`: último valor visto por fuente y hora del último chequeo.
 - Cada observación lleva:
   - `observed_at_utc`: momento de la petición;
@@ -41,3 +41,6 @@
 - Ejecución real local escribe observaciones válidas.
 - Workflow commiteado.
 - El usuario sabe cómo ver la rama y desactivarlo.
+
+## Revisión adversarial
+Ver ADR-016: 11 hallazgos, todos corregidos.

@@ -275,6 +275,29 @@ class GdeltConfig(_Strict):
     ingest: GkgIngestConfig
 
 
+# ------------------------------------------------------------------ capture
+
+
+class CaptureConfig(_Strict):
+    """Captura prospectiva (D12, ADR-016)."""
+
+    gdelt_lastupdate_url: HttpsUrl
+    gdelt_file_prefix: HttpsUrl
+    gdelt_slot_minutes: PositiveInt
+    gdelt_pending_expiry_hours: PositiveInt
+    eia_table1_url: HttpsUrl
+    cftc_url: HttpsUrl
+    cftc_contract_code: Annotated[str, StringConstraints(pattern=r"^\d{6}$")]
+    user_agent: NonEmptyStr
+    http_timeout_s: PositiveFloat
+    max_seen: PositiveInt
+
+
+def load_capture_config(config_dir: Path = CONFIG_DIR) -> CaptureConfig:
+    """Carga ``config/capture.yaml``."""
+    return load_yaml_model(config_dir / "capture.yaml", CaptureConfig)
+
+
 # ------------------------------------------------------------------ project
 
 

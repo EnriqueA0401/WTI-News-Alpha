@@ -26,16 +26,23 @@ jobs:
           set -euo pipefail
           git config --global user.name "wna-capture-bot"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin capture-data > /dev/null; then
+          set +e
+          git ls-remote --exit-code --heads origin capture-data > /dev/null
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
             git fetch --depth=1 origin capture-data
             git worktree add -B capture-data capture-data FETCH_HEAD
-          else
+          elif [ "$rc" -eq 2 ]; then
             git worktree add --orphan -b capture-data capture-data
+          else
+            echo "git ls-remote falló (código $rc): no se crea una rama vacía"
+            exit 1
           fi
       - name: Capturar
         id: cap
         continue-on-error: true
-        run: uv run --no-sync wna capture run --data-dir capture-data --run-id "${{ github.run_id }}" --commit "${{ github.sha }}"
+        run: uv run --no-sync wna capture run --data-dir capture-data --run-id "${{ github.run_id }}-${{ github.run_attempt }}" --commit "${{ github.sha }}"
       - name: Guardar observaciones
         if: always()
         run: |
