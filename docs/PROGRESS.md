@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F2 (ingesta y normalización). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F2 terminada. **Puerta G1: informe en `reports/G1_cierre.md`, pendiente de aprobación del usuario.** **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -12,8 +12,8 @@
 | Calendario federal (festivos + cierres por orden ejecutiva) | Hecho | `normalization/federal_calendar.py` |
 | COT | Hecho y revisado (decisiones del usuario en ADR-022) | `cftc-cot-v2`, `reports/f2/cftc_cot_normalized.md` |
 | FRED/ALFRED (5 series diarias, historial de vintages) | Hecho y revisado | `fred-alfred-v2`, `reports/f2/fred_alfred_normalized.md` (ADR-024/025) |
-| Noticias con `first_available_at` | Código listo; ejecución completa y revisión adversarial en curso | `gdelt-news-v1`, `docs/plans/FASE_02_noticias.md` |
-| Puerta G1 | Pendiente | — |
+| Noticias con `first_available_at` | Hecho y revisado (decisiones del usuario en ADR-026) | `gdelt-news-v2`, `reports/f2/gdelt_news_normalized.md` |
+| Puerta G1 | Informe listo; espera aprobación | `reports/G1_cierre.md` |
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
