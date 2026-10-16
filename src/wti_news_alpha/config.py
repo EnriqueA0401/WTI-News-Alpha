@@ -460,6 +460,21 @@ def load_event_rules_config(config_dir: Path = CONFIG_DIR) -> EventRulesConfig:
     return load_yaml_model(config_dir / "events_rules.yaml", EventRulesConfig)
 
 
+class EventsConfig(_Strict):
+    """Construcción de eventos (``config/events.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    news_version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    title_dedup_window_hours: Param[PositiveInt]
+    event_gap_hours: Param[PositiveInt]
+    eligible_relevance: Param[list[NonEmptyStr]]
+
+
+def load_events_config(config_dir: Path = CONFIG_DIR) -> EventsConfig:
+    """Carga ``config/events.yaml``."""
+    return load_yaml_model(config_dir / "events.yaml", EventsConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 

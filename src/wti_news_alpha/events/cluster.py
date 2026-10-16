@@ -69,16 +69,11 @@ def assign_events(df: pl.DataFrame, gap: timedelta) -> pl.DataFrame:
         "is_event_first",
         "mechanism_differs",
     )
-    out = d.join(el, on="article_id", how="left", validate="1:1")
-    if out.height != d.height:
-        raise SchemaError("la agrupación cambió el número de filas")
-    return out
+    return d.join(el, on="article_id", how="left", validate="1:1")  # left 1:1: mismas filas
 
 
 def inherit_events(df: pl.DataFrame) -> pl.DataFrame:
     """Los duplicados (``dup_of``) heredan ``event_id`` de su original (si lo tiene)."""
     orig = df.select(pl.col("article_id").alias("dup_of"), pl.col("event_id").alias("_orig_ev"))
-    out = df.join(orig, on="dup_of", how="left", validate="m:1")
-    if out.height != df.height:
-        raise SchemaError("la herencia de eventos cambió el número de filas")
+    out = df.join(orig, on="dup_of", how="left", validate="m:1")  # left m:1: mismas filas
     return out.with_columns(event_id=pl.coalesce("event_id", "_orig_ev")).drop("_orig_ev")

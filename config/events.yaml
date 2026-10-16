@@ -1,0 +1,17 @@
+# Construcción de eventos (docs/plans/FASE_03.md). Parámetros de diseño técnico de la línea base
+# (no son horizontes, etiquetas, costes ni timestamps): se revisan con la muestra auditada de G2
+# y cualquier cambio es una versión nueva (ADR-029).
+version: events-v1
+news_version: gdelt-news-v2
+title_dedup_window_hours:
+  value: 48
+  status: approved
+  source_ref: "ADR-029: re-publicación = mismo título normalizado con huecos <= 48 h"
+event_gap_hours:
+  value: 24
+  status: approved
+  source_ref: "ADR-029: un evento se cierra tras 24 h sin artículos elegibles de su clave (familia, país)"
+eligible_relevance:
+  value: [direct]
+  status: approved
+  source_ref: "ADR-029: solo artículos directamente relevantes abren o alimentan eventos"

@@ -165,3 +165,17 @@ def test_normalize_news(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(cli.app, ["normalize", "news"])
     assert result.exit_code == 0, result.output
     assert "1 meses" in result.output
+
+
+def test_events_build(monkeypatch: pytest.MonkeyPatch) -> None:
+    man = {"n_articles": 10, "n_events": 2, "n_eligible": 4}
+
+    def fake(**_: object) -> Published:
+        return Published(created=True, outputs={}, manifest=man)
+
+    monkeypatch.setattr(cli.events_pipeline, "run_build", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["events", "build"])
+    assert result.exit_code == 0, result.output
+    assert "2 eventos" in result.output

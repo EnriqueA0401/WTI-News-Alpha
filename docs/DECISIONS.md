@@ -389,3 +389,18 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - la propuesta de Claude se hace leyendo cada titular, independiente de las reglas que se evalúan;
   - se guardan por separado la propuesta y la etiqueta final;
   - se reporta el % de correcciones.
+
+## ADR-029 — Línea base de eventos F3: parámetros técnicos (2026-10-16)
+- **Contexto:** F3, fase 1 del §6.3 (reglas y diccionarios). Estos parámetros son de diseño técnico; no son horizontes, etiquetas, costes ni timestamps. Se fijan aquí y se revisan con la muestra auditada de G2. Cualquier cambio es una versión nueva.
+- **Deduplicación online:**
+  - URL canónica, sin límite de tiempo;
+  - mismo medio y título, o re-publicación del mismo título en otro medio: huecos ≤ 48 h.
+- **Eventos:** racha de artículos elegibles con la misma (familia, país principal de GDELT), que se cierra tras 24 h sin artículos.
+  - Elegibles: relevancia `direct`, no duplicados y sin `exclude_reason`.
+  - Los duplicados heredan el evento.
+  - Un cambio de mecanismo dentro de un evento se marca (`mechanism_differs`).
+- **Reglas `rules-v1`** (`config/events_rules.yaml`):
+  - el título decide la relevancia;
+  - los temas u organizaciones solo deciden "directo" si no hay título (2018).
+  - Un ensayo sobre un mes real destapó falsos positivos ("crude bomb") que ya están corregidos.
+- **Limitación:** la clave (familia, país) es gruesa. Puede juntar acontecimientos distintos del mismo país y familia, o separar uno con varios países. La muestra G2 lo medirá.

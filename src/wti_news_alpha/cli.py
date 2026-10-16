@@ -14,12 +14,15 @@ from wti_news_alpha.config import (
     load_cftc_cot_config,
     load_darwinex_config,
     load_eia_wpsr_config,
+    load_event_rules_config,
+    load_events_config,
     load_fred_config,
     load_gdelt_config,
     load_news_config,
     load_project_config,
 )
 from wti_news_alpha.errors import PhaseNotImplementedError
+from wti_news_alpha.events import pipeline as events_pipeline
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
 from wti_news_alpha.normalization import cftc_cot, darwinex, eia_wpsr, fred_alfred, gdelt_news
@@ -33,6 +36,8 @@ app.add_typer(ingest_app, name="ingest")
 GDELT_INDEX_REL = "gdelt/index/masterfilelist_20261015.txt"
 normalize_app = typer.Typer(no_args_is_help=True, help="Capa normalizada (F2)")
 app.add_typer(normalize_app, name="normalize")
+events_app = typer.Typer(no_args_is_help=True, help="Noticias → eventos (F3)")
+app.add_typer(events_app, name="events")
 capture_app = typer.Typer(no_args_is_help=True, help="Captura prospectiva (D12)")
 app.add_typer(capture_app, name="capture")
 
@@ -205,6 +210,29 @@ def normalize_news() -> None:
         res.update(created=pub.created, totals=pub.manifest["totals"])
     action = "creada" if pub.created else "verificada (ya existía)"
     typer.echo(f"{cfg.version} {action}: {len(pub.outputs)} meses · {pub.manifest['totals']}")
+
+
+@events_app.command("build")
+def events_build() -> None:
+    """Reglas + deduplicación + eventos online (FASE_03.md). Idempotente."""
+    cfg = load_events_config(CONFIG_DIR)
+    rcfg = load_event_rules_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("events_build", logger, commit, version=cfg.version) as res:
+        pub = events_pipeline.run_build(
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            rcfg=rcfg,
+            commit=commit,
+        )
+        res.update(created=pub.created, n_events=pub.manifest["n_events"])
+    action = "creada" if pub.created else "verificada (ya existía)"
+    typer.echo(
+        f"{cfg.version} {action}: {pub.manifest['n_articles']} artículos · "
+        f"{pub.manifest['n_events']} eventos · elegibles {pub.manifest['n_eligible']}"
+    )
 
 
 @ingest_app.command("gdelt-gkg")
