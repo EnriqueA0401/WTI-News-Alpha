@@ -10,8 +10,8 @@
 | Precio Darwinex → UTC | Hecho y revisado | `dwx-xti-m1-v3`, `reports/f2/darwinex_normalized.md` |
 | WPSR (calendario + valores) | Hecho y revisado | `eia-wpsr-v2`, `reports/f2/eia_wpsr_normalized.md` |
 | Calendario federal (festivos + cierres por orden ejecutiva) | Hecho | `normalization/federal_calendar.py` |
-| COT | Código listo; **espera 2 decisiones del usuario** (margen sobre `created_at` y exclusión de la puesta al día de 2019) | `config/cftc_cot.yaml` |
-| FRED/ALFRED | Pendiente | — |
+| COT | Hecho y revisado (decisiones del usuario en ADR-022) | `cftc-cot-v2`, `reports/f2/cftc_cot_normalized.md` |
+| FRED/ALFRED (5 series diarias, historial de vintages) | Hecho; revisión adversarial pendiente | `fred-alfred-v1` (ADR-024) |
 | Noticias con `first_available_at` | Pendiente | — |
 | Puerta G1 | Pendiente | — |
 
