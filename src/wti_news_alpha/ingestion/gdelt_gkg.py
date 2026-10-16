@@ -224,6 +224,7 @@ class FilterStats:
     match_title: int
     match_org: int
     match_url: int
+    rejected_blocks: int  # tramos de líneas rechazadas consecutivas ≈ registros rotos
 
 
 def output_schema(flt: GkgFilterConfig) -> pl.Schema:
@@ -261,7 +262,7 @@ def filter_gkg(
     if lines and lines[-1] == "":
         lines.pop()  # salto final del fichero, no es un registro
     if not lines:
-        return _empty_output(schema), FilterStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        return _empty_output(schema), FilterStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     raw = pl.DataFrame({"raw": lines}).with_row_index("row_in_file")
     well_formed = pl.col("raw").str.contains(_RECORD_START_RE) & (
@@ -311,6 +312,7 @@ def filter_gkg(
         match_title=int(good["match_title"].sum()),
         match_org=int(good["match_org"].sum()),
         match_url=int(good["match_url"].sum()),
+        rejected_blocks=int((rejected["row_in_file"].diff().fill_null(2) != 1).sum()),
     )
     return kept, stats
 
@@ -359,6 +361,7 @@ class FileRecord:
     match_title: int = 0
     match_org: int = 0
     match_url: int = 0
+    rejected_blocks: int = 0
 
 
 def _last_modified(resp: httpx.Response) -> str | None:
@@ -377,10 +380,18 @@ def _last_modified(resp: httpx.Response) -> str | None:
 
 
 def _check_file_rejects(name: str, st: FilterStats, cfg: GdeltConfig) -> None:
-    n_lines = st.rows_in + st.rejected
-    tol = cfg.ingest.reject_lines_tolerance_per_file
-    if st.rejected > tol and st.rejected / n_lines > cfg.ingest.max_reject_fraction_per_file:
-        raise SchemaError(f"{name}: {st.rejected}/{n_lines} líneas rechazadas en el fichero")
+    """Umbral por fichero sobre registros rotos (tramos de líneas rechazadas), no líneas.
+
+    Un solo registro con muchos saltos internos ocupa muchas líneas: cuenta como uno.
+    """
+    n_records = st.rows_in + st.rejected_blocks
+    tol = cfg.ingest.reject_records_tolerance_per_file
+    frac = cfg.ingest.max_reject_fraction_per_file
+    if st.rejected_blocks > tol and st.rejected_blocks / n_records > frac:
+        raise SchemaError(
+            f"{name}: {st.rejected_blocks}/{n_records} registros rechazadas en el fichero "
+            f"({st.rejected} líneas)"
+        )
 
 
 def fetch_and_filter(

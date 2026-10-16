@@ -45,9 +45,10 @@ ingest:
   url_prefix: https://data.gdeltproject.org/gdeltv2/
   # Fracción máxima de líneas rechazadas (nº de campos != 27) por día; si se supera, el día falla.
   max_reject_fraction_per_day: 0.005
-  # Por fichero: falla si rechaza más de reject_lines_tolerance_per_file líneas Y más de esta fracción.
+  # Por fichero: falla si hay más de reject_records_tolerance_per_file registros rotos (tramos de líneas
+  # rechazadas consecutivas) Y más de esta fracción de registros. Desde 2026-10-16 (antes: líneas).
   max_reject_fraction_per_file: 0.02
-  reject_lines_tolerance_per_file: 2
+  reject_records_tolerance_per_file: 2
   # 404 tolerados por día (F1: el índice lista ficheros inexistentes); por encima, el día falla y se reintenta.
   max_missing_404_per_day: 8
   # Líneas mal formadas toleradas en el índice maestro (F1: 61 líneas truncadas).

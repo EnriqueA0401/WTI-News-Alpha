@@ -221,3 +221,8 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - Va como filtro nuevo `gkg-oil-v3`: mismas filas que v2, columna `v2_gcam` excluida (`drop_columns`).
   - 2024–2025 queda en v2 (con GCAM). Aguas abajo se usa la intersección de columnas.
 - **Ejecución:** `wna ingest gdelt-gkg` 2026-01-01 → 2026-10-15 y 2018-01-01 → 2021-01-01 (≈ 2–3 h, aprobado por el usuario).
+- **Ejecución 2018–2020 (2026-10-16):** 1.095 de 1.096 días OK. Falló 2020-05-19 por un único registro (página de patentes de la USPTO) con 48 saltos de línea internos: 49 líneas de 1.220, por encima del 2 % por fichero. El md5 coincide con el índice, así que viene así de origen.
+  - **Corrección:** el umbral por fichero cuenta registros rotos (tramos de líneas rechazadas consecutivas, `rejected_blocks`), no líneas.
+  - Los días ya escritos no cambian: con la regla nueva solo pueden pasar más días, nunca menos.
+  - El umbral diario sigue en líneas (0,5 %).
+  - Test de regresión añadido. Se re-ejecuta ese día.

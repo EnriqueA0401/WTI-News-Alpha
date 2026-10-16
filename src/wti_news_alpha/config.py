@@ -262,7 +262,7 @@ class GkgIngestConfig(_Strict):
     url_prefix: HttpsUrl
     max_reject_fraction_per_day: UnitFraction
     max_reject_fraction_per_file: UnitFraction
-    reject_lines_tolerance_per_file: Annotated[int, Strict(), Field(ge=0)]
+    reject_records_tolerance_per_file: Annotated[int, Strict(), Field(ge=0)]
     max_missing_404_per_day: Annotated[int, Strict(), Field(ge=0)]
     max_malformed_index_lines: Annotated[int, Strict(), Field(ge=0)]
     http_timeout_s: PositiveFloat

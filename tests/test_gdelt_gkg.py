@@ -463,7 +463,7 @@ def test_process_day_reject_threshold_fails(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     content = zip_bytes(gkg_text(*[line(record_id=str(i)) for i in range(5)], "broken\tline"))
     e = entry_for(content)
-    ingest = CFG.ingest.model_copy(update={"reject_lines_tolerance_per_file": 5})
+    ingest = CFG.ingest.model_copy(update={"reject_records_tolerance_per_file": 5})
     cfg = CFG.model_copy(update={"ingest": ingest})
     with pytest.raises(SchemaError, match="rechazadas"):
         g.process_day(
@@ -474,13 +474,24 @@ def test_process_day_reject_threshold_fails(tmp_path: Path) -> None:
 
 def test_file_reject_threshold_fails() -> None:
     # Regresión (revisión adversarial): un fichero pequeño mal formado pasaba el umbral diario.
-    content = zip_bytes(gkg_text(line(), "x", "y", "z"))
+    content = zip_bytes(gkg_text(line(), line(), "x", line(), line(), "y", line(), line(), "z"))
     e = entry_for(content)
     with (
         Server({e.name: [ok(content)]}).client() as c,
         pytest.raises(SchemaError, match="en el fichero"),
     ):
         g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+
+
+def test_one_record_split_into_many_lines_counts_once() -> None:
+    # Regresión (2020-05-19 04:15): un registro con 48 saltos internos tumbaba el día entero.
+    rows = [line(record_id=str(i)) for i in range(60)]
+    broken = [line(record_id="patent"), *[f"&HomeUrl=part{i}" for i in range(48)]]
+    content = zip_bytes(gkg_text(*rows[:30], *broken, *rows[30:]))
+    e = entry_for(content)
+    with Server({e.name: [ok(content)]}).client() as c:
+        _, rec = g.fetch_and_filter(c, e, CFG, sleep=no_sleep)
+    assert (rec.rejected, rec.rejected_blocks, rec.rows_in) == (49, 1, 60)
 
 
 def test_file_reject_within_tolerance_passes() -> None:
