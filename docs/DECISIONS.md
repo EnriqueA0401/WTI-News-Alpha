@@ -151,7 +151,8 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - el COT de CL de la CFTC: `report_date` y `:created_at`.
 - Todo sin claves. Se guarda en la rama huérfana `capture-data` (append-only).
 - La disponibilidad real queda acotada por `(previous_check_utc, observed_at_utc]`.
-- **Hallazgo en la primera prueba (2026-10-16 00:30–00:45 UTC):** `lastupdate.txt` anunció los GKG de 00:30 y 00:45 mientras el fichero daba 404 (>5 min). Por eso se separan los eventos "anunciado" y "disponible".
+- **Hallazgo en la primera prueba (2026-10-16):** desde el entorno de desarrollo, `lastupdate.txt` anunciaba los GKG de 00:30 y 00:45 mientras el fichero daba 404 (00:30–00:35 UTC). Desde GitHub, el GKG de 00:45 ya estaba disponible a las 00:36. Por eso se separan los eventos "anunciado" y "disponible"; la captura medirá cuánto duran estos desfases.
+- **Prueba en GitHub:** run 38830378719 (manual) OK. Rama `capture-data` creada con 8 observaciones.
   - Consecuencia para F3/F4: la hora de anuncio no garantiza que el fichero exista.
   - La disponibilidad histórica sigue la regla D6 (+15 min) y lo verifica esta captura.
 - **Riesgos:**
