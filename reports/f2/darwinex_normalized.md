@@ -1,12 +1,14 @@
-# F2 — Precio normalizado Darwinex XTIUSD M1 (`dwx-xti-m1-v1`)
+# F2 — Precio normalizado Darwinex XTIUSD M1 (`dwx-xti-m1-v3`)
+
+> v1, v2 y v3 tienen salidas idénticas (mismos sha256). La v2 añade las validaciones de la revisión adversarial y la v3 el hash del código en el manifiesto.
 
 Fecha: 2026-10-16. Plan: `docs/plans/FASE_02_precio.md`. Comando: `wna normalize darwinex`.
 
 ## Resultado
 - **Entrada:** `darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv`, con sha256 `ab0ede34…68aa`.
   - La procedencia del RAR está en `manifests/darwinex_extract.jsonl`.
-- **Salida:** `data/normalized/darwinex_xti_m1/dwx-xti-m1-v1/YYYY.parquet` (7 ficheros, 35 MB, solo lectura).
-  - Manifiesto: `manifests/normalized/darwinex_xti_m1/dwx-xti-m1-v1.json`.
+- **Salida:** `data/normalized/darwinex_xti_m1/dwx-xti-m1-v3/YYYY.parquet` (7 ficheros, 35 MB, solo lectura).
+  - Manifiesto: `manifests/normalized/darwinex_xti_m1/dwx-xti-m1-v3.json`.
 - **Filas:** 1.961.470 leídas, 1.961.464 conservadas.
 - **Descartadas (6):**
   - `daily_break`: 4 barras a las 17:00 ET (2018);
