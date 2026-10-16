@@ -16,6 +16,8 @@ from wti_news_alpha.runlog import REPO_ROOT, current_commit
 
 SERIES = ("DGS10", "DGS2", "T10YIE", "VIXCLS", "DTWEXBGS")
 FIRST_YEAR, LAST_YEAR = 2015, 2026
+# DTWEXBGS no tiene vintages antes del 2019-02-04 (F1, decisión D10): la API da HTTP 400.
+FIRST_REALTIME = {"DTWEXBGS": "2019-02-04"}
 LAST_DAY = "2026-10-16"
 URL = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -30,13 +32,15 @@ def main() -> None:
     store = RawStore(REPO_ROOT / "data" / "raw", REPO_ROOT / "manifests", commit)
     with httpx.Client(timeout=120) as client:
         for sid in SERIES:
-            for year in range(FIRST_YEAR, LAST_YEAR + 1):
+            first = FIRST_REALTIME.get(sid, f"{FIRST_YEAR}-01-01")
+            for year in range(int(first[:4]), LAST_YEAR + 1):
                 end = LAST_DAY if year == LAST_YEAR else f"{year}-12-31"
+                start = max(first, f"{year}-01-01")
                 params = {
                     "series_id": sid,
                     "api_key": key,
                     "file_type": "json",
-                    "realtime_start": f"{year}-01-01",
+                    "realtime_start": start,
                     "realtime_end": end,
                     "observation_start": "2014-01-01",
                     "output_type": "1",
