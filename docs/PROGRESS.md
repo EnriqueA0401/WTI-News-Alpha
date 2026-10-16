@@ -25,7 +25,7 @@
 - D12: captura prospectiva (`ingestion/capture.py`, `wna capture run`, `.github/workflows/capture.yml`, ADR-016).
   - Revisión adversarial: 11 hallazgos, todos corregidos.
   - Dos ejecuciones manuales en GitHub OK (crear la rama y actualizarla).
-  - **Pendiente:** el cron programado aún no se ha disparado (01:40 UTC); se revisa en cada chequeo horario.
+  - El cron programado empezó a correr solo a las 04:56 UTC, después de que el usuario hiciera un commit del workflow. Registró correctamente el salto 01:30→05:00 como `gap`.
 - `make check` en verde (246 tests, cobertura de ramas 99 %).
 
 ## Pendiente
