@@ -214,12 +214,22 @@ def test_filter_title_and_org() -> None:
 def test_filter_keeps_raw_columns_order_and_provenance() -> None:
     text = gkg_text(line(record_id="a"), line(record_id="b", themes="ENV_OIL;"))
     df, _ = g.filter_gkg(text, TS, FLT)
-    assert df.columns == [*g.GKG_COLUMNS, *g.EXTRA_COLUMNS]
-    assert df.schema == g.OUTPUT_SCHEMA
+    assert df.columns == [c for c in [*g.GKG_COLUMNS, *g.EXTRA_COLUMNS] if c != "v2_gcam"]
+    assert df.schema == g.output_schema(FLT)
     assert df["row_in_file"].to_list() == [1]
     assert df["source_file_ts"].to_list() == [TS]
-    assert df["v2_gcam"].to_list() == ["wc:10,c1.1:2"]
+    assert "v2_gcam" not in df.columns
     assert df["v1_counts"].to_list() == [""]
+    full = FLT.model_copy(update={"drop_columns": ()})
+    df_full, _ = g.filter_gkg(text, TS, full)
+    assert df_full["v2_gcam"].to_list() == ["wc:10,c1.1:2"]
+    assert df_full.schema == g.OUTPUT_SCHEMA
+
+
+def test_drop_columns_must_be_gkg_columns() -> None:
+    bad = FLT.model_copy(update={"drop_columns": ("match_theme",)})
+    with pytest.raises(SchemaError, match="drop_columns"):
+        g.filter_gkg("", TS, bad)
 
 
 def test_filter_rejects_ragged_lines_and_flags_relevance() -> None:
@@ -242,7 +252,7 @@ def test_filter_counts_date_mismatch() -> None:
 def test_filter_empty_file() -> None:
     df, st = g.filter_gkg("", TS, FLT)
     assert df.height == 0
-    assert df.schema == g.OUTPUT_SCHEMA
+    assert df.schema == g.output_schema(FLT)
     assert st.rows_in == 0
 
 
@@ -431,11 +441,11 @@ def test_process_day_writes_only_to_staging(tmp_path: Path) -> None:
     staged = Path(out.staged_path)
     assert staged.parent == store.staging_dir
     assert not (store.raw_root / out.rel_path).exists()
-    assert out.rel_path == "gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    assert out.rel_path == "gdelt_gkg_oil/gkg-oil-v3/2024/06/20240610.parquet"
     assert not staged.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
     df = pl.read_parquet(staged)
     assert labels(df) == ["a1", "b1"]
-    assert df.schema == g.OUTPUT_SCHEMA
+    assert df.schema == g.output_schema(FLT)
     assert out.n_rows == 2
     assert [r.status for r in out.files] == ["ok", "ok", "missing_404"]
     assert out.sha256 == hashlib.sha256(staged.read_bytes()).hexdigest()
@@ -497,7 +507,7 @@ def test_process_day_empty_day_writes_empty_output(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     out = run_day(store, [], Server({}))
     assert out.n_rows == 0
-    assert pl.read_parquet(out.staged_path).schema == g.OUTPUT_SCHEMA
+    assert pl.read_parquet(out.staged_path).schema == g.output_schema(FLT)
 
 
 def read_manifest(store: g.GkgDayStore) -> list[dict[str, object]]:
@@ -517,7 +527,7 @@ def test_publish_and_status(tmp_path: Path) -> None:
     assert store.status(DAY) == "done"
     (rec,) = read_manifest(store)
     assert rec["sha256"] == out.sha256
-    assert rec["filter_version"] == "gkg-oil-v2"
+    assert rec["filter_version"] == "gkg-oil-v3"
     assert rec["filter_sha256"] == g.filter_sha256(FLT)
     assert rec["code_commit"] == "abc"
     assert rec["index"] == {
@@ -716,7 +726,7 @@ def test_ingest_gkg_adopts_identical_orphan(tmp_path: Path) -> None:
 
 def test_ingest_gkg_different_orphan_is_failure(tmp_path: Path) -> None:
     entries, srv = day_fixture()
-    dest = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    dest = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v3/2024/06/20240610.parquet"
     dest.parent.mkdir(parents=True)
     dest.write_bytes(b"other")
     s = runner(tmp_path, srv)({DAY: entries})
@@ -727,7 +737,7 @@ def test_ingest_gkg_tampered_done_day_is_failure(tmp_path: Path) -> None:
     entries, srv = day_fixture()
     run = runner(tmp_path, srv)
     run({DAY: entries})
-    path = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet"
+    path = tmp_path / "raw/gdelt_gkg_oil/gkg-oil-v3/2024/06/20240610.parquet"
     os.chmod(path, 0o644)
     path.write_bytes(b"x")
     s = run({DAY: entries})
@@ -795,7 +805,7 @@ def test_run_pipeline_verifies_index_and_ingests(tmp_path: Path) -> None:
     s = pipeline(raw, man, srv)
     assert s.written == [DAY]
     assert s.ok
-    out = pl.read_parquet(raw / "gdelt_gkg_oil/gkg-oil-v2/2024/06/20240610.parquet")
+    out = pl.read_parquet(raw / "gdelt_gkg_oil/gkg-oil-v3/2024/06/20240610.parquet")
     assert labels(out) == ["a1", "b1"]
     (rec,) = read_manifest(g.GkgDayStore(raw, man, FLT, "abc", IDX))
     index = rec["index"]

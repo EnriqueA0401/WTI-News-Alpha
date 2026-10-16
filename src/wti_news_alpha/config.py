@@ -248,6 +248,8 @@ class GkgFilterConfig(_Strict):
     org_regex: PolarsRegex
     url_regex: PolarsRegex
     reject_relevance_regex: PolarsRegex
+    # Columnas GKG que no se guardan (se validan contra el esquema GKG al usarlas).
+    drop_columns: tuple[NonEmptyStr, ...] = ()
 
     @model_validator(mode="after")
     def _unique_tokens(self) -> Self:

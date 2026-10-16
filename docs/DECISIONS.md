@@ -211,3 +211,13 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
 - **Roll del CFD (2026-10-16):** no hay escalón de roll. El precio pasa gradualmente de C1 a C2 durante el mes (w ≈ 0,2 a 22 días hábiles del vencimiento → ≈ 1 a 3 días).
   - Se trata como precio a vencimiento casi constante.
   - Las etiquetas no cruzan la pausa diaria, donde se concentran los saltos (mediana de 6,9 pb frente a 0,5 pb).
+
+## ADR-018 — Arranque con 2018–2020 + 2024–2026 y filtro `gkg-oil-v3` sin GCAM (usuario, 2026-10-16)
+- **Contexto:** falta el precio de 2021–2023 (ADR-017). El usuario decide no esperar.
+- **Decisión 1:** el periodo de trabajo pasa a ser 2018–2020 + 2024–2026, con precio Darwinex y noticias GDELT. 2021–2023 se añadirá cuando llegue.
+  - Esto modifica D4 (2020–2026).
+  - Limitación declarada: periodo discontinuo; 2018 sin títulos.
+- **Decisión 2:** en la ampliación se deja de guardar la columna GCAM (≈ 70 % del tamaño).
+  - Va como filtro nuevo `gkg-oil-v3`: mismas filas que v2, columna `v2_gcam` excluida (`drop_columns`).
+  - 2024–2025 queda en v2 (con GCAM). Aguas abajo se usa la intersección de columnas.
+- **Ejecución:** `wna ingest gdelt-gkg` 2026-01-01 → 2026-10-15 y 2018-01-01 → 2021-01-01 (≈ 2–3 h, aprobado por el usuario).

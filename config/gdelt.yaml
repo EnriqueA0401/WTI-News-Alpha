@@ -1,9 +1,10 @@
 # GDELT GKG: filtro amplio versionado e ingesta por streaming (ADR-011, D5 aprobado 2026-10-15; ADR-013).
-# v1: solo prueba de un día (2024-06-10). v2: + token FUEL, título/organización ampliados y URL (revisión adversarial).
+# v1: solo prueba de un día (2024-06-10). v2: + token FUEL, título/organización ampliados y URL (revisión adversarial;
+# piloto 2024-2025). v3 (usuario 2026-10-16): mismas filas que v2 sin la columna GCAM (disco); 2018-2020 y 2026.
 # El filtro decide qué filas del GKG se conservan en raw; la relevancia fina se decide en F3.
 # Cambiar cualquier campo de gkg_filter exige una nueva version (la salida va a otra carpeta).
 gkg_filter:
-  version: gkg-oil-v2
+  version: gkg-oil-v3
   # Un tema de V1Themes cuenta si alguno de sus tokens separados por "_" está en esta lista
   # (así ENV_OIL y ECON_OILPRICE cuentan, pero WB_1913_SOIL_MANAGEMENT no).
   theme_tokens:
@@ -37,6 +38,8 @@ gkg_filter:
   url_regex: '(?i)(?:^|[^a-z])(crude|oil|opec|wti|brent|petroleum|petrol|oilfields?|aramco)(?:[^a-z]|$)'
   # Solo para marcar líneas rechazadas que parecían relevantes (no filtra nada).
   reject_relevance_regex: '(?i)(oil|crude|opec|petrol)'
+  # GCAM ocupa ≈ 70 % del tamaño; el tono general sigue en v15_tone (decisión del usuario 2026-10-16).
+  drop_columns: [v2_gcam]
 
 ingest:
   url_prefix: https://data.gdeltproject.org/gdeltv2/

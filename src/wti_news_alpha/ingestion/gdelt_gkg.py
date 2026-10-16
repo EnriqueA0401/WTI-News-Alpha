@@ -7,6 +7,7 @@ maestro (tamaño y md5), se filtra con el filtro versionado de
 - ``raw_root/gdelt_gkg_oil/<version>/YYYY/MM/YYYYMMDD.parquet``: las 27
   columnas originales (texto, sin rellenar) de las filas conservadas, más
   ``source_file_ts`` (UTC, timestamp nominal del fichero), ``row_in_file``
+  (columnas GKG de ``drop_columns`` excluidas, p. ej. GCAM desde v3),
   (línea 0-based en el fichero) y los motivos de coincidencia. Clave de fila:
   ``(source_file_ts, row_in_file)``; ``gkg_record_id`` NO es único (2015-2018).
   Se escribe una vez, en solo lectura.
@@ -225,8 +226,16 @@ class FilterStats:
     match_url: int
 
 
-def _empty_output() -> pl.DataFrame:
-    return pl.DataFrame(schema=OUTPUT_SCHEMA)
+def output_schema(flt: GkgFilterConfig) -> pl.Schema:
+    """Esquema de salida: ``OUTPUT_SCHEMA`` sin las columnas GKG de ``flt.drop_columns``."""
+    unknown = sorted(set(flt.drop_columns) - set(GKG_COLUMNS))
+    if unknown:
+        raise SchemaError(f"drop_columns desconocidas o no eliminables: {unknown}")
+    return pl.Schema([(n, t) for n, t in OUTPUT_SCHEMA.items() if n not in flt.drop_columns])
+
+
+def _empty_output(schema: pl.Schema) -> pl.DataFrame:
+    return pl.DataFrame(schema=schema)
 
 
 def filter_sha256(flt: GkgFilterConfig) -> str:
@@ -243,15 +252,16 @@ def filter_gkg(
     ``file_ts`` es el timestamp nominal (UTC) del fichero. Una línea es un
     registro válido si tiene 27 campos, empieza por un GKGRECORDID y la línea
     siguiente (si existe) también lo es; si no, se rechaza y se cuenta.
-    Devuelve las filas conservadas con ``OUTPUT_SCHEMA`` en el orden del
+    Devuelve las filas conservadas con ``output_schema(flt)`` en el orden del
     fichero y estadísticas.
     """
     file_ts = ensure_utc(file_ts)
+    schema = output_schema(flt)
     lines = text.split("\n")
     if lines and lines[-1] == "":
         lines.pop()  # salto final del fichero, no es un registro
     if not lines:
-        return _empty_output(), FilterStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        return _empty_output(schema), FilterStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     raw = pl.DataFrame({"raw": lines}).with_row_index("row_in_file")
     well_formed = pl.col("raw").str.contains(_RECORD_START_RE) & (
@@ -288,8 +298,8 @@ def filter_gkg(
     kept = good.filter(
         pl.col("match_theme") | pl.col("match_title") | pl.col("match_org") | pl.col("match_url")
     )
-    kept = kept.select(list(OUTPUT_SCHEMA.names()))
-    if kept.schema != OUTPUT_SCHEMA:  # pragma: no cover - invariante de construcción
+    kept = kept.select(list(schema.names()))
+    if kept.schema != schema:  # pragma: no cover - invariante de construcción
         raise SchemaError(f"esquema de salida inesperado: {kept.schema}")
     stats = FilterStats(
         rows_in=good.height,
@@ -649,7 +659,7 @@ def process_day(  # noqa: PLR0913 - se ejecuta en otro proceso: todo explícito
             f"(> {cfg.ingest.max_reject_fraction_per_day:.3%})"
         )
     frames = [df for df, _ in results if df is not None]
-    out = pl.concat(frames) if frames else _empty_output()
+    out = pl.concat(frames) if frames else _empty_output(output_schema(cfg.gkg_filter))
     out = out.sort(["source_file_ts", "row_in_file"], maintain_order=True)
 
     spec.staging_dir.mkdir(parents=True, exist_ok=True)
