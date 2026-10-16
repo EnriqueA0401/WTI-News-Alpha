@@ -58,3 +58,4 @@ jobs:
       - name: Fallar si alguna fuente falló
         if: steps.cap.outcome == 'failure'
         run: exit 1
+ 
