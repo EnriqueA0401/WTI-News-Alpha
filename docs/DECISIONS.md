@@ -200,3 +200,6 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   3. **Precio de referencia para etiquetas:** medio aproximado = bid + AvgSpread/2 (a fijar en F6). Costes: AvgSpread real por minuto (mejor que el supuesto de 1 tick).
   4. Las barras ausentes nunca se rellenan (CLAUDE.md §6.3).
 - **Pendiente del usuario:** enlace de descarga (Drive/Dropbox) y re-descarga de 2021–2023 en SQX.
+- **Primer intento de descarga (2026-10-16):** Drive devolvió la página de inicio de sesión (fichero no compartido públicamente).
+  - Queda en raw como `darwinex/xti_m1_sqx_20261016.bin` (HTML, 947 KB, manifiesto `manifests/darwinex.jsonl`) y se marca **inválido**; no se borra porque raw es inmutable.
+  - La siguiente descarga irá a otra ruta.
