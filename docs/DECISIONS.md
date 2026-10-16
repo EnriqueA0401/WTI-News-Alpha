@@ -356,3 +356,20 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
 6. DTWEXBGS: su primera ventana (2019-02-04) es la primera vintage real, no un recorte.
    - Interpretación de D10: obs anteriores a 2019-02-04 se incluyen con la disponibilidad de esa vintage (correcta point-in-time).
 7. Fusión de ventanas vectorizada (CLAUDE.md §13). Test de propiedades: cortar la historia en ventanas no cambia la fusión.
+
+## ADR-026 — Noticias: ficheros GDELT tardíos y fecha de publicación (usuario, 2026-10-16)
+- **Revisión adversarial de `gdelt-news-v1`:** sin fallos de código críticos. Dos hallazgos de datos necesitaban decisión del usuario.
+- **Decisión 1: ficheros tardíos.** La evidencia de D6 estaba incompleta: había **33 ficheros** publicados más de 15 min después de su nombre (2 en 2024–2025 y 31 en 2018–2020), con 2.875 noticias. El peor llegó 5,8 días tarde (2018-02-21 20:15).
+  - El usuario elige **"usar la hora real"**: `first_available_at` = max(nominal + 15 min, `Last-Modified`).
+  - Esto modifica D6 solo para esos ficheros. Se mantiene `late_file`.
+  - Un fichero con filas y sin `Last-Modified` → error.
+  - `Last-Modified` puede ser una re-subida. En ese caso solo retrasa la disponibilidad, que es la dirección conservadora (ADR-012).
+- **Decisión 2: fecha de publicación del artículo** (`PAGE_PRECISEPUBTIMESTAMP`, huso no verificado). El 1,9 % llega "en el futuro", casi siempre por la hora local del medio (Europa y Asia).
+  - El usuario elige **"solo imposibles"**: se excluye solo si la fecha va más de 14 h por delante de `first_available_at` (`published_after_available`) o si el año es < 1995 (`published_at_incoherent`; por ejemplo 1970 o el año 0).
+  - Los adelantos menores solo se marcan (`published_ahead`).
+- **Otras correcciones (`gdelt-news-v2`; la v1 se conserva):**
+  - columna `first_seen_at` (= `first_available_at` en el histórico, CLAUDE.md §7);
+  - comprobación de que cada fichero del manifiesto pertenece a su día y no está duplicado;
+  - hash del código calculado al inicio;
+  - test de propiedades y de determinismo.
+  - Los ficheros mensuales se parten por `source_file_ts`: para seleccionar por disponibilidad hay que filtrar por `first_available_at`.

@@ -407,6 +407,8 @@ class NewsConfig(_Strict):
     version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
     sources: list[NewsSource] = Field(min_length=1)
     availability_lag_minutes: Param[PositiveInt]
+    published_ahead_tolerance_hours: Param[PositiveInt]
+    published_min_year: Param[Annotated[int, Strict(), Field(ge=1900, le=2100)]]
 
     @model_validator(mode="after")
     def _no_overlap(self) -> Self:

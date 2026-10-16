@@ -3,7 +3,14 @@
 Especificación: ``docs/plans/FASE_02_noticias.md``; regla D6 (ADR-014).
 
 Invariantes:
-- ``first_available_at`` = ``source_file_ts`` + ``availability_lag_minutes`` (UTC).
+- ``first_available_at`` = max(``source_file_ts`` + ``availability_lag_minutes``,
+  ``Last-Modified`` del fichero) en UTC (D6 + ADR-026). ``first_seen_at`` es igual
+  en el histórico (no hubo captura en vivo).
+- ``exclude_reason``: fecha de publicación imposible (más de 14 h por delante de
+  ``first_available_at`` o año < 1995). Adelantos menores (husos horarios) solo
+  se marcan (``published_ahead``). Los ficheros mensuales se parten por
+  ``source_file_ts``: para seleccionar por disponibilidad, filtrar por
+  ``first_available_at``.
 - Cada día raw se verifica (sha256) contra su manifiesto antes de leerlo.
 - No se borra ninguna fila: las incoherencias se marcan (``late_file``,
   ``exclude_reason``). La deduplicación y la relevancia son de F3.
@@ -45,10 +52,12 @@ OUTPUT_COLUMNS = (
     "gkg_record_id",
     "filter_version",
     "first_available_at",
+    "first_seen_at",
     "file_last_modified_utc",
     "late_file",
     "ingested_at",
     "published_at",
+    "published_ahead",
     "exclude_reason",
     "url",
     "source_common_name",
@@ -97,20 +106,36 @@ def load_day_entries(manifest_dir: Path, filter_version: str) -> dict[date, DayE
                 day = date.fromisoformat(d["day"])
                 if day in out:
                     raise RawIntegrityError(f"{path.name}: día {day} duplicado en el manifiesto")
-                lm = {
-                    _file_ts(f["name"]): (
-                        _utc(f["last_modified_utc"]) if f.get("last_modified_utc") else None
-                    )
-                    for f in d["files"]
-                }
+                lm: dict[datetime, datetime | None] = {}
+                for f in d["files"]:
+                    ts = _file_ts(f["name"])
+                    if ts.date() != day or ts in lm:
+                        raise RawIntegrityError(
+                            f"{path.name}: fichero {f['name']} incoherente con {day}"
+                        )
+                    lm[ts] = _utc(f["last_modified_utc"]) if f.get("last_modified_utc") else None
                 out[day] = DayEntry(
                     day, filter_version, d["path"], d["sha256"], _utc(d["recorded_at_utc"]), lm
                 )
     return out
 
 
-def normalize_day(raw: pl.DataFrame, entry: DayEntry, lag: timedelta) -> tuple[pl.DataFrame, int]:
-    """Un día raw → filas normalizadas. Devuelve también los ``published_at`` ilegibles."""
+@dataclass(frozen=True)
+class PubRules:
+    """Exclusión por fecha de publicación (decisión del usuario, ADR-026)."""
+
+    ahead_tolerance: timedelta
+    min_year: int
+
+
+def normalize_day(
+    raw: pl.DataFrame, entry: DayEntry, lag: timedelta, rules: PubRules
+) -> tuple[pl.DataFrame, int]:
+    """Un día raw → filas normalizadas. Devuelve también los ``published_at`` ilegibles.
+
+    ``first_available_at`` = max(``source_file_ts`` + ``lag``, ``Last-Modified``)
+    (ADR-026). Un fichero con filas y sin ``Last-Modified`` → error.
+    """
     require_utc_column(raw, "source_file_ts")
     lm = pl.DataFrame(
         {
@@ -126,14 +151,21 @@ def normalize_day(raw: pl.DataFrame, entry: DayEntry, lag: timedelta) -> tuple[p
     missing = df.filter(~pl.col("source_file_ts").is_in(lm["source_file_ts"].implode()))
     if missing.height:
         raise SchemaError(f"{entry.day}: {missing.height} filas de ficheros fuera del manifiesto")
+    no_lm = df.filter(pl.col("file_last_modified_utc").is_null())
+    if no_lm.height:
+        raise SchemaError(f"{entry.day}: {no_lm.height} filas de ficheros sin Last-Modified")
     pub_raw = pl.col("v2_extras_xml").str.extract(_PUB_RE, 1)
     tone_raw = pl.col("v15_tone").str.split(",").list.first()
+    pub_parsed = pub_raw.str.strptime(pl.Datetime("us"), "%Y%m%d%H%M%S", strict=False)
+    nominal = pl.col("source_file_ts") + lag
     df = df.with_columns(
-        first_available_at=pl.col("source_file_ts") + lag,
+        first_available_at=pl.max_horizontal(nominal, "file_last_modified_utc"),
+        late_file=pl.col("file_last_modified_utc") > nominal,
         _pub_raw=pub_raw,
-        published_at=pub_raw.str.strptime(
-            pl.Datetime("us"), "%Y%m%d%H%M%S", strict=False
-        ).dt.replace_time_zone("UTC"),
+        _pub_incoherent=pub_parsed.dt.year() < rules.min_year,
+        published_at=pl.when(pub_parsed.dt.year() >= rules.min_year)
+        .then(pub_parsed)
+        .dt.replace_time_zone("UTC"),
         tone=tone_raw.cast(pl.Float64, strict=False),
         _tone_raw=tone_raw,
     )
@@ -141,7 +173,9 @@ def normalize_day(raw: pl.DataFrame, entry: DayEntry, lag: timedelta) -> tuple[p
     if bad_tone.height:
         raise SchemaError(f"{entry.day}: {bad_tone.height} tonos no numéricos")
     n_pub_invalid = df.filter(
-        pl.col("_pub_raw").is_not_null() & pl.col("published_at").is_null()
+        pl.col("_pub_raw").is_not_null()
+        & pl.col("published_at").is_null()
+        & ~pl.col("_pub_incoherent").fill_null(False)
     ).height
     out = df.select(
         "source_file_ts",
@@ -149,12 +183,15 @@ def normalize_day(raw: pl.DataFrame, entry: DayEntry, lag: timedelta) -> tuple[p
         "gkg_record_id",
         filter_version=pl.lit(entry.filter_version),
         first_available_at="first_available_at",
+        first_seen_at="first_available_at",
         file_last_modified_utc="file_last_modified_utc",
-        late_file=pl.col("file_last_modified_utc").fill_null(pl.col("first_available_at"))
-        > pl.col("first_available_at"),
+        late_file="late_file",
         ingested_at=pl.lit(entry.ingested_at).cast(_UTC),
         published_at="published_at",
-        exclude_reason=pl.when(pl.col("published_at") > pl.col("first_available_at"))
+        published_ahead=(pl.col("published_at") > pl.col("first_available_at")).fill_null(False),
+        exclude_reason=pl.when(pl.col("_pub_incoherent").fill_null(False))
+        .then(pl.lit("published_at_incoherent"))
+        .when(pl.col("published_at") > pl.col("first_available_at") + rules.ahead_tolerance)
         .then(pl.lit("published_after_available"))
         .otherwise(pl.lit(None, dtype=pl.Utf8)),
         url="v2_document_identifier",
@@ -171,7 +208,7 @@ def normalize_day(raw: pl.DataFrame, entry: DayEntry, lag: timedelta) -> tuple[p
         match_org="match_org",
         match_url="match_url",
     ).sort("source_file_ts", "row_in_file")
-    for col in ("first_available_at", "ingested_at"):
+    for col in ("first_available_at", "first_seen_at", "ingested_at"):
         require_utc_column(out, col)
     if out.filter(pl.col("ingested_at") < pl.col("first_available_at")).height:
         raise SchemaError(f"{entry.day}: ingesta anterior a la disponibilidad (incoherente)")
@@ -192,7 +229,7 @@ def _select_entries(cfg: NewsConfig, manifest_dir: Path) -> list[DayEntry]:
     return selected
 
 
-def _writer(entries: list[DayEntry], raw_root: Path, lag: timedelta) -> Writer:
+def _writer(entries: list[DayEntry], raw_root: Path, lag: timedelta, rules: PubRules) -> Writer:
     def write(staging: Path) -> dict[str, Any]:
         by_month: dict[tuple[int, int], list[DayEntry]] = {}
         for e in entries:
@@ -202,7 +239,7 @@ def _writer(entries: list[DayEntry], raw_root: Path, lag: timedelta) -> Writer:
             parts = []
             n_pub_invalid = 0
             for e in month_entries:
-                day_df, n_bad = normalize_day(pl.read_parquet(raw_root / e.rel_path), e, lag)
+                day_df, n_bad = normalize_day(pl.read_parquet(raw_root / e.rel_path), e, lag, rules)
                 parts.append(day_df)
                 n_pub_invalid += n_bad
             month = pl.concat(parts).sort("source_file_ts", "row_in_file")
@@ -216,7 +253,15 @@ def _writer(entries: list[DayEntry], raw_root: Path, lag: timedelta) -> Writer:
             counts[f"{y}-{m:02d}"] = {
                 "rows": month.height,
                 "late_file_rows": int(month["late_file"].sum()),
-                "published_after_available": int(month["exclude_reason"].is_not_null().sum()),
+                "published_after_available": int(
+                    (month["exclude_reason"] == "published_after_available").sum()
+                ),
+                "published_at_incoherent": int(
+                    (month["exclude_reason"] == "published_at_incoherent").sum()
+                ),
+                "published_ahead_flag_only": int(
+                    (month["published_ahead"] & month["exclude_reason"].is_null()).sum()
+                ),
                 "published_at_missing": int(month["published_at"].null_count()),
                 "published_at_invalid": n_pub_invalid,
                 "title_missing": int(month["title"].null_count()),
@@ -231,7 +276,14 @@ def run_normalize(
     *, raw_root: Path, out_root: Path, manifest_dir: Path, cfg: NewsConfig, commit: str
 ) -> Published:
     """Verifica cada día raw contra su manifiesto y publica (o verifica) la capa mensual."""
+    code = code_hashes(sys.modules[__name__], timeutils)  # al inicio, junto al commit
     lag = timedelta(minutes=cfg.availability_lag_minutes.require("availability_lag_minutes"))
+    rules = PubRules(
+        ahead_tolerance=timedelta(
+            hours=cfg.published_ahead_tolerance_hours.require("published_ahead_tolerance_hours")
+        ),
+        min_year=cfg.published_min_year.require("published_min_year"),
+    )
     entries = _select_entries(cfg, manifest_dir)
     inputs: dict[str, str] = {}
     for e in entries:
@@ -245,7 +297,7 @@ def run_normalize(
         spec,
         inputs,
         params,
-        _writer(entries, raw_root, lag),
+        _writer(entries, raw_root, lag, rules),
         commit=commit,
-        code=code_hashes(sys.modules[__name__], timeutils),
+        code=code,
     )

@@ -1,5 +1,6 @@
 # Noticias normalizadas (docs/plans/FASE_02_noticias.md).
-version: gdelt-news-v1
+# v1 (2026-10-16) se conserva; v2 aplica las decisiones del usuario de ADR-026.
+version: gdelt-news-v2
 sources:
   - {filter_version: gkg-oil-v3, start: "2018-01-01", end: "2021-01-01"}
   - {filter_version: gkg-oil-v2, start: "2024-01-01", end: "2026-01-01"}
@@ -7,4 +8,12 @@ sources:
 availability_lag_minutes:
   value: 15
   status: approved
-  source_ref: "ADR-014 D6 (first_available_at = timestamp nominal del fichero + 15 min)"
+  source_ref: "ADR-014 D6 (first_available_at = timestamp nominal del fichero + 15 min); ficheros tardíos: max con Last-Modified (ADR-026)"
+published_ahead_tolerance_hours:
+  value: 14
+  status: approved
+  source_ref: "Decisión del usuario 2026-10-16 (ADR-026): excluir solo fechas de publicación > 14 h por delante (más que cualquier huso horario)"
+published_min_year:
+  value: 1995
+  status: approved
+  source_ref: "Decisión del usuario 2026-10-16 (ADR-026): fechas absurdas (p. ej. 1970) se excluyen"

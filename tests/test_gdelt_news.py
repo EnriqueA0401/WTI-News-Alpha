@@ -8,6 +8,8 @@ from pathlib import Path
 
 import polars as pl
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from wti_news_alpha.config import CONFIG_DIR, NewsConfig, load_news_config
 from wti_news_alpha.errors import RawIntegrityError, SchemaError
@@ -15,6 +17,7 @@ from wti_news_alpha.normalization import gdelt_news as gn
 
 D = date.fromisoformat
 LAG = timedelta(minutes=15)
+RULES = gn.PubRules(ahead_tolerance=timedelta(hours=14), min_year=1995)
 STR_COLS = [
     "gkg_record_id",
     "v21_date",
@@ -107,7 +110,7 @@ def test_first_available_at_and_fields() -> None:
             }
         ]
     )
-    out, n_bad = gn.normalize_day(raw, _entry(), LAG)
+    out, n_bad = gn.normalize_day(raw, _entry(), LAG, RULES)
     r = out.row(0, named=True)
     assert out.columns == list(gn.OUTPUT_COLUMNS)
     assert r["first_available_at"] == datetime(2024, 3, 10, 6, 15, tzinfo=UTC)
@@ -119,53 +122,93 @@ def test_first_available_at_and_fields() -> None:
     assert n_bad == 0
 
 
-def test_flags_late_file_and_future_publication() -> None:
-    raw = _raw(
-        [
-            {
-                "ts": T0,
-                "v15_tone": "1",
-                "v2_extras_xml": _pub("20240310070000"),
-            },
-            {
-                "ts": T0,
-                "v15_tone": "1",
-                "v2_extras_xml": _pub("20241399000000"),
-            },
-            {"ts": T0, "v15_tone": ""},
-        ]
-    )
-    out, n_bad = gn.normalize_day(raw, _entry({T0: T0 + timedelta(minutes=35)}), LAG)
-    assert out["late_file"].to_list() == [True, True, True]
-    assert out["exclude_reason"].to_list() == ["published_after_available", None, None]
-    assert out["published_at"].null_count() == 2
-    assert out["tone"].to_list()[2] is None
+def test_late_file_uses_last_modified() -> None:
+    # ADR-026: fichero publicado 35 min después de su nombre → disponible a esa hora real.
+    lm = T0 + timedelta(minutes=35)
+    out, _ = gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), _entry({T0: lm}), LAG, RULES)
+    r = out.row(0, named=True)
+    assert r["late_file"] is True
+    assert r["first_available_at"] == lm
+    assert r["first_seen_at"] == lm
+
+
+@pytest.mark.parametrize(("lm_minutes", "late"), [(15, False), (14, False), (16, True)])
+def test_late_file_boundary(lm_minutes: int, late: bool) -> None:
+    lm = T0 + timedelta(minutes=lm_minutes)
+    out, _ = gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), _entry({T0: lm}), LAG, RULES)
+    assert out["late_file"].to_list() == [late]
+    assert out["first_available_at"].to_list() == [max(lm, T0 + LAG)]
+
+
+def test_publication_date_rules() -> None:
+    fa = T0 + LAG  # 2024-03-10 06:15 UTC
+    pubs = [
+        "20240310140000",  # +7 h 45: huso horario, solo se marca
+        "20240310201500",  # +14 h justo: solo se marca
+        "20240310201600",  # > +14 h: se excluye
+        "19700101000000",  # absurda
+        "00000101000000",  # año 0
+        "20241399000000",  # ilegible
+    ]
+    rows = [{"ts": T0, "v15_tone": "1", "v2_extras_xml": _pub(p)} for p in pubs]
+    raw = _raw([*rows, {"ts": T0, "v15_tone": ""}])
+    out, n_bad = gn.normalize_day(raw, _entry(), LAG, RULES)
+    assert out["exclude_reason"].to_list() == [
+        None,
+        None,
+        "published_after_available",
+        "published_at_incoherent",
+        "published_at_incoherent",
+        None,
+        None,
+    ]
+    assert out["published_ahead"].to_list() == [True, True, True, False, False, False, False]
+    pub = out["published_at"].to_list()
+    assert pub[:2] == [fa + timedelta(hours=7, minutes=45), fa + timedelta(hours=14)]
+    assert pub[3:6] == [None, None, None]
+    assert out["tone"].to_list()[6] is None
     assert n_bad == 1
 
 
-def test_missing_last_modified_is_not_late() -> None:
-    out, _ = gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), _entry({T0: None}), LAG)
-    assert out["late_file"].to_list() == [False]
-    assert out["file_last_modified_utc"].to_list() == [None]
+def test_missing_last_modified_raises() -> None:
+    with pytest.raises(SchemaError, match="sin Last-Modified"):
+        gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), _entry({T0: None}), LAG, RULES)
+
+
+@settings(max_examples=100, deadline=None)
+@given(st.integers(0, 95), st.integers(-60, 600), st.integers(-48 * 60, 48 * 60))
+def test_property_availability_and_exclusion(slot: int, lm_delay: int, pub_delta: int) -> None:
+    ts = datetime(2019, 6, 1, tzinfo=UTC) + timedelta(minutes=15 * slot)
+    lm = ts + timedelta(minutes=lm_delay)
+    pub = ts + timedelta(minutes=pub_delta)
+    raw = _raw([{"ts": ts, "v15_tone": "1", "v2_extras_xml": _pub(f"{pub:%Y%m%d%H%M%S}")}])
+    entry = gn.DayEntry(
+        D("2019-06-01"), "v", "x", "0" * 64, datetime(2026, 1, 1, tzinfo=UTC), {ts: lm}
+    )
+    r = gn.normalize_day(raw, entry, LAG, RULES)[0].row(0, named=True)
+    assert r["first_available_at"] == max(ts + LAG, lm)
+    assert r["late_file"] == (lm > ts + LAG)
+    excluded = pub > r["first_available_at"] + timedelta(hours=14)
+    assert (r["exclude_reason"] == "published_after_available") == excluded
 
 
 def test_bad_tone_raises() -> None:
     with pytest.raises(SchemaError, match="tonos"):
-        gn.normalize_day(_raw([{"ts": T0, "v15_tone": "abc,1"}]), _entry(), LAG)
+        gn.normalize_day(_raw([{"ts": T0, "v15_tone": "abc,1"}]), _entry(), LAG, RULES)
 
 
 def test_row_from_file_not_in_manifest_raises() -> None:
     raw = _raw([{"ts": T0 + timedelta(minutes=15), "v15_tone": "1"}])
     with pytest.raises(SchemaError, match="fuera del manifiesto"):
-        gn.normalize_day(raw, _entry(), LAG)
+        gn.normalize_day(raw, _entry(), LAG, RULES)
 
 
 def test_ingested_before_available_raises() -> None:
     e = gn.DayEntry(
-        D("2024-03-10"), "v", "x", "0" * 64, datetime(2024, 3, 10, 6, 5, tzinfo=UTC), {T0: None}
+        D("2024-03-10"), "v", "x", "0" * 64, datetime(2024, 3, 10, 6, 5, tzinfo=UTC), {T0: T0}
     )
     with pytest.raises(SchemaError, match="incoherente"):
-        gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), e, LAG)
+        gn.normalize_day(_raw([{"ts": T0, "v15_tone": "1"}]), e, LAG, RULES)
 
 
 def test_config() -> None:
@@ -200,7 +243,11 @@ def _write_day(
         "sha256": sha,
         "recorded_at_utc": "2026-10-15T00:00:00+00:00",
         "files": [
-            {"name": f"{t:%Y%m%d%H%M%S}.gkg.csv.zip", "last_modified_utc": None} for t in sorted(ts)
+            {
+                "name": f"{t:%Y%m%d%H%M%S}.gkg.csv.zip",
+                "last_modified_utc": (t + timedelta(minutes=5)).isoformat(),
+            }
+            for t in sorted(ts)
         ],  # type: ignore[str-format]
     }
     mpath = mroot / "gdelt_gkg_oil" / version / f"{day:%Y-%m}.jsonl.gz"
@@ -243,7 +290,7 @@ def test_run_end_to_end(tmp_path: Path) -> None:
     res = _run(tmp_path, cfg)
     assert sorted(res.outputs) == ["201801.parquet", "201802.parquet", "202401.parquet"]  # type: ignore[attr-defined]
     assert res.manifest["totals"]["rows"] == 6  # type: ignore[attr-defined]
-    out = pl.read_parquet(tmp_path / "n" / "gdelt_news" / "gdelt-news-v1" / "201801.parquet")
+    out = pl.read_parquet(tmp_path / "n" / "gdelt_news" / "gdelt-news-v2" / "201801.parquet")
     assert out["row_in_file"].to_list() == [0, 1]
     assert out["filter_version"].to_list() == ["gkg-oil-v3"] * 2
 
@@ -299,3 +346,21 @@ def test_duplicate_row_keys_raise(tmp_path: Path) -> None:
     )
     with pytest.raises(SchemaError, match="duplicadas"):
         _run(tmp_path, _cfg([("gkg-oil-v3", "2018-01-31", "2018-02-01")]))
+
+
+def test_manifest_file_from_other_day_raises(tmp_path: Path) -> None:
+    d = D("2018-01-31")
+    _write_day(tmp_path / "raw", tmp_path / "m", "gkg-oil-v3", d, _day_rows(D("2018-02-01")))
+    with pytest.raises(RawIntegrityError, match="incoherente"):
+        gn.load_day_entries(tmp_path / "m", "gkg-oil-v3")
+
+
+def test_run_is_deterministic(tmp_path: Path) -> None:
+    outs = []
+    for sub in ("a", "b"):
+        base = tmp_path / sub
+        d = D("2018-01-31")
+        _write_day(base / "raw", base / "m", "gkg-oil-v3", d, _day_rows(d))
+        res = _run(base, _cfg([("gkg-oil-v3", "2018-01-31", "2018-02-01")]))
+        outs.append(res.outputs)  # type: ignore[attr-defined]
+    assert outs[0] == outs[1]
