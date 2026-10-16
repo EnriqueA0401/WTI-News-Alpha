@@ -18,7 +18,7 @@ TARGETS: tuple[RuleTarget, ...] = ("relevance", "family", "mechanism")
 
 
 def _match(rule: EventRule) -> pl.Expr:
-    m = pl.col(rule.field).str.contains(f"(?i){rule.regex}").fill_null(False)  # noqa: FBT003
+    m = pl.col(rule.field).str.contains(f"(?i){rule.regex}").fill_null(False)
     return m & pl.col("title").is_null() if rule.only_without_title else m
 
 
