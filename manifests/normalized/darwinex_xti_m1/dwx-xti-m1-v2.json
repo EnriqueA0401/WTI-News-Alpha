@@ -1,0 +1,72 @@
+{
+  "source": "darwinex_xti_m1",
+  "version": "dwx-xti-m1-v2",
+  "rows_in": 1961470,
+  "rows_out": 1961464,
+  "dropped": {
+    "daily_break": 4,
+    "outside_week": 2
+  },
+  "bar_start_utc_min": "2017-10-01 22:00:00+00:00",
+  "bar_start_utc_max": "2026-07-20 23:59:00+00:00",
+  "inputs": {
+    "darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv": "ab0ede34a6d63b5075a506813490dce646531f6b65fef945367075a468e668aa"
+  },
+  "params": {
+    "bar_timestamp_is_start": {
+      "note": "",
+      "source_ref": "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (primera barra semanal = domingo 18:00 ET; última del viernes = 16:59 ET)",
+      "status": "approved",
+      "value": true
+    },
+    "daily_break_end_et": {
+      "note": "",
+      "source_ref": "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (reapertura 18:00 ET)",
+      "status": "approved",
+      "value": "18:00:00"
+    },
+    "daily_break_start_et": {
+      "note": "",
+      "source_ref": "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (sin barras 17:01-17:59 ET)",
+      "status": "approved",
+      "value": "17:00:00"
+    },
+    "input": {
+      "parent_rel_path": "darwinex/xti_m1_sqx_20261016_v2.bin",
+      "rel_path": "darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv",
+      "sha256": "ab0ede34a6d63b5075a506813490dce646531f6b65fef945367075a468e668aa"
+    },
+    "max_drop_fraction": {
+      "note": "",
+      "source_ref": "docs/plans/FASE_02_precio.md (umbral de descarte; hoy 6 de 1,96 M barras)",
+      "status": "approved",
+      "value": 0.0001
+    },
+    "plausible_server_range": {
+      "note": "",
+      "source_ref": "Revisión adversarial F2-precio: fechas fuera de [2010, fecha de extracción] son errores de formato",
+      "status": "approved",
+      "value": [
+        "2010-01-01",
+        "2026-10-16"
+      ]
+    },
+    "server_offset_vs_new_york_hours": {
+      "note": "",
+      "source_ref": "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (inferido de los datos: pausa diaria siempre 00:00-00:59 servidor, también en cambios DST)",
+      "status": "approved",
+      "value": 7
+    }
+  },
+  "outputs": {
+    "2017.parquet": "e824f2154d446098d359ad5da4f935574955ba4a2c8b18bacf86dd0b65f59e6c",
+    "2018.parquet": "bd1b3d9a33814d45e0f48ef24f20f895e2199237b43e7c714d321b453ad9e895",
+    "2019.parquet": "26334cecd7307136dff13dd20db8482febac136a8bb4eccad25e6231a208860a",
+    "2020.parquet": "931d23ad1dde076ed07d14924cc51ac59d65989eb9c01bb19ef67f823d7b97d0",
+    "2024.parquet": "8800512c0e493733be0d9d42041d40a426d691f04862b0e06f3e65e477fb41ee",
+    "2025.parquet": "152f639c08f8955b10a1b7526b84f196d4779ae55e5b566466f2277541b6bb78",
+    "2026.parquet": "9b2341284f97b431e6333f8908db5397f2ecbd981342b45c10b96db064549682"
+  },
+  "code_commit": "aa2cc395f3c0ccac1374285f27bd6bb36cc330f2",
+  "polars_version": "2.0.0"
+}
