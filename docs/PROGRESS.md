@@ -24,7 +24,7 @@
 
 ## Pendiente
 - Usuario: credenciales de Darwinex como variables de entorno (`DARWINEX_FTP_USER`, `DARWINEX_FTP_PASSWORD`).
-- Auditoría Darwinex (F1 bis): cobertura, zona horaria, huecos, rollover, licencia → cierre de G0.
+- Auditoría Darwinex (F1 bis): cobertura, zona horaria, huecos, rollover, licencia y contraste con la EIA (futuro CL diario hasta 2024-04-05, ADR-015) → cierre de G0.
 - Avisado al usuario: riesgos de D6 (+15 min: 2 ficheros tardíos) y D7 (EIA revisada).
 - Revisión adversarial G0 hecha: 11 hallazgos resueltos o convertidos en decisiones (`reports/F1_source_audit.md` §6).
 - Credenciales: guardadas solo en la sesión (`~/.config/wna/secrets.env`, fuera del repo). Recomendado regenerarlas (se compartieron en el chat) y ponerlas en la configuración del entorno.
