@@ -51,28 +51,46 @@ def normalized_title(title: pl.Expr) -> pl.Expr:
     return pl.when(t.str.len_chars() >= MIN_TITLE_CHARS).then(t)
 
 
-def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
-    """Añade ``dup_kind`` y ``dup_of`` (nulos en los originales).
+KEY_COLUMNS = ("_url_ok", "_url_key", "_title_ok", "_title_key", "_src_key")
 
-    Entrada: ``article_id``, ``first_available_at``, ``source_file_ts``,
-    ``row_in_file``, ``source_common_name``, ``url``, ``title``.
-    Por título solo se agrupan artículos encadenados con huecos ≤ ``title_window``
-    (un titular genérico repetido meses después no es una re-publicación).
+
+def dedup_keys(df: pl.DataFrame) -> pl.DataFrame:
+    """Sustituye ``url``, ``title`` y ``source_common_name`` por claves hash compactas.
+
+    Permite calcular las claves mes a mes y deduplicar después todo el periodo
+    sin cargar las cadenas en memoria.
     """
-    missing = {"article_id", *ORDER, "source_common_name", "url", "title"} - set(df.columns)
+    missing = {"url", "title", "source_common_name"} - set(df.columns)
     if missing:
         raise SchemaError(f"faltan columnas para deduplicar: {sorted(missing)}")
-    if df["article_id"].is_duplicated().any():
-        raise SchemaError("article_id duplicado")
     canon = canonical_url(pl.col("url"))
     title = normalized_title(pl.col("title"))
-    d = df.sort(*ORDER).with_columns(
-        _url_ok=canon.is_not_null() & (canon != ""),
+    return df.with_columns(
+        _url_ok=(canon.is_not_null() & (canon != "")).fill_null(False),
         _url_key=canon.hash(seed=0),
         _title_ok=title.is_not_null(),
         _title_key=title.hash(seed=0),
         _src_key=pl.col("source_common_name").fill_null("").str.to_lowercase().hash(seed=0),
-    )
+    ).drop("url", "title", "source_common_name")
+
+
+def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
+    """Añade ``dup_kind`` y ``dup_of`` (nulos en los originales).
+
+    Entrada: ``article_id``, ``first_available_at``, ``source_file_ts``,
+    ``row_in_file`` y, o bien ``source_common_name``, ``url``, ``title``, o bien
+    las claves de ``dedup_keys``.
+    Por título solo se agrupan artículos encadenados con huecos ≤ ``title_window``
+    (un titular genérico repetido meses después no es una re-publicación).
+    """
+    if not set(KEY_COLUMNS) <= set(df.columns):
+        df = dedup_keys(df)
+    missing = {"article_id", *ORDER} - set(df.columns)
+    if missing:
+        raise SchemaError(f"faltan columnas para deduplicar: {sorted(missing)}")
+    if df["article_id"].is_duplicated().any():
+        raise SchemaError("article_id duplicado")
+    d = df.sort(*ORDER)
     fa = pl.col("first_available_at")
 
     def session(keys: list[str]) -> pl.Expr:
@@ -107,15 +125,4 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
         .when(is_t)
         .then(pl.col("_f_t"))
         .otherwise(pl.lit(None, dtype=pl.Utf8)),
-    ).drop(
-        "_url_ok",
-        "_url_key",
-        "_title_ok",
-        "_title_key",
-        "_src_key",
-        "_s_st",
-        "_s_t",
-        "_f_url",
-        "_f_st",
-        "_f_t",
-    )
+    ).drop(*KEY_COLUMNS, "_s_st", "_s_t", "_f_url", "_f_st", "_f_t")
