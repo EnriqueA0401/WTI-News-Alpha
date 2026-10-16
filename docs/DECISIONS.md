@@ -208,3 +208,6 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - Hueco 2021–2023 confirmado.
   - Zona horaria inferida = America/New_York + 7 h (pausa diaria siempre 00:00–00:59 servidor, también en los cambios de horario).
   - Frente a la EIA: diferencia mediana de 0,06–0,11 USD y correlación de retornos de 0,979 con C1. Muchos días sigue al 2.º vencimiento → hay rolls propios del bróker que habrá que detectar.
+- **Roll del CFD (2026-10-16):** no hay escalón de roll. El precio pasa gradualmente de C1 a C2 durante el mes (w ≈ 0,2 a 22 días hábiles del vencimiento → ≈ 1 a 3 días).
+  - Se trata como precio a vencimiento casi constante.
+  - Las etiquetas no cruzan la pausa diaria, donde se concentran los saltos (mediana de 6,9 pb frente a 0,5 pb).

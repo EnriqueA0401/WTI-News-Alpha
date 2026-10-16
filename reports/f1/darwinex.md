@@ -54,9 +54,35 @@ Fecha: 2026-10-16.
 - **Interpretación:**
   - El CFD sigue el futuro de cerca, con diferencias de céntimos, pero no siempre el mismo contrato: muchos días se parece más al segundo vencimiento.
   - Lo esperable es que el bróker role antes que el vencimiento del CL. Las peores diferencias (1,4–2,1 USD) se concentran en mar–abr 2020, con el contango extremo y el precio negativo de C1.
-- **Consecuencia:** el CFD tiene **saltos en sus fechas de roll**. Antes de usarlo para etiquetas o retornos hay que detectarlas (cambios de base frente a C1/C2) y tratarlas como cruces de contrato: no hay retornos ni etiquetas a través del roll (CLAUDE.md §7).
+- **Consecuencia:** ver §4b. El CFD no rola de golpe sino de forma gradual entre C1 y C2.
+
+## 4b. Cómo "rola" el CFD (`scripts/f1_audit/darwinex_roll.py`, `darwinex_roll_profile.csv`)
+- **Método:**
+  - peso w = (mid − C1)/(C2 − C1), solo en días con |C2 − C1| ≥ 0,20 USD (413 días);
+  - frente a los días hábiles que faltan para el vencimiento de C1, según la regla NYMEX 200102.F con días hábiles aproximados (lun–vie, ±1 día).
+- **Resultado:** w sube de forma gradual, sin escalón:
+
+| Días hábiles al vencimiento de C1 | Mediana de w |
+|---|---|
+| 22 | ≈ 0,2 |
+| 15 | ≈ 0,5 |
+| 8 | ≈ 0,8 |
+| 3 | ≈ 1,0 |
+
+- **Interpretación:** el CFD se comporta como un precio a vencimiento casi constante (interpolado entre C1 y C2), no como un contrato que salta en una fecha de roll.
+  - Ventaja: no hay saltos de roll discretos en los precios.
+  - Inconveniente: no es ningún contrato concreto, y su retorno incluye un pequeño componente de interpolación (curva).
+- **Reapertura diaria** (01:00 servidor = 18:00 ET, tras la pausa de 1 h), `scripts/f1_audit/darwinex_reopen.py`:
+
+| Medida | Reapertura | Minutos normales (02–04 h) |
+|---|---|---|
+| Mediana del salto | 6,9 pb | 0,5 pb |
+| p99 | 159 pb | 4,7 pb |
+
+  - Los mayores son de abr–may 2020.
+  - No se puede separar un ajuste del bróker de un movimiento real sin intradía del futuro. Por eso las etiquetas **no cruzarán la pausa diaria** (regla ya aprobada en el protocolo).
 
 ## 5. Pendiente
 1. **Re-descargar 2021-01 → 2024-01** en SQX (usuario).
-2. Detectar las fechas de roll del CFD y documentarlas (F2).
+2. Hecho en §4b: no hay roll discreto (precio interpolado). Revisarlo con 2021–2023 cuando lleguen.
 3. Desde 2024-04-06 no hay referencia externa gratuita (ADR-015): limitación declarada.
