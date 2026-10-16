@@ -280,6 +280,29 @@ class GdeltConfig(_Strict):
 # ------------------------------------------------------------------ capture
 
 
+class DarwinexInput(_Strict):
+    rel_path: NonEmptyStr
+    sha256: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
+    parent_rel_path: NonEmptyStr
+
+
+class DarwinexConfig(_Strict):
+    """Capa normalizada Darwinex XTIUSD M1 (``config/darwinex.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    input: DarwinexInput
+    server_offset_vs_new_york_hours: Param[Annotated[int, Strict(), Field(ge=-12, le=14)]]
+    bar_timestamp_is_start: Param[Annotated[bool, Strict()]]
+    daily_break_start_et: Param[WallTime]
+    daily_break_end_et: Param[WallTime]
+    max_drop_fraction: Param[UnitFraction]
+
+
+def load_darwinex_config(config_dir: Path = CONFIG_DIR) -> DarwinexConfig:
+    """Carga ``config/darwinex.yaml``."""
+    return load_yaml_model(config_dir / "darwinex.yaml", DarwinexConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 

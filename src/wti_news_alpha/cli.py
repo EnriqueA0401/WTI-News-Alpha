@@ -11,12 +11,14 @@ import typer
 from wti_news_alpha.config import (
     CONFIG_DIR,
     load_capture_config,
+    load_darwinex_config,
     load_gdelt_config,
     load_project_config,
 )
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
+from wti_news_alpha.normalization import darwinex
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
 app = typer.Typer(no_args_is_help=True, help="WTI News Alpha", pretty_exceptions_show_locals=False)
@@ -25,6 +27,8 @@ app.add_typer(sources_app, name="sources")
 ingest_app = typer.Typer(no_args_is_help=True, help="Ingesta de fuentes (F2)")
 app.add_typer(ingest_app, name="ingest")
 GDELT_INDEX_REL = "gdelt/index/masterfilelist_20261015.txt"
+normalize_app = typer.Typer(no_args_is_help=True, help="Capa normalizada (F2)")
+app.add_typer(normalize_app, name="normalize")
 capture_app = typer.Typer(no_args_is_help=True, help="Captura prospectiva (D12)")
 app.add_typer(capture_app, name="capture")
 
@@ -86,6 +90,33 @@ def sources_check(
 
 def _not_yet(command: str, phase: str) -> None:
     raise PhaseNotImplementedError(f"`{command}` se implementa en {phase} (ver CLAUDE.md §12)")
+
+
+@normalize_app.command("darwinex")
+def normalize_darwinex() -> None:
+    """Precio Darwinex XTIUSD M1 → UTC (docs/plans/FASE_02_precio.md). Idempotente."""
+    cfg = load_darwinex_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("normalize_darwinex", logger, commit, version=cfg.version) as res:
+        result = darwinex.run_normalize(
+            raw_root=REPO_ROOT / "data" / "raw",
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            commit=commit,
+        )
+        res.update(
+            created=result.created,
+            rows_in=result.stats.rows_in,
+            rows_out=result.stats.rows_out,
+            dropped=result.stats.dropped,
+        )
+    action = "creada" if result.created else "verificada (ya existía)"
+    typer.echo(
+        f"{cfg.version} {action}: {result.stats.rows_out}/{result.stats.rows_in} barras · "
+        f"descartadas {result.stats.dropped} · {len(result.outputs)} ficheros"
+    )
 
 
 @ingest_app.command("gdelt-gkg")

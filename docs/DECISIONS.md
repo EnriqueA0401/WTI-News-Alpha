@@ -226,3 +226,19 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
   - Los días ya escritos no cambian: con la regla nueva solo pueden pasar más días, nunca menos.
   - El umbral diario sigue en líneas (0,5 %).
   - Test de regresión añadido. Se re-ejecuta ese día.
+
+## ADR-019 — G0 aprobado; F2 continúa con precio, fundamentales y noticias (usuario, 2026-10-16)
+- **Decisión del usuario:** "Aprobado G0" sobre `reports/G0_cierre.md`: **intradía viable (condicionado)** con el CFD XTIUSD de Darwinex en 2018–2020 + 2024–2026.
+- **Consecuencias:**
+  - Los valores de Darwinex inferidos de los datos en F1 pasan a estado `approved` en `config/darwinex.yaml`:
+    - hora servidor = NY + 7 h;
+    - sello = inicio de barra;
+    - pausa diaria 17:00–18:00 ET.
+  - No hay documentación del bróker. Si aparece, se contrasta.
+  - Las limitaciones de G0 (§"Limitaciones declaradas") se arrastran a todos los informes.
+- **Siguiente:** resto de F2 en tres bloques, cada uno con su plan:
+  1. precio normalizado (`docs/plans/FASE_02_precio.md`);
+  2. fundamentales;
+  3. noticias con `first_available_at`.
+  Después, la puerta G1.
+- **Extracción del CSV de Darwinex** registrada en `manifests/darwinex_extract.jsonl`: miembro del RAR, sha256 del padre y del hijo. Re-extraer con `bsdtar -xO` reproduce el sha256.

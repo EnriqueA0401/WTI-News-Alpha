@@ -1,0 +1,28 @@
+# Capa normalizada de precio Darwinex XTIUSD M1 (docs/plans/FASE_02_precio.md).
+# Los valores inferidos de los datos (no hay documentación del bróker) tienen estado
+# approved: el usuario los aceptó al aprobar G0 (ADR-019).
+version: dwx-xti-m1-v1
+input:
+  rel_path: "darwinex/extracted_v2/XTIUSD_darwinex_M1 - copia.csv"
+  sha256: ab0ede34a6d63b5075a506813490dce646531f6b65fef945367075a468e668aa
+  parent_rel_path: "darwinex/xti_m1_sqx_20261016_v2.bin"
+server_offset_vs_new_york_hours:
+  value: 7
+  status: approved
+  source_ref: "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (inferido de los datos: pausa diaria siempre 00:00-00:59 servidor, también en cambios DST)"
+bar_timestamp_is_start:
+  value: true
+  status: approved
+  source_ref: "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (primera barra semanal = domingo 18:00 ET; última del viernes = 16:59 ET)"
+daily_break_start_et:
+  value: "17:00"
+  status: approved
+  source_ref: "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (sin barras 17:01-17:59 ET)"
+daily_break_end_et:
+  value: "18:00"
+  status: approved
+  source_ref: "G0 aprobado (ADR-019); reports/f1/darwinex.md §3 (reapertura 18:00 ET)"
+max_drop_fraction:
+  value: 0.0001
+  status: approved
+  source_ref: "docs/plans/FASE_02_precio.md (umbral de descarte; hoy 6 de 1,96 M barras)"

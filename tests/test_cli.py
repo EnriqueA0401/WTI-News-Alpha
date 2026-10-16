@@ -12,6 +12,7 @@ from wti_news_alpha.config import SourceSpec
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, ProbeResult
+from wti_news_alpha.normalization import darwinex
 
 runner = CliRunner()
 
@@ -90,3 +91,19 @@ def test_capture_run_exit_code(
     )
     assert result.exit_code == code
     assert "nuevas observaciones: 2" in result.output
+
+
+@pytest.mark.parametrize(("created", "word"), [(True, "creada"), (False, "verificada")])
+def test_normalize_darwinex(monkeypatch: pytest.MonkeyPatch, created: bool, word: str) -> None:
+    stats = darwinex.DropStats(rows_in=10, rows_out=9, dropped={"daily_break": 1})
+
+    def fake(**_: object) -> darwinex.NormalizeResult:
+        return darwinex.NormalizeResult(created=created, outputs={"2018.parquet": "x"}, stats=stats)
+
+    monkeypatch.setattr(cli.darwinex, "run_normalize", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["normalize", "darwinex"])
+    assert result.exit_code == 0, result.output
+    assert word in result.output
+    assert "9/10" in result.output
