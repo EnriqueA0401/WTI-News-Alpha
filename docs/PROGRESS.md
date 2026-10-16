@@ -2,7 +2,18 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F1 terminada; noticias 2018–2020 + 2024–2026 ingeridas (v2/v3). **G0: informe de cierre en `reports/G0_cierre.md`, pendiente de aprobación del usuario.** Decisiones G0 tomadas (ADR-014). Precio: Darwinex. **G0 no se cierra hasta auditar los datos de Darwinex, y para eso hacen falta las credenciales del usuario.** Piloto GDELT GKG 2024–2025 terminado.
+**Fase actual:** F2 (ingesta y normalización). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+
+### F2: estado por bloque
+| Bloque | Estado | Salida |
+|---|---|---|
+| Precio Darwinex → UTC | Hecho y revisado | `dwx-xti-m1-v3`, `reports/f2/darwinex_normalized.md` |
+| WPSR (calendario + valores) | Hecho y revisado | `eia-wpsr-v2`, `reports/f2/eia_wpsr_normalized.md` |
+| Calendario federal (festivos + cierres por orden ejecutiva) | Hecho | `normalization/federal_calendar.py` |
+| COT | Código listo; **espera 2 decisiones del usuario** (margen sobre `created_at` y exclusión de la puesta al día de 2019) | `config/cftc_cot.yaml` |
+| FRED/ALFRED | Pendiente | — |
+| Noticias con `first_available_at` | Pendiente | — |
+| Puerta G1 | Pendiente | — |
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
