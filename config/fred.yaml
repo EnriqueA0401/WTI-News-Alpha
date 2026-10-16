@@ -1,0 +1,11 @@
+# Series diarias de contexto FRED/ALFRED point-in-time (docs/plans/FASE_02_fundamentales.md §C).
+version: fred-alfred-v1
+series_glob: "fred/api/{series}/vintages_rt*_20261016.json"
+series:
+  value: [DGS10, DGS2, T10YIE, VIXCLS, DTWEXBGS]
+  status: approved
+  source_ref: "reports/f1/fred.md §6; DTWEXBGS solo desde su primera vintage 2019-02-04 (ADR-014 D10)"
+available_rule:
+  value: next_day_midnight_et
+  status: approved
+  source_ref: "ADR-014 D9 / R-PIT 4: ALFRED (vintage sin hora) → 00:00 ET del día siguiente a la fecha de vintage"

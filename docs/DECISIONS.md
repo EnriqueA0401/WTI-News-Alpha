@@ -321,3 +321,16 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
    - propiedades;
    - datos reales contra el calendario oficial 2026;
    - calendario federal con cierres.
+
+## ADR-024 — FRED/ALFRED: historial de vintages y fechas de vintage anteriores a la observación (2026-10-16)
+- **Datos:** historial completo de vintages ALFRED (`output_type=1`) de DGS10, DGS2, T10YIE, VIXCLS y DTWEXBGS. Se descargó en ventanas anuales de tiempo real para no superar el límite de 2000 vintages.
+  - DTWEXBGS empieza en su primera vintage, 2019-02-04 (D10). Antes de esa fecha la API da HTTP 400.
+  - Raw con manifiesto; la clave está redactada y se comprobó que no aparece en ningún manifiesto.
+- **Regla (D9 / R-PIT 4):** `available_at` = 00:00 ET del día siguiente a la fecha de vintage.
+- **Hallazgo:** en 32 valores de VIXCLS (festivos federales con mercado abierto, como Columbus Day, o lunes festivos), ALFRED fecha la vintage **un día hábil antes de la observación**.
+  - Ejemplo: el VIX del lunes 2018-10-08 (15,69, distinto del viernes) tiene vintage del 2018-10-05.
+  - Aplicar la regla tal cual sería leakage. Se aplica una cota inferior: `available_at` = 00:00 ET del día siguiente a max(vintage, observación).
+  - Las filas se marcan con `vintage_before_obs`.
+  - Consecuencia: la fecha de vintage de ALFRED no garantiza ser la primera publicación. Para series diarias de mercado, el día de la observación es el límite seguro.
+- Los valores "." se conservan como nulos, para que un borrado posterior no deje vivo el valor anterior.
+- En la primera ventana (2015-01-01) los periodos previos quedan recortados y se marcan con `vintage_start_clipped`. Es conservador.

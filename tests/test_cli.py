@@ -137,3 +137,17 @@ def test_normalize_cftc_cot(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result.exit_code == 0, result.output
     assert "614 semanas" in result.output
     assert "verificada" in result.output
+
+
+def test_normalize_fred(monkeypatch: pytest.MonkeyPatch) -> None:
+    man = {"n_rows": 10, "by_series": {"DGS10": {"n_rows": 10}}}
+
+    def fake(**_: object) -> Published:
+        return Published(created=True, outputs={}, manifest=man)
+
+    monkeypatch.setattr(cli.fred_alfred, "run_normalize", fake)
+    monkeypatch.setattr(cli, "current_commit", lambda: "abc")
+    monkeypatch.setattr(cli, "get_logger", lambda *_: logging.getLogger("t"))
+    result = runner.invoke(cli.app, ["normalize", "fred"])
+    assert result.exit_code == 0, result.output
+    assert "10 filas" in result.output

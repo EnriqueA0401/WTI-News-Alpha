@@ -14,13 +14,14 @@ from wti_news_alpha.config import (
     load_cftc_cot_config,
     load_darwinex_config,
     load_eia_wpsr_config,
+    load_fred_config,
     load_gdelt_config,
     load_project_config,
 )
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
-from wti_news_alpha.normalization import cftc_cot, darwinex, eia_wpsr
+from wti_news_alpha.normalization import cftc_cot, darwinex, eia_wpsr, fred_alfred
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
 app = typer.Typer(no_args_is_help=True, help="WTI News Alpha", pretty_exceptions_show_locals=False)
@@ -162,6 +163,27 @@ def normalize_cftc_cot() -> None:
     typer.echo(
         f"{cfg.version} {action}: {pub.manifest['n_rows']} semanas · "
         f"horas {pub.manifest['time_status_counts']}"
+    )
+
+
+@normalize_app.command("fred")
+def normalize_fred() -> None:
+    """Vintages ALFRED point-in-time (FASE_02_fundamentales.md §C). Idempotente."""
+    cfg = load_fred_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("normalize_fred", logger, commit, version=cfg.version) as res:
+        pub = fred_alfred.run_normalize(
+            raw_root=REPO_ROOT / "data" / "raw",
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            commit=commit,
+        )
+        res.update(created=pub.created, by_series=pub.manifest["by_series"])
+    action = "creada" if pub.created else "verificada (ya existía)"
+    typer.echo(
+        f"{cfg.version} {action}: {pub.manifest['n_rows']} filas · {pub.manifest['by_series']}"
     )
 
 

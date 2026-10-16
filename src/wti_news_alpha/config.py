@@ -365,6 +365,20 @@ def load_cftc_cot_config(config_dir: Path = CONFIG_DIR) -> CftcCotConfig:
     return load_yaml_model(config_dir / "cftc_cot.yaml", CftcCotConfig)
 
 
+class FredConfig(_Strict):
+    """Vintages ALFRED de series diarias (``config/fred.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    series_glob: NonEmptyStr
+    series: Param[list[NonEmptyStr]]
+    available_rule: Param[Literal["next_day_midnight_et"]]
+
+
+def load_fred_config(config_dir: Path = CONFIG_DIR) -> FredConfig:
+    """Carga ``config/fred.yaml``."""
+    return load_yaml_model(config_dir / "fred.yaml", FredConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 

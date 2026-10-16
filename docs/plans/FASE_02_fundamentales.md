@@ -63,7 +63,7 @@ Se hace en tres partes, en este orden: **A. WPSR**, **B. COT**, **C. FRED/ALFRED
   - antes, fecha oficial más R-PIT (18:00 ET; fecha dudosa → siguiente laborable).
   - El margen sobre `created_at` **no está fijado** → se preguntará.
 
-## C. FRED/ALFRED (resumen)
+## C. FRED/ALFRED (hecho: `fred-alfred-v1`, ADR-024)
 - **Series:** DGS10, DGS2, T10YIE, VIXCLS y DTWEXBGS (desde 2019-02-04, D10).
 - **Regla:** `available_at` = 00:00 ET del día siguiente a la vintage (D9 / R-PIT 4).
 - Las macro mensuales (PAYEMS…) quedan fuera de las features intradía mientras su hora no esté verificada.
