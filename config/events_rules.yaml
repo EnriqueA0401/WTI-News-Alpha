@@ -1,0 +1,34 @@
+# Reglas de relevancia, familia y mecanismo (FASE_03.md, Documento §6.2/§16.3; fase 1 de §6.3).
+# Cada regla: (campo, regex sin distinguir mayúsculas). Gana la primera regla que coincide;
+# si ninguna coincide (o el campo es nulo), se usa el valor de `defaults`. `only_without_title`:
+# la regla solo se aplica a artículos sin título (2018); con título, decide el título.
+# Solo título, URL, temas y organizaciones (no hay texto completo: A10). La precisión se mide en
+# la muestra auditada de G2; los ajustes posteriores son una versión nueva.
+version: rules-v1
+defaults: {relevance: not_relevant, family: other, mechanism: ambiguous}
+relevance:
+  - {name: title_false_crude, value: not_relevant, field: title, regex: '\bcrude (bombs?|jokes?|remarks?|language|comments?|humou?r|drawings?|weapons?|devices?|attempts?)\b'}
+  - {name: title_direct, value: direct, field: title, regex: '\b(crude|oil prices?|wti|brent|opec\+?|barrels?|refiner(y|ies)|oil (output|production|supply|demand|exports?|imports?|market|futures|tankers?|facilit(y|ies)|fields?|terminals?|platforms?|rigs?|wells?|pipelines?|majors?|producers?)|petroleum|shale|rig count|cushing|oilfield|aramco)\b'}
+  - {name: theme_oilprice, value: direct, field: themes, only_without_title: true, regex: '(^|;)ECON_OILPRICE(;|$)'}
+  - {name: org_opec, value: direct, field: organizations, only_without_title: true, regex: '\bopec\b|organization of the petroleum exporting countries'}
+  - {name: theme_oil_context, value: indirect, field: themes, regex: '(^|;)(ECON_OILPRICE|ENV_OIL|WB_539_OIL_AND_GAS_POLICY_STRATEGY_AND_INSTITUTIONS|WB_2299_PIPELINES|ENV_NATURALGAS|FUELPRICES)(;|$)'}
+  - {name: title_energy, value: indirect, field: title, regex: '\b(oil|gas|fuel|gasoline|diesel|energy|pipeline)\b'}
+family:
+  - {name: eia_inventories, value: eia_inventories, field: title, regex: '\b(eia|api|inventor(y|ies)|stockpiles?|crude stocks|cushing|spr|strategic petroleum reserve)\b'}
+  - {name: opec_policy, value: opec_policy, field: title, regex: '\b(opec\+?|output cuts?|production cuts?|quotas?|ministerial meeting)\b'}
+  - {name: weather, value: weather, field: title, regex: '\b(hurricane|tropical storm|storm|cyclone|typhoon|freeze|winter storm|flood(s|ing)?)\b'}
+  - {name: conflict_attack, value: conflict_attack, field: title, regex: '\b(attack(s|ed)?|drone|missile|strike(s)?|explosion|blast|houthis?|bomb(ing)?|war)\b'}
+  - {name: sanctions_geopolitics, value: sanctions_geopolitics, field: title, regex: '\b(sanction(s|ed)?|embargo|price cap|tariffs?|nuclear deal|ceasefire|peace talks|tensions?)\b'}
+  - {name: supply_disruption, value: supply_disruption, field: title, regex: '\b(outage|shut ?down|shut|halt(s|ed)?|disruption|force majeure|leak|spill|fire|blockade|seized?)\b'}
+  - {name: logistics, value: logistics, field: title, regex: '\b(tankers?|shipping|strait|hormuz|suez|red sea|ports?|pipelines?|freight)\b'}
+  - {name: rates_usd, value: rates_usd, field: title, regex: '\b(fed|federal reserve|interest rates?|rate (cut|hike)|dollar|inflation|treasury yields?)\b'}
+  - {name: demand_macro, value: demand_macro, field: title, regex: '\b(demand|consumption|gdp|recession|pmi|economy|economic growth|imports?|travel|jet fuel)\b'}
+  - {name: company, value: company, field: title, regex: '\b(earnings|profits?|quarterly|exxon|chevron|shell|bp|totalenergies|conocophillips|merger|acquisition|ipo|shares)\b'}
+  - {name: opinion_url, value: opinion, field: url, regex: '/(opinion|opinions|column|columns|commentary|editorial|blogs?)/'}
+  - {name: market_report, value: market_report, field: title, regex: '\b(oil prices?|crude|brent|wti)\b.*\b(rise|rises|rose|fall|falls|fell|jump|jumps|slip|slips|gain|gains|drop|drops|climb|climbs|steady|edge|edges|settle|settles)\b'}
+mechanism:
+  - {name: loosens_supply, value: loosens_supply, field: title, regex: '\b(raise|raises|boost|boosts|increase|increases|hike|hikes) (oil )?(output|production|supply)\b|\b(inventory|stocks?|stockpiles?) (build|rise|rises|jump|jumps|swell)|\bease[sd]? sanctions\b|\bresum(e|es|ed) (output|production|exports)\b'}
+  - {name: tightens_supply, value: tightens_supply, field: title, regex: '\b(cut|cuts|curb|curbs|reduce|reduces|deepen|deepens) (oil )?(output|production|supply|exports)\b|\b(output|production|supply|export) (cuts?|curbs?)\b|\b(inventory|stocks?|stockpiles?) (draw|fall|falls|drop|drops|decline)|\b(outage|shut(s|ting)?( ?down| in)?|halt(s|ed)?|disruption|force majeure|attack(s|ed)?|sanction(s|ed)?|embargo|blockade)\b'}
+  - {name: raises_demand, value: raises_demand, field: title, regex: '\bdemand (rise|rises|jump|jumps|rebound|rebounds|recover|recovers|strong|surge|surges|grow|grows)\b|\bstrong demand\b'}
+  - {name: lowers_demand, value: lowers_demand, field: title, regex: '\bdemand (fall|falls|drop|drops|slump|slumps|weak|weakens|slow|slows)\b|\bweak demand\b|\brecession\b'}
+  - {name: raises_risk, value: raises_risk, field: title, regex: '\b(threat(s|ens)?|tensions?|escalat(e|es|ion)|uncertain(ty)?|fears?|risk)\b'}

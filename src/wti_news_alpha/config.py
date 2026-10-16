@@ -424,6 +424,42 @@ def load_news_config(config_dir: Path = CONFIG_DIR) -> NewsConfig:
     return load_yaml_model(config_dir / "news.yaml", NewsConfig)
 
 
+RuleTarget = Literal["relevance", "family", "mechanism"]
+
+
+class EventRule(_Strict):
+    name: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
+    value: Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
+    field: Literal["title", "url", "themes", "organizations"]
+    regex: NonEmptyStr
+    only_without_title: bool = False
+
+
+class EventRulesConfig(_Strict):
+    """Reglas de relevancia, familia y mecanismo (``config/events_rules.yaml``)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    defaults: dict[RuleTarget, Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]]
+    relevance: list[EventRule] = Field(min_length=1)
+    family: list[EventRule] = Field(min_length=1)
+    mechanism: list[EventRule] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _unique_names(self) -> Self:
+        names = [r.name for rules in (self.relevance, self.family, self.mechanism) for r in rules]
+        dup = sorted({n for n in names if names.count(n) > 1})
+        if dup:
+            raise ValueError(f"nombres de regla repetidos: {dup}")
+        if set(self.defaults) != {"relevance", "family", "mechanism"}:
+            raise ValueError("defaults debe definir relevance, family y mechanism")
+        return self
+
+
+def load_event_rules_config(config_dir: Path = CONFIG_DIR) -> EventRulesConfig:
+    """Carga ``config/events_rules.yaml``."""
+    return load_yaml_model(config_dir / "events_rules.yaml", EventRulesConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 
