@@ -11,8 +11,8 @@
 | WPSR (calendario + valores) | Hecho y revisado | `eia-wpsr-v2`, `reports/f2/eia_wpsr_normalized.md` |
 | Calendario federal (festivos + cierres por orden ejecutiva) | Hecho | `normalization/federal_calendar.py` |
 | COT | Hecho y revisado (decisiones del usuario en ADR-022) | `cftc-cot-v2`, `reports/f2/cftc_cot_normalized.md` |
-| FRED/ALFRED (5 series diarias, historial de vintages) | Hecho; revisión adversarial pendiente | `fred-alfred-v1` (ADR-024) |
-| Noticias con `first_available_at` | Pendiente | — |
+| FRED/ALFRED (5 series diarias, historial de vintages) | Hecho y revisado | `fred-alfred-v2`, `reports/f2/fred_alfred_normalized.md` (ADR-024/025) |
+| Noticias con `first_available_at` | Código listo; ejecución completa y revisión adversarial en curso | `gdelt-news-v1`, `docs/plans/FASE_02_noticias.md` |
 | Puerta G1 | Pendiente | — |
 
 ## Hecho
