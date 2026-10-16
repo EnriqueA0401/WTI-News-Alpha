@@ -30,6 +30,7 @@
 
 ## Pendiente
 - Credenciales de Darwinex guardadas en la sesión (`~/.config/wna/secrets.env`, fuera del repo). **Bloqueo:** el FTP de Darwinex (tickdata.darwinex.com:21) no es accesible desde el entorno: el DNS resuelve, pero la conexión TCP agota el tiempo; el entorno solo deja salir HTTPS por el proxy. El acceso a la red del entorno ya es "Completo". Por el túnel del proxy (CONNECT) se abre la conexión, pero el servidor no completa el saludo FTP y la corta (3 intentos, 2026-10-16). Opción viable: el usuario descarga los ficheros en su ordenador y los sube.
+- Datos Darwinex XTI M1 (SQX) en manos del usuario (ADR-017). **Hueco 2020-12-31 → 2024-01-05**: hay que re-descargarlo en SQX. Pendiente: enlace de descarga.
 - Auditoría Darwinex (F1 bis): cobertura, zona horaria, huecos, rollover, licencia y contraste con la EIA (futuro CL diario hasta 2024-04-05, ADR-015) → cierre de G0.
 - Avisado al usuario: riesgos de D6 (+15 min: 2 ficheros tardíos) y D7 (EIA revisada).
 - Revisión adversarial G0 hecha: 11 hallazgos resueltos o convertidos en decisiones (`reports/F1_source_audit.md` §6).

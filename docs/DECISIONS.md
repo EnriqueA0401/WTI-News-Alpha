@@ -182,3 +182,21 @@ Respuestas del usuario a D1–D12 (`reports/F1_source_audit.md` §5) y a la elec
      - `run_id` incluye el intento.
 - **Riesgo aceptado (bajo):** si una ejecución muere entre escribir observaciones y estado, la siguiente puede repetir ítems. Aguas abajo se toma la primera aparición.
 - **Pendiente de verificar:** que el cron programado de GitHub se dispare. A las 01:27 UTC aún no había corrido ninguno.
+
+## ADR-017 — Datos Darwinex XTI recibidos por el usuario (descripción declarada, pendiente de verificar)
+- **Descripción del usuario (2026-10-16), aún no verificada por nosotros:**
+  - Barras M1 exportadas de StrategyQuant X (SQX), un fichero de ≈ 600 MB.
+  - OHLC sobre el **bid**. `TickVolume` = nº de ticks del minuto. `AvgSpread` = spread medio (ask − bid) del minuto.
+  - Hora del **servidor del bróker**, sin convertir a UTC: el primer tick cae el lunes a las 01:00.
+  - Minutos sin ticks: no hay barra (no se rellenan).
+  - Sin precios inválidos, ticks desordenados ni ask < bid.
+  - **Hueco: ningún tick entre 2020-12-31 y 2024-01-05** (del archivo original). El resto de huecos son fines de semana y festivos.
+- **Consecuencias:**
+  1. El hueco deja sin precio 3 de los 7 años del periodo principal (2021–2023, D4). Hay que re-descargarlos en SQX antes de usar los datos; sin ellos, el estudio intradía tendría solo 2020 y 2024–2026.
+  2. **Zona horaria:** no se supondrá ninguna. Se inferirá el desfase servidor→UTC por fecha (incluidos los cambios de horario) desde los datos:
+     - la pausa diaria del CL (17:00–18:00 ET) debe verse como minutos sin ticks;
+     - se contrastará con el cierre diario frente a la liquidación de la EIA (14:30 ET, hasta 2024-04-05).
+     - Si no es concluyente → parada y pregunta.
+  3. **Precio de referencia para etiquetas:** medio aproximado = bid + AvgSpread/2 (a fijar en F6). Costes: AvgSpread real por minuto (mejor que el supuesto de 1 tick).
+  4. Las barras ausentes nunca se rellenan (CLAUDE.md §6.3).
+- **Pendiente del usuario:** enlace de descarga (Drive/Dropbox) y re-descarga de 2021–2023 en SQX.
