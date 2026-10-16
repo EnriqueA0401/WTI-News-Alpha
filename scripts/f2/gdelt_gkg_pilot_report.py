@@ -56,7 +56,7 @@ def main() -> None:
         .with_columns((pl.col("n_rows") / pl.col("rows_in")).round(4).alias("kept_fraction"))
     )
     OUT.mkdir(parents=True, exist_ok=True)
-    months.write_csv(OUT / "gdelt_gkg_pilot_months.csv")
+    months.write_csv(OUT / f"gdelt_gkg_{VERSION}_months.csv")
     tot = df.select(pl.len().alias("days"), pl.exclude("day", "month").sum())
     with pl.Config(tbl_cols=20, tbl_width_chars=250, tbl_rows=40):
         print(months)

@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F1 terminada. Decisiones G0 tomadas (ADR-014). Precio: Darwinex. **G0 no se cierra hasta auditar los datos de Darwinex, y para eso hacen falta las credenciales del usuario.** Piloto GDELT GKG 2024–2025 terminado.
+**Fase actual:** F1 terminada; noticias 2018–2020 + 2024–2026 ingeridas (v2/v3). **G0: informe de cierre en `reports/G0_cierre.md`, pendiente de aprobación del usuario.** Decisiones G0 tomadas (ADR-014). Precio: Darwinex. **G0 no se cierra hasta auditar los datos de Darwinex, y para eso hacen falta las credenciales del usuario.** Piloto GDELT GKG 2024–2025 terminado.
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
