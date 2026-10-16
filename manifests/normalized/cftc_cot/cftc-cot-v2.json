@@ -1,0 +1,133 @@
+{
+  "source": "cftc_cot",
+  "version": "cftc-cot-v2",
+  "n_rows": 614,
+  "before_window": 0,
+  "time_status_counts": {
+    "api_created_at": 210,
+    "catch_up_expected_rpit": 11,
+    "rule_date": 365,
+    "rule_date_unconfirmed_shift": 25,
+    "verified_release": 3
+  },
+  "first_as_of": "2015-01-06",
+  "last_as_of": "2026-10-06",
+  "inputs": {
+    "cftc/history/fut_disagg_txt_2015.zip": "36aacb4389831a89996ba5366c91eedeaa32a55abca8265325bc52d74b06ca34",
+    "cftc/history/fut_disagg_txt_2016.zip": "50f52674fd924d24c794b921c29342be7d35cbe0a241ac823925ccf43ca1a6d2",
+    "cftc/history/fut_disagg_txt_2017.zip": "6fc467b989df527a4fbea4ba07185e8951f35cb72563f156488904a37c100e43",
+    "cftc/history/fut_disagg_txt_2018.zip": "df4bf7d72e8984d6ea04087f793c9f2bf3503ea8c2149f4b01eedeef4fbe40a8",
+    "cftc/history/fut_disagg_txt_2019.zip": "942a438bcc6f66e65aaf594a1a1fdb8c1505fe4a0feece77a1fd97270317e753",
+    "cftc/history/fut_disagg_txt_2020.zip": "0aa03c0fd6360f56b6897b6eaff30e8dba774c826bf93cac61598312e19bd1cd",
+    "cftc/history/fut_disagg_txt_2021.zip": "12d5d49a8963367fd3439050e3e20e6a5338757dfa083432795c5556827ff8ae",
+    "cftc/history/fut_disagg_txt_2022.zip": "74205d75d4d7b75a9f4159ef2e6abed53eeb4771a74e5a4bf78bc0451410ab7f",
+    "cftc/history/fut_disagg_txt_2023.zip": "9fe75dba0256819d476bb0d01f9e8e5ac6ec2c4390f609a7e3259e85796b79ce",
+    "cftc/history/fut_disagg_txt_2024.zip": "5e40f60993120d26c116ab347beaf93702f5da60c7bdccbbee43cb3d0a91d01a",
+    "cftc/history/fut_disagg_txt_2025.zip": "17ac2fef1b53303d01e486bbf5768a4e062308a3c34a2970871f3eab89829cbc",
+    "cftc/history/fut_disagg_txt_2026.zip": "efe9751cd985522768381cc661e5dbc796066b88109fb402b6222e0a854ba2a5",
+    "cftc/socrata/72hh-3qpy_067651_systemfields.json": "cf77d815109c5c8a829b990638faeaf7d6420891a3b9b607bd9fd1a3e864c291",
+    "federal_calendar/fr_closing_eos_2014plus_20261016.json": "de6e4dc7a23c525e380559737fa262b04fc5ffbe0a3e7bc522eb4d7cca00be7e",
+    "federal_calendar/usc5_6103_2023.htm": "0c3ef0793a5a8106354d3d3f3d4dc0e9aa9de7803325d01ca95048ff9c4cd806"
+  },
+  "params": {
+    "api_created_at_margin_minutes": {
+      "note": "",
+      "source_ref": "Decisión del usuario 2026-10-16 (ADR-022): hora exacta de :created_at, sin margen",
+      "status": "approved",
+      "value": 0
+    },
+    "api_first_as_of": {
+      "note": "",
+      "source_ref": "reports/f1/cftc.md §3: :created_at válido desde el lanzamiento de la API (oct-2022); las cargas previas no reflejan la publicación",
+      "status": "approved",
+      "value": "2022-10-04"
+    },
+    "catch_up_expected_releases": {
+      "note": "",
+      "source_ref": "PR 7864-19 (cftc/press/7864-19.htm) + decisión del usuario 2026-10-16 (ADR-022)",
+      "status": "approved",
+      "value": {
+        "2018-12-24": "2019-02-01",
+        "2018-12-31": "2019-02-05",
+        "2019-01-08": "2019-02-08",
+        "2019-01-15": "2019-02-12",
+        "2019-01-22": "2019-02-15",
+        "2019-01-29": "2019-02-19",
+        "2019-02-05": "2019-02-22",
+        "2019-02-12": "2019-02-26",
+        "2019-02-19": "2019-03-01",
+        "2019-02-26": "2019-03-05",
+        "2019-03-05": "2019-03-08"
+      }
+    },
+    "catch_up_window": {
+      "note": "",
+      "source_ref": "PR 7864-19: puesta al día tras el cierre 2018-19 (fechas reales no verificadas). Incluye el primero (02-01, también 'expects') y el primer informe normal (03-08), que dependen de que el calendario previsto se cumpliera (revisión adversarial, ADR-023)",
+      "status": "approved",
+      "value": [
+        "2018-12-24",
+        "2019-03-05"
+      ]
+    },
+    "contract_code": "067651",
+    "first_as_of": {
+      "note": "",
+      "source_ref": "Ventana de estudio desde 2015 (ADR-014 D4, ADR-018)",
+      "status": "approved",
+      "value": "2015-01-06"
+    },
+    "inputs": {
+      "closure_eos": "federal_calendar/fr_closing_eos_2014plus_20261016.json",
+      "socrata_systemfields": "cftc/socrata/72hh-3qpy_067651_systemfields.json",
+      "statute": "federal_calendar/usc5_6103_2023.htm",
+      "zips_glob": "cftc/history/fut_disagg_txt_*.zip"
+    },
+    "official_release_time_et": {
+      "note": "",
+      "source_ref": "cftc/pages/about_cot.htm: 'released every Friday at 3:30 p.m. Eastern time'",
+      "status": "verified",
+      "value": "15:30:00"
+    },
+    "release_business_day": {
+      "note": "",
+      "source_ref": "cftc/pages/about_cot.htm: 'the third business day after the as of date'; contrastada 41/41 (2026), 13/13 (2025), 4/4 anuncios (reports/f1/cftc.md §3)",
+      "status": "verified",
+      "value": 3
+    },
+    "rpit_time_et": {
+      "note": "",
+      "source_ref": "ADR-014 D9 / R-PIT 1-2 (reports/F1_source_audit.md §3)",
+      "status": "approved",
+      "value": "18:00:00"
+    },
+    "verified_releases": {
+      "note": "",
+      "source_ref": "reports/f1/cftc.md §3 (tabla de excepciones verificadas)",
+      "status": "verified",
+      "value": {
+        "2015-06-30": "2015-07-06",
+        "2020-12-21": "2020-12-28",
+        "2021-06-15": "2021-06-21",
+        "2023-01-31": "2023-02-24",
+        "2023-02-07": "2023-03-03",
+        "2023-02-14": "2023-03-08",
+        "2023-02-21": "2023-03-10",
+        "2023-02-28": "2023-03-14",
+        "2023-03-07": "2023-03-16",
+        "2023-03-14": "2023-03-21",
+        "2025-01-07": "2025-01-13"
+      }
+    }
+  },
+  "code": {
+    "wti_news_alpha.normalization.cftc_cot": "d6fca5792ded911461fa8d54487bb1072c97ffb750334f546579fa9ae7d9a3cf",
+    "wti_news_alpha.normalization.federal_calendar": "61f37a9cb9b2228b108eb83572271e46b0cff11737c8846cca53139f2cabdb23",
+    "wti_news_alpha.normalization.store": "9af845bf2d782f62d36b461823073c396d8a0ca75a353655bb85d10f66996c28",
+    "wti_news_alpha.timeutils": "d65e20af12d9ce62bbe7c8264a88151c20374e0149200f3a6aeffe6885a22a68"
+  },
+  "outputs": {
+    "cot.parquet": "dad3a6e2081fe830f663ae5467e4ee01bd9385f65801688731fabc2f3d2917b5"
+  },
+  "code_commit": "dd64a463fe4b763cb2a545d304fce3a9325ff956",
+  "polars_version": "2.0.0"
+}
