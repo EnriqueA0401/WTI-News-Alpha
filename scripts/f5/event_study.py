@@ -85,7 +85,32 @@ def free_of(grid: pl.DataFrame, ev_times: pl.DataFrame) -> pl.Series:
     return ~(near_b.fill_null(False) | near_f.fill_null(False))
 
 
+def bh_qvalues(pvals: list[float]) -> list[float]:
+    """Benjamini-Hochberg: q-valores en el orden de entrada (CLAUDE.md §11.4)."""
+    m = len(pvals)
+    order = sorted(range(m), key=lambda i: pvals[i])
+    q = [0.0] * m
+    running = 1.0
+    for rank, i in reversed(list(enumerate(order, start=1))):
+        running = min(running, pvals[i] * m / rank)
+        q[i] = running
+    return q
+
+
+def vol_regime(col: str, q1: float, q2: float) -> pl.Expr:
+    c = pl.col(col)
+    return (
+        pl.when(c <= q1)
+        .then(pl.lit("low"))
+        .when(c <= q2)
+        .then(pl.lit("mid"))
+        .when(c.is_not_null())
+        .then(pl.lit("high"))
+    )
+
+
 def main() -> None:
+    commit = current_commit()
     ev, bars, grid, meta = load()
     p = es.StudyParams(meta["latency"], timedelta(minutes=5), HORIZONS, SESSIONS, 60)  # type: ignore[arg-type]
     er = es.event_returns(ev.select("event_id", "t0"), bars, p)
@@ -98,25 +123,82 @@ def main() -> None:
     er = keyed(er).with_columns(day=pl.col("t0").dt.date().cast(pl.Utf8))
     # Régimen de volatilidad previo: terciles de la RV de 60 min de la rejilla de 2018-2020.
     rv = grid.filter(pl.col("t0").dt.year() <= 2020)["mkt_rv_60m"].drop_nulls()
-    q1, q2 = rv.quantile(1 / 3), rv.quantile(2 / 3)
+    q1, q2 = float(rv.quantile(1 / 3) or 0.0), float(rv.quantile(2 / 3) or 0.0)
+    if not 0 < q1 < q2:
+        raise ValueError(f"terciles de volatilidad no válidos: {q1}, {q2}")
     er = er.join_asof(
         grid.select(pl.col("t0").alias("_g"), pl.col("mkt_rv_60m").alias("rv_pre")).sort("_g"),
         left_on="t0",
         right_on="_g",
         strategy="backward",
     ).with_columns(
-        vol_regime=pl.when(pl.col("rv_pre") <= q1)
-        .then(pl.lit("low"))
-        .when(pl.col("rv_pre") <= q2)
-        .then(pl.lit("mid"))
-        .when(pl.col("rv_pre").is_not_null())
-        .then(pl.lit("high")),
+        vol_regime=vol_regime("rv_pre", q1, q2),
         epoch=pl.when(pl.col("t0") < pl.datetime(2019, 9, 1, time_zone="UTC"))
         .then(pl.lit("slug"))
         .otherwise(pl.lit("title")),
     )
-    rng = random.Random(SEED)  # noqa: S311 (placebo, no criptografía)
+    base = base.with_columns(vol_regime=vol_regime("mkt_rv_60m", q1, q2))
+    variants = {
+        "hour": ["k_wd", "k_hour", "k_year"],
+        "hour_vol": ["k_wd", "k_hour", "k_year", "vol_regime"],
+    }
     rows = []
+    for variant, keys in variants.items():
+        rows += placebo_rows(er, base, grid, keys, variant)
+    summary = pl.DataFrame(rows)
+    summary = pl.concat(
+        [
+            g.with_columns(
+                q_bh=pl.Series([round(x, 4) for x in bh_qvalues(g["p_placebo"].to_list())])
+            )
+            for _, g in summary.group_by("variant", maintain_order=True)
+        ]
+    )
+    OUT.mkdir(parents=True, exist_ok=True)
+    summary.write_csv(OUT / "event_study_summary.csv")
+    write_segments(er)
+    write_tables(er)
+    info = {
+        "sealed_start": str(meta["sealed_start"]),
+        "cutoff": meta["cutoff"],
+        "latency_s": meta["latency"].total_seconds(),  # type: ignore[attr-defined]
+        "commit": commit,
+        "n_events_research": er.height,
+        "n_events_with_entry": int(er["entry_at"].is_not_null().sum()),
+        "n_baseline_instants": base.height,
+        "vol_terciles_2018_2020": [q1, q2],
+        "seed": SEED,
+        "n_placebo": N_PLACEBO,
+        "n_boot": N_BOOT,
+        "exclusion_hours": EXCLUSION.total_seconds() / 3600,
+        "n_tests_per_variant": summary.height // len(variants),
+    }
+    (OUT / "summary.json").write_text(json.dumps(info, indent=2, default=str) + "\n")
+    print(json.dumps(info, indent=1, default=str))
+    with pl.Config(tbl_rows=80, tbl_cols=12, tbl_width_chars=220):
+        print(
+            summary.select(
+                "variant",
+                "family",
+                "measure",
+                "n_events",
+                "matched_share",
+                "med_abs_bp",
+                "placebo_med_bp",
+                "placebo_hi_bp",
+                "ratio_vs_placebo",
+                "p_placebo",
+                "q_bh",
+            )
+        )
+
+
+def placebo_rows(
+    er: pl.DataFrame, base: pl.DataFrame, grid: pl.DataFrame, keys: list[str], variant: str
+) -> list[dict[str, object]]:
+    """Por familia y medida: mediana de |retorno| frente a placebos emparejados por ``keys``."""
+    rng = random.Random(SEED)  # noqa: S311 (placebo, no criptografía)
+    rows: list[dict[str, object]] = []
     for fam in sorted(er["family"].unique()):
         fe = er.filter(pl.col("family") == fam)
         pool = base.filter(free_of(grid, fe))
@@ -130,15 +212,15 @@ def main() -> None:
             pools = {
                 k: v[m].abs().to_list()
                 for k, v in pool.filter(pl.col(m).is_not_null())
-                .partition_by("k_wd", "k_hour", "k_year", as_dict=True)
+                .partition_by(keys, as_dict=True)
                 .items()
             }
-            need = e.group_by("k_wd", "k_hour", "k_year").len()
+            need = e.group_by(keys).len()
             plan: list[tuple[list[float], int]] = []
             for r in need.iter_rows():
-                vals = pools.get(tuple(r[:3]))
+                vals = pools.get(tuple(r[: len(keys)]))
                 if vals:
-                    plan.append((vals, r[3]))
+                    plan.append((vals, r[len(keys)]))
             meds = []
             for _ in range(N_PLACEBO):
                 draw = [x for vals, n in plan for x in rng.choices(vals, k=n)]
@@ -147,6 +229,7 @@ def main() -> None:
             p_val = (1 + sum(x >= ci.point for x in meds)) / (N_PLACEBO + 1)
             rows.append(
                 {
+                    "variant": variant,
                     "family": fam,
                     "measure": m,
                     "n_events": ci.n,
@@ -165,9 +248,10 @@ def main() -> None:
                     "med_signed_hi_bp": round(1e4 * sg.hi, 2),
                 }
             )
-    summary = pl.DataFrame(rows)
-    OUT.mkdir(parents=True, exist_ok=True)
-    summary.write_csv(OUT / "event_study_summary.csv")
+    return rows
+
+
+def write_segments(er: pl.DataFrame) -> None:
     seg_rows = []
     for seg in ("epoch", "vol_regime", "k_year"):
         for (fam, val), g in er.filter(pl.col("ret_15m").is_not_null()).group_by("family", seg):
@@ -189,6 +273,9 @@ def main() -> None:
                 }
             )
     pl.DataFrame(seg_rows).sort("segment", "family", "value").write_csv(OUT / "segments.csv")
+
+
+def write_tables(er: pl.DataFrame) -> None:
     cov = er.group_by("k_year", "family").agg(
         n_events=pl.len(),
         with_entry=pl.col("entry_at").is_not_null().sum(),
@@ -203,38 +290,6 @@ def main() -> None:
         .select("family", "event_id", "t0", "country", "n_sources_final", "ret_15m", "ret_60m")
     )
     extremes.write_csv(OUT / "extremes.csv")
-    info = {
-        "sealed_start": str(meta["sealed_start"]),
-        "cutoff": meta["cutoff"],
-        "latency_s": meta["latency"].total_seconds(),  # type: ignore[attr-defined]
-        "commit": current_commit(),
-        "n_events_research": er.height,
-        "n_events_with_entry": int(er["entry_at"].is_not_null().sum()),
-        "n_baseline_instants": base.height,
-        "vol_terciles_2018_2020": [q1, q2],
-        "seed": SEED,
-        "n_placebo": N_PLACEBO,
-        "n_boot": N_BOOT,
-        "exclusion_hours": EXCLUSION.total_seconds() / 3600,
-    }
-    (OUT / "summary.json").write_text(json.dumps(info, indent=2, default=str) + "\n")
-    print(json.dumps(info, indent=1, default=str))
-    with pl.Config(tbl_rows=60, tbl_cols=12, tbl_width_chars=200):
-        print(
-            summary.select(
-                "family",
-                "measure",
-                "n_events",
-                "med_abs_bp",
-                "med_abs_lo_bp",
-                "med_abs_hi_bp",
-                "placebo_med_bp",
-                "placebo_hi_bp",
-                "ratio_vs_placebo",
-                "p_placebo",
-                "med_signed_bp",
-            )
-        )
 
 
 if __name__ == "__main__":
