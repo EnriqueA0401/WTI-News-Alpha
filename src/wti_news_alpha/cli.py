@@ -16,6 +16,7 @@ from wti_news_alpha.config import (
     load_eia_wpsr_config,
     load_event_rules_config,
     load_events_config,
+    load_features_config,
     load_fred_config,
     load_gdelt_config,
     load_news_config,
@@ -23,6 +24,7 @@ from wti_news_alpha.config import (
 )
 from wti_news_alpha.errors import PhaseNotImplementedError
 from wti_news_alpha.events import pipeline as events_pipeline
+from wti_news_alpha.features import build as features_build
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
 from wti_news_alpha.normalization import cftc_cot, darwinex, eia_wpsr, fred_alfred, gdelt_news
@@ -284,8 +286,23 @@ def ingest_gdelt_gkg(
 
 @app.command("build-features")
 def build_features() -> None:
-    """Features point-in-time (F4)."""
-    _not_yet("build-features", "F4")
+    """Features point-in-time (F4, FASE_04.md). Idempotente."""
+    cfg = load_features_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("features_build", logger, commit, version=cfg.version) as res:
+        pub = features_build.run_build(
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            commit=commit,
+        )
+        res.update(created=pub.created, n_rows=pub.manifest["n_rows"])
+    action = "creada" if pub.created else "verificada (ya existía)"
+    typer.echo(
+        f"{cfg.version} {action}: {pub.manifest['n_rows']} instantes · "
+        f"{pub.manifest['n_columns']} columnas"
+    )
 
 
 @app.command("build-labels")

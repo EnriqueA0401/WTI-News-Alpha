@@ -18,9 +18,7 @@ from wti_news_alpha.normalization.store import Published
 runner = CliRunner()
 
 
-@pytest.mark.parametrize(
-    "command", ["build-features", "build-labels", "train", "evaluate", "report"]
-)
+@pytest.mark.parametrize("command", ["build-labels", "train", "evaluate", "report"])
 def test_future_phase_commands_fail_loudly(command: str) -> None:
     result = runner.invoke(cli.app, [command])
     assert result.exit_code != 0
