@@ -28,7 +28,7 @@ from wti_news_alpha.config import (
 )
 from wti_news_alpha.evaluation import sealed_guard as sg
 from wti_news_alpha.labels import splits
-from wti_news_alpha.models import compare, pipeline
+from wti_news_alpha.models import compare, data, pipeline
 from wti_news_alpha.runlog import REPO_ROOT, current_commit
 
 OUT = REPO_ROOT / "reports" / "f6"
@@ -38,7 +38,7 @@ M3 = pipeline.ModelSpec("M3", ("mkt", "wpsr", "cot", "fred", "cal"))
 M4P = pipeline.ModelSpec("M4_placebo", ("mkt", "wpsr", "cot", "fred", "cal", "news"))
 
 
-def load() -> tuple[pl.DataFrame, sg.SealedGuard, datetime]:
+def load() -> tuple[data.ResearchFrame, datetime]:
     proj = load_project_config(CONFIG_DIR)
     win = proj.splits.sealed_test_window.require("sealed_test_window")
     guard = sg.SealedGuard(
@@ -49,15 +49,12 @@ def load() -> tuple[pl.DataFrame, sg.SealedGuard, datetime]:
     )
     fv = load_features_config(CONFIG_DIR).version
     lv = load_labels_config(CONFIG_DIR).version
-    feats = pl.scan_parquet(REPO_ROOT / "data" / "features" / fv / "*.parquet").filter(
-        pl.col("decision_time") < win.start
+    rf = data.load_research_frame(
+        features_dir=REPO_ROOT / "data" / "features" / fv,
+        labels_dir=REPO_ROOT / "data" / "labels" / lv,
+        guard=guard,
     )
-    labs = pl.scan_parquet(REPO_ROOT / "data" / "labels" / lv / "*.parquet").select(
-        "decision_time", "ret_15m", "ret_60m", "label_end_15m", "label_end_60m"
-    )
-    df = feats.join(labs, on="decision_time", how="inner").collect().sort("decision_time")
-    guard.assert_research_only(df)
-    return df, guard, win.start
+    return rf, win.start
 
 
 def placebo_news(df: pl.DataFrame) -> pl.DataFrame:
@@ -80,7 +77,7 @@ def placebo_news(df: pl.DataFrame) -> pl.DataFrame:
         _d=pl.col("decision_time").dt.date(), _tod=pl.col("decision_time").dt.time()
     )
     out = base.join(m, on="_d", how="left").join(src, on=["_src", "_tod"], how="left")
-    return out.drop("_d", "_tod", "_src").select(df.columns)
+    return out.drop("_d", "_tod", "_src").select(df.columns).sort("decision_time")
 
 
 def registry_row(spec: str, h: int, commit: str, preds: pl.DataFrame) -> dict[str, str]:
@@ -106,36 +103,61 @@ def registry_row(spec: str, h: int, commit: str, preds: pl.DataFrame) -> dict[st
 
 def main() -> None:
     commit = current_commit()
-    df, _, sealed_start = load()
+    rf, sealed_start = load()
+    df = rf.df
     pl_df = placebo_news(df)
-    results = {"commit": commit, "seed": SEED, "n_rows": df.height}
+    results: dict[str, object] = {"commit": commit, "seed": SEED, "n_rows": df.height}
     rows = []
     for h in (15, 60):
-        folds = splits.walk_forward(
-            pipeline.purge_frame(df, h),
-            first_test=FIRST_TEST,
-            end=sealed_start,
-            step="quarter",
-            embargo=timedelta(days=1),
-        )
-        p3 = pipeline.run_walk_forward(df, M3, folds, horizon_min=h)
-        p4 = pipeline.run_walk_forward(pl_df, M4P, folds, horizon_min=h)
+
+        def folds_for(frame: pl.DataFrame, hh: int = h) -> list[splits.Fold]:
+            return splits.walk_forward(
+                pipeline.purge_frame(frame, hh),
+                first_test=FIRST_TEST,
+                end=sealed_start,
+                step="quarter",
+                embargo=timedelta(days=1),
+                sealed_start=sealed_start,
+                horizon=f"{hh}m",
+            )
+
+        kw = {"horizon_min": h, "allowed": rf.allowed, "sealed_start": sealed_start}
+        r3 = pipeline.run_walk_forward(df, M3, folds_for(df), **kw)  # type: ignore[arg-type]
+        r4 = pipeline.run_walk_forward(pl_df, M4P, folds_for(pl_df), **kw)  # type: ignore[arg-type]
+        m0 = pipeline.climatology_loss(df, folds_for(df), horizon_min=h)
+        p3, p4 = r3.predictions, r4.predictions
         j = p3.join(p4, on="decision_time", suffix="_p", validate="1:1")
         blocks = j["decision_time"].dt.strftime("%Y-%m-%d").to_list()
         c = compare.compare_losses(
             j["loss"].to_list(), j["loss_p"].to_list(), blocks, n_boot=1000, seed=SEED
         )
+        j0 = m0.join(p3, on="decision_time", suffix="_3", validate="1:1")
+        c0 = compare.compare_losses(
+            j0["loss"].to_list(),
+            j0["loss_3"].to_list(),
+            j0["decision_time"].dt.strftime("%Y-%m-%d").to_list(),
+            n_boot=1000,
+            seed=SEED,
+        )
         results[f"h{h}"] = {
-            "n_folds": len(folds),
+            "n_folds_used": int(p3["fold"].n_unique()),
+            "skipped_folds": r3.skipped,
             "n_test_rows": j.height,
+            "loss_M0": round(float(m0["loss"].mean()), 5),  # type: ignore[arg-type]
             "loss_M3": round(float(j["loss"].mean()), 5),  # type: ignore[arg-type]
             "loss_M4_placebo": round(float(j["loss_p"].mean()), 5),  # type: ignore[arg-type]
-            "uniform_loss_ln3": 1.09861,
-            "mean_diff_M3_minus_placebo": c.mean_diff,
-            "ci95": [c.lo, c.hi],
-            "p_dm": c.p_dm,
-            "p_bootstrap": c.p_bootstrap,
-            "n_days": c.n_blocks,
+            "placebo_vs_M3": {
+                "mean_diff_M3_minus_placebo": c.mean_diff,
+                "ci95": [c.lo, c.hi],
+                "p_dm": c.p_dm,
+                "p_bootstrap": c.p_bootstrap,
+                "n_days": c.n_blocks,
+            },
+            "M3_vs_M0": {
+                "mean_diff_M0_minus_M3": c0.mean_diff,
+                "ci95": [c0.lo, c0.hi],
+                "p_dm": c0.p_dm,
+            },
         }
         rows += [registry_row("M3", h, commit, p3), registry_row("M4_placebo", h, commit, p4)]
     OUT.mkdir(parents=True, exist_ok=True)

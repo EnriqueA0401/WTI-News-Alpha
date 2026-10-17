@@ -116,3 +116,18 @@ def test_edited_or_truncated_committed_log_is_detected(tmp_path: Path) -> None:
     log.write_text(json.dumps(rec0, sort_keys=True) + "\n" + second + "\n")
     with pytest.raises(SealedTestError, match="cadena"):
         g.open(confirm=True, commit="abc", reason="F10")
+
+
+def test_deleted_committed_log_and_forged_access_and_outside_log(tmp_path: Path) -> None:
+    repo = _repo(tmp_path, commit_prereg=True)
+    g = _guard(repo)
+    g.open(confirm=True, commit="abc", reason="F10")
+    _git(repo, "add", "runs/sealed_access.jsonl")
+    _git(repo, "commit", "-q", "-m", "log")
+    (repo / "runs" / "sealed_access.jsonl").unlink()
+    with pytest.raises(SealedTestError, match="borrado"):
+        g.open(confirm=True, commit="abc", reason="F10")
+    with pytest.raises(SealedTestError, match="solo se crea"):
+        sg.SealedAccess(1, False, WIN)
+    with pytest.raises(SealedTestError, match="dentro del repo"):
+        sg.SealedGuard(WIN, repo=repo, prereg="preregistration/H1.yaml", log=tmp_path / "x.jsonl")

@@ -587,3 +587,31 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
 - **Contexto:** los controles sintéticos de F6 (CLAUDE.md §8.5) ejecutan la línea M3/M4 completa, así que necesitan el stack de modelos de §6.1 antes de F7.
 - **Decisión:** `scikit-learn` 1.9.1, `xgboost-cpu` 3.4.1 (sin GPU, más ligero) y `numpy` 2.5.4, fijados en `uv.lock`. Son gratuitas: sin coste ni registro.
 - `mypy` ignora la falta de stubs de `sklearn`, `xgboost` y `scipy`.
+
+## ADR-043 — Revisión adversarial de F6: correcciones (2026-10-17)
+1. **(Alto) La guardia del sellado ya protege la línea de modelos.**
+   - `walk_forward` exige `sealed_start` y falla si `end` lo supera o si hay filas selladas.
+   - `run_walk_forward` falla con filas selladas.
+   - Los datos de modelado se cargan solo con `models.data.load_research_frame`, que pasa por `SealedGuard.assert_research_only`.
+2. **Guardia:**
+   - un log commiteado y borrado se detecta;
+   - el log debe estar dentro del repo;
+   - `SealedAccess` solo lo crea `open`.
+   - **Procedimiento:** commitear el log tras cada acceso; un log sin commitear podría reescribirse.
+3. **Folds:** guardan el hash (sensible al orden) de `decision_time` y el horizonte de la purga. Usarlos con otro DataFrame u otro horizonte falla.
+4. **Features permitidas:** solo las columnas de la capa de features (`allowed`). Una columna de etiqueta con prefijo de grupo ya no entra.
+5. **Controles sintéticos más exigentes:**
+   - señal plantada en una sola categoría (OPEP+) con otra categoría de ruido, a 0,5 desviaciones típicas;
+   - M3 no supera a M0 (climatología del train);
+   - canario con `z` futuro: pérdida forzada < 0,1.
+6. **Comparación:**
+   - bootstrap de bloques móviles (`ceil(n^(1/3))` días);
+   - DM con corrección HLN y p con t de Student;
+   - mínimo de 30 días;
+   - test de tamaño bajo nulo AR(0,5): < 12 % a p < 0,05.
+7. **XGBoost regularizado**, fijado antes de cualquier corrida real: 150 árboles, profundidad 2, `learning_rate` 0,03, `min_child_weight` 100 y `reg_lambda` 10.
+   - Motivo: con ruido puro, M3 quedaba peor que la climatología.
+   - Se añade M0 (climatología) como línea base.
+8. **Folds omitidos** (train < 100 filas): se devuelven y se reportan.
+9. **Aplazado a F9 (`label-v2`):** MFE/MAE con "lo adverso primero", retorno neto y bid/spread de salida. No hacen falta para la prueba principal en log loss.
+10. **Aceptado (bajo):** con empates, `fit_threshold` deja algo más de 1/3 en neutral. Es despreciable con n grande, y la fracción real se reporta.

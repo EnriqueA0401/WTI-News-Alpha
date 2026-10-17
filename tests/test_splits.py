@@ -7,11 +7,13 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from wti_news_alpha.errors import SchemaError
+from wti_news_alpha.errors import SchemaError, SealedTestError
 from wti_news_alpha.labels import splits
 
 UTC_US = pl.Datetime("us", "UTC")
 D = timedelta(days=1)
+SEALED = datetime(2025, 7, 1, tzinfo=UTC)
+KW = {"sealed_start": SEALED, "horizon": "2h"}
 
 
 def _frame(times: list[datetime], horizon: timedelta) -> pl.DataFrame:
@@ -32,6 +34,7 @@ def test_quarters_purge_and_embargo_hand_case() -> None:
         end=datetime(2020, 7, 1, tzinfo=UTC),
         step="quarter",
         embargo=D,
+        **KW,
     )
     assert [f.test_start for f in folds] == [
         datetime(2020, 1, 1, tzinfo=UTC),
@@ -62,6 +65,7 @@ def test_validation() -> None:
             end=datetime(2020, 4, 1, tzinfo=UTC),
             step="month",
             embargo=D,
+            **KW,
         )  # type: ignore[arg-type]
     with pytest.raises(SchemaError, match="label_end"):
         splits.walk_forward(
@@ -70,6 +74,7 @@ def test_validation() -> None:
             end=datetime(2020, 4, 1, tzinfo=UTC),
             step="quarter",
             embargo=D,
+            **KW,
         )
     bad = df.with_columns(label_end=pl.col("decision_time") - D)
     with pytest.raises(SchemaError, match="anterior"):
@@ -79,6 +84,7 @@ def test_validation() -> None:
             end=datetime(2020, 4, 1, tzinfo=UTC),
             step="quarter",
             embargo=D,
+            **KW,
         )
 
 
@@ -97,7 +103,8 @@ def test_property_no_overlap(hours: list[int], horizon_h: int, step: str) -> Non
         first_test=datetime(2019, 1, 1, tzinfo=UTC),
         end=datetime(2021, 1, 1, tzinfo=UTC),
         step=step,
-        embargo=D,  # type: ignore[arg-type]
+        embargo=D,
+        **KW,  # type: ignore[arg-type]
     )
     for f in folds:
         tr, te = df.filter(f.train), df.filter(f.test)
@@ -107,3 +114,58 @@ def test_property_no_overlap(hours: list[int], horizon_h: int, step: str) -> Non
             assert tr["label_end"].max() < f.test_start - D  # type: ignore[operator]
             assert tr["decision_time"].max() < f.test_start - D  # type: ignore[operator]
         assert not (f.train & f.test).any()
+
+
+def test_sealed_and_month_start_are_enforced() -> None:
+    df = _frame([datetime(2020, 1, 1, tzinfo=UTC)], D)
+    with pytest.raises(SealedTestError, match="sellado"):
+        splits.walk_forward(
+            df,
+            first_test=datetime(2020, 1, 1, tzinfo=UTC),
+            end=datetime(2026, 8, 1, tzinfo=UTC),
+            step="quarter",
+            embargo=D,
+            **KW,
+        )  # type: ignore[arg-type]
+    late = _frame([datetime(2025, 7, 2, tzinfo=UTC)], D)
+    with pytest.raises(SealedTestError, match="filas"):
+        splits.walk_forward(
+            late,
+            first_test=datetime(2020, 1, 1, tzinfo=UTC),
+            end=SEALED,
+            step="quarter",
+            embargo=D,
+            **KW,
+        )  # type: ignore[arg-type]
+    with pytest.raises(SchemaError, match="primer instante"):
+        splits.walk_forward(
+            df,
+            first_test=datetime(2020, 1, 31, tzinfo=UTC),
+            end=SEALED,
+            step="quarter",
+            embargo=D,
+            **KW,
+        )  # type: ignore[arg-type]
+
+
+def test_null_label_end_never_trains_and_hash_is_order_sensitive() -> None:
+    times = [
+        datetime(2019, 6, 1, tzinfo=UTC),
+        datetime(2019, 6, 2, tzinfo=UTC),
+        datetime(2020, 1, 5, tzinfo=UTC),
+    ]
+    df = _frame(times, D).with_columns(
+        label_end=pl.when(pl.col("decision_time") == times[1])
+        .then(None)
+        .otherwise(pl.col("label_end"))
+    )
+    (f,) = splits.walk_forward(
+        df,
+        first_test=datetime(2020, 1, 1, tzinfo=UTC),
+        end=datetime(2020, 4, 1, tzinfo=UTC),
+        step="quarter",
+        embargo=D,
+        **KW,
+    )  # type: ignore[arg-type]
+    assert df.filter(f.train)["decision_time"].to_list() == [times[0]]
+    assert splits.frame_hash(df) != splits.frame_hash(df.reverse())

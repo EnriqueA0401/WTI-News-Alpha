@@ -9,6 +9,9 @@ Invariantes:
   (``prev_sha256``). Un log vacío, una cadena rota o un log más corto que su versión
   commiteada en git hacen fallar la guardia: el historial no se puede borrar en silencio.
 - El segundo acceso y los siguientes quedan marcados ``repeated`` y se deben reportar.
+- Revisión F6: el log debe estar dentro del repo; si falta pero existe en ``HEAD``, falla
+  (borrarlo no reinicia el contador). Un ``SealedAccess`` solo lo crea ``open``. Tras cada
+  acceso hay que **commitear el log**: un log sin commitear podría reescribirse entero.
 """
 
 import hashlib
@@ -35,11 +38,19 @@ class Window:
         return pl.col(col).is_between(self.start, self.end, closed="left")
 
 
+_TOKEN = object()
+
+
 @dataclass(frozen=True)
 class SealedAccess:
     access_number: int
     repeated: bool
     window: Window
+    _token: object = None
+
+    def __post_init__(self) -> None:
+        if self._token is not _TOKEN:
+            raise SealedTestError("SealedAccess solo se crea con SealedGuard.open")
 
     def select_sealed(self, df: pl.DataFrame, col: str = DECISION) -> pl.DataFrame:
         """Filas del periodo sellado (solo dentro de un acceso abierto y registrado)."""
@@ -62,6 +73,8 @@ class SealedGuard:
         self.repo = repo
         self.prereg = prereg
         self.log = log
+        if not log.is_relative_to(repo):
+            raise SealedTestError(f"el log de accesos {log} debe estar dentro del repo {repo}")
 
     def assert_research_only(self, df: pl.DataFrame, col: str = DECISION) -> None:
         require_utc_column(df, col)
@@ -77,7 +90,10 @@ class SealedGuard:
         return hashlib.sha256((self.repo / self.prereg).read_bytes()).hexdigest()
 
     def _history(self) -> list[dict[str, object]]:
+        rel = self.log.relative_to(self.repo).as_posix()
         if not self.log.exists():
+            if _git(self.repo, "cat-file", "-e", f"HEAD:{rel}").returncode == 0:
+                raise SealedTestError(f"log de accesos {self.log} borrado (existe en HEAD)")
             return []
         lines = self.log.read_text(encoding="utf-8").splitlines()
         if not lines:
@@ -90,11 +106,9 @@ class SealedGuard:
                 raise SealedTestError(f"log de accesos {self.log}: cadena de hashes rota")
             prev = hashlib.sha256(raw.encode()).hexdigest()
             out.append(rec)
-        rel = self.log.relative_to(self.repo) if self.log.is_relative_to(self.repo) else None
-        if rel is not None:
-            head = _git(self.repo, "show", f"HEAD:{rel.as_posix()}")
-            if head.returncode == 0 and not "\n".join(lines).startswith(head.stdout.strip()):
-                raise SealedTestError(f"log de accesos {self.log} más corto que el commiteado")
+        head = _git(self.repo, "show", f"HEAD:{rel}")
+        if head.returncode == 0 and not "\n".join(lines).startswith(head.stdout.strip()):
+            raise SealedTestError(f"log de accesos {self.log} más corto que el commiteado")
         return out
 
     def open(self, *, confirm: bool, commit: str, reason: str) -> SealedAccess:
@@ -125,4 +139,4 @@ class SealedGuard:
         self.log.parent.mkdir(parents=True, exist_ok=True)
         with self.log.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(rec, sort_keys=True) + "\n")
-        return SealedAccess(n, n > 1, self.window)
+        return SealedAccess(n, n > 1, self.window, _TOKEN)
