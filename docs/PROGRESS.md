@@ -20,8 +20,8 @@
 |---|---|---|
 | Capa de eventos (reglas, dedup online, eventos) | Hecho y revisado | `events-v2` / `rules-v2` |
 | Muestra G2 (288 titulares, 26 repetidos a ciegas) | Hecha; propuestas de Claude cargadas | `scripts/f3/g2_sample.py`, página de revisión (artifact privado) |
-| Revisión del usuario | **Pendiente (usuario)** | etiquetas en la base de datos de la página |
-| Precisión por categoría + informe G2 | Pendiente de la revisión | `reports/G2_*.md` |
+| Etiquetas | Propuestas de Claude aceptadas por el usuario (ADR-031) | `reports/f3/g2_labels.csv` |
+| Precisión por categoría + informe G2 | Hecho. **Puerta G2: decisión del usuario pendiente** | `reports/G2_eventos.md`, `scripts/f3/g2_metrics.py` |
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).

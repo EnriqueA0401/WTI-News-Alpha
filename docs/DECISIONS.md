@@ -429,3 +429,12 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
      - medio nulo → dominio de la URL.
   10. **Matiz de la ventana de 48 h:** se mide entre artículos encadenados, sin límite de duración total. Aceptado: son sobre todo titulares repetitivos.
 - **Riesgo aceptado:** `hash()` de polars solo es estable dentro de una misma versión de polars. Las claves no se persisten.
+
+## ADR-031 — Etiquetas de G2: el usuario acepta las propuestas de Claude sin revisarlas una a una (usuario, 2026-10-17)
+- **Contexto:** ADR-028 preveía que el usuario confirmara o corrigiera cada titular. El usuario ha indicado que da por correctas las propuestas de Claude y que se siga.
+- **Decisión:** las etiquetas finales de la muestra G2 son las propuestas de Claude, sin cambios (`reports/f3/g2_labels.csv`, sin titulares).
+- **Consecuencias:**
+  - la auditoría no es independiente ni humana en sentido estricto: mide el acuerdo entre las reglas y un segundo etiquetador (Claude), que leyó cada titular sin mirar las reglas;
+  - la consistencia intra-anotador no se puede medir: las 26 repeticiones copian la etiqueta del original;
+  - el % de correcciones del usuario es 0 por construcción, no por evidencia.
+- **Mitigación propuesta:** que el usuario revise a mano una submuestra pequeña antes de aprobar las reglas finales (queda como opción en el informe G2).

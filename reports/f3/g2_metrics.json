@@ -1,0 +1,1069 @@
+{
+  "labels": "propuestas de Claude aceptadas sin revisión ítem a ítem (ADR-031)",
+  "n_originals": 262,
+  "n_direct_sample": 182,
+  "weighted_direct": {
+    "relevance_direct": {
+      "p": 0.5386,
+      "ci95_bootstrap": [
+        0.4513,
+        0.6134
+      ]
+    },
+    "family_correct": {
+      "p": 0.3163,
+      "ci95_bootstrap": [
+        0.2584,
+        0.3907
+      ]
+    },
+    "event_eligible_correct": {
+      "p": 0.3559,
+      "ci95_bootstrap": [
+        0.2992,
+        0.4296
+      ]
+    }
+  },
+  "weighted_direct_event_families": {
+    "relevance_direct": {
+      "p": 0.7146,
+      "ci95_bootstrap": [
+        0.648,
+        0.7755
+      ]
+    },
+    "family_correct": {
+      "p": 0.5501,
+      "ci95_bootstrap": [
+        0.4818,
+        0.6174
+      ]
+    }
+  },
+  "by_title_source": {
+    "title": {
+      "relevance_direct": {
+        "k": 64,
+        "n": 91,
+        "p": 0.7033,
+        "ci95": [
+          0.6028,
+          0.7874
+        ]
+      },
+      "family_correct": {
+        "k": 40,
+        "n": 91,
+        "p": 0.4396,
+        "ci95": [
+          0.3421,
+          0.5419
+        ]
+      }
+    },
+    "url_slug": {
+      "relevance_direct": {
+        "k": 59,
+        "n": 91,
+        "p": 0.6484,
+        "ci95": [
+          0.5461,
+          0.7386
+        ]
+      },
+      "family_correct": {
+        "k": 39,
+        "n": 91,
+        "p": 0.4286,
+        "ci95": [
+          0.3318,
+          0.5311
+        ]
+      }
+    }
+  },
+  "by_family": {
+    "company": {
+      "relevance_direct": {
+        "k": 1,
+        "n": 14,
+        "p": 0.0714,
+        "ci95": [
+          0.0127,
+          0.3147
+        ]
+      },
+      "family_correct": {
+        "k": 0,
+        "n": 14,
+        "p": 0.0,
+        "ci95": [
+          -0.0,
+          0.2153
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "ci95": [
+          NaN,
+          NaN
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 1,
+            "n": 7,
+            "p": 0.1429,
+            "ci95": [
+              0.0257,
+              0.5131
+            ]
+          },
+          "family_correct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          },
+          "family_correct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          }
+        }
+      }
+    },
+    "conflict_attack": {
+      "relevance_direct": {
+        "k": 10,
+        "n": 14,
+        "p": 0.7143,
+        "ci95": [
+          0.4535,
+          0.8828
+        ]
+      },
+      "family_correct": {
+        "k": 9,
+        "n": 14,
+        "p": 0.6429,
+        "ci95": [
+          0.3876,
+          0.8366
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 2,
+        "n": 7,
+        "p": 0.2857,
+        "ci95": [
+          0.0822,
+          0.6411
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          }
+        }
+      }
+    },
+    "demand_macro": {
+      "relevance_direct": {
+        "k": 10,
+        "n": 14,
+        "p": 0.7143,
+        "ci95": [
+          0.4535,
+          0.8828
+        ]
+      },
+      "family_correct": {
+        "k": 6,
+        "n": 14,
+        "p": 0.4286,
+        "ci95": [
+          0.2138,
+          0.6741
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "ci95": [
+          NaN,
+          NaN
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "family_correct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          },
+          "family_correct": {
+            "k": 1,
+            "n": 7,
+            "p": 0.1429,
+            "ci95": [
+              0.0257,
+              0.5131
+            ]
+          }
+        }
+      }
+    },
+    "eia_inventories": {
+      "relevance_direct": {
+        "k": 14,
+        "n": 14,
+        "p": 1.0,
+        "ci95": [
+          0.7847,
+          1.0
+        ]
+      },
+      "family_correct": {
+        "k": 9,
+        "n": 14,
+        "p": 0.6429,
+        "ci95": [
+          0.3876,
+          0.8366
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 2,
+        "n": 5,
+        "p": 0.4,
+        "ci95": [
+          0.1176,
+          0.7693
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          }
+        }
+      }
+    },
+    "logistics": {
+      "relevance_direct": {
+        "k": 10,
+        "n": 14,
+        "p": 0.7143,
+        "ci95": [
+          0.4535,
+          0.8828
+        ]
+      },
+      "family_correct": {
+        "k": 7,
+        "n": 14,
+        "p": 0.5,
+        "ci95": [
+          0.268,
+          0.732
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 2,
+        "n": 2,
+        "p": 1.0,
+        "ci95": [
+          0.3424,
+          1.0
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          }
+        }
+      }
+    },
+    "market_report": {
+      "relevance_direct": {
+        "k": 12,
+        "n": 14,
+        "p": 0.8571,
+        "ci95": [
+          0.6006,
+          0.9599
+        ]
+      },
+      "family_correct": {
+        "k": 8,
+        "n": 14,
+        "p": 0.5714,
+        "ci95": [
+          0.3259,
+          0.7862
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 0,
+        "n": 1,
+        "p": 0.0,
+        "ci95": [
+          0.0,
+          0.7935
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          }
+        }
+      }
+    },
+    "opec_policy": {
+      "relevance_direct": {
+        "k": 13,
+        "n": 14,
+        "p": 0.9286,
+        "ci95": [
+          0.6853,
+          0.9873
+        ]
+      },
+      "family_correct": {
+        "k": 13,
+        "n": 14,
+        "p": 0.9286,
+        "ci95": [
+          0.6853,
+          0.9873
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 2,
+        "n": 5,
+        "p": 0.4,
+        "ci95": [
+          0.1176,
+          0.7693
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "family_correct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "opinion": {
+      "relevance_direct": {
+        "k": 6,
+        "n": 14,
+        "p": 0.4286,
+        "ci95": [
+          0.2138,
+          0.6741
+        ]
+      },
+      "family_correct": {
+        "k": 2,
+        "n": 14,
+        "p": 0.1429,
+        "ci95": [
+          0.0401,
+          0.3994
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 0,
+        "n": 1,
+        "p": 0.0,
+        "ci95": [
+          0.0,
+          0.7935
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          },
+          "family_correct": {
+            "k": 2,
+            "n": 7,
+            "p": 0.2857,
+            "ci95": [
+              0.0822,
+              0.6411
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          },
+          "family_correct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          }
+        }
+      }
+    },
+    "other": {
+      "relevance_direct": {
+        "k": 5,
+        "n": 14,
+        "p": 0.3571,
+        "ci95": [
+          0.1634,
+          0.6124
+        ]
+      },
+      "family_correct": {
+        "k": 1,
+        "n": 14,
+        "p": 0.0714,
+        "ci95": [
+          0.0127,
+          0.3147
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 0,
+        "n": 1,
+        "p": 0.0,
+        "ci95": [
+          0.0,
+          0.7935
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 1,
+            "n": 7,
+            "p": 0.1429,
+            "ci95": [
+              0.0257,
+              0.5131
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          },
+          "family_correct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          }
+        }
+      }
+    },
+    "rates_usd": {
+      "relevance_direct": {
+        "k": 7,
+        "n": 14,
+        "p": 0.5,
+        "ci95": [
+          0.268,
+          0.732
+        ]
+      },
+      "family_correct": {
+        "k": 4,
+        "n": 14,
+        "p": 0.2857,
+        "ci95": [
+          0.1172,
+          0.5465
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 1,
+        "n": 1,
+        "p": 1.0,
+        "ci95": [
+          0.2065,
+          1.0
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          },
+          "family_correct": {
+            "k": 2,
+            "n": 7,
+            "p": 0.2857,
+            "ci95": [
+              0.0822,
+              0.6411
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          },
+          "family_correct": {
+            "k": 2,
+            "n": 7,
+            "p": 0.2857,
+            "ci95": [
+              0.0822,
+              0.6411
+            ]
+          }
+        }
+      }
+    },
+    "sanctions_geopolitics": {
+      "relevance_direct": {
+        "k": 13,
+        "n": 14,
+        "p": 0.9286,
+        "ci95": [
+          0.6853,
+          0.9873
+        ]
+      },
+      "family_correct": {
+        "k": 9,
+        "n": 14,
+        "p": 0.6429,
+        "ci95": [
+          0.3876,
+          0.8366
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 3,
+        "n": 14,
+        "p": 0.2143,
+        "ci95": [
+          0.0757,
+          0.4759
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "family_correct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          }
+        }
+      }
+    },
+    "supply_disruption": {
+      "relevance_direct": {
+        "k": 9,
+        "n": 14,
+        "p": 0.6429,
+        "ci95": [
+          0.3876,
+          0.8366
+        ]
+      },
+      "family_correct": {
+        "k": 3,
+        "n": 14,
+        "p": 0.2143,
+        "ci95": [
+          0.0757,
+          0.4759
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 1,
+        "n": 6,
+        "p": 0.1667,
+        "ci95": [
+          0.0301,
+          0.5635
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 4,
+            "n": 7,
+            "p": 0.5714,
+            "ci95": [
+              0.2505,
+              0.8418
+            ]
+          },
+          "family_correct": {
+            "k": 0,
+            "n": 7,
+            "p": 0.0,
+            "ci95": [
+              -0.0,
+              0.3543
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          },
+          "family_correct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          }
+        }
+      }
+    },
+    "weather": {
+      "relevance_direct": {
+        "k": 13,
+        "n": 14,
+        "p": 0.9286,
+        "ci95": [
+          0.6853,
+          0.9873
+        ]
+      },
+      "family_correct": {
+        "k": 8,
+        "n": 14,
+        "p": 0.5714,
+        "ci95": [
+          0.3259,
+          0.7862
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 4,
+        "n": 7,
+        "p": 0.5714,
+        "ci95": [
+          0.2505,
+          0.8418
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 6,
+            "n": 7,
+            "p": 0.8571,
+            "ci95": [
+              0.4869,
+              0.9743
+            ]
+          },
+          "family_correct": {
+            "k": 5,
+            "n": 7,
+            "p": 0.7143,
+            "ci95": [
+              0.3589,
+              0.9178
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 7,
+            "n": 7,
+            "p": 1.0,
+            "ci95": [
+              0.6457,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 3,
+            "n": 7,
+            "p": 0.4286,
+            "ci95": [
+              0.1582,
+              0.7495
+            ]
+          }
+        }
+      }
+    }
+  },
+  "mechanism_correct_when_rule_not_ambiguous": {
+    "k": 17,
+    "n": 50,
+    "p": 0.34,
+    "ci95": [
+      0.2244,
+      0.4785
+    ]
+  },
+  "rule_ambiguous_mechanism_share": {
+    "k": 132,
+    "n": 182,
+    "p": 0.7253,
+    "ci95": [
+      0.6563,
+      0.785
+    ]
+  },
+  "gold_relevance_in_other_strata": {
+    "indirect": {
+      "direct": 3,
+      "indirect": 13,
+      "not_relevant": 29
+    },
+    "hard_negative": {
+      "not_relevant": 35
+    }
+  },
+  "population_by_stratum": {
+    "direct/company/title": 13678,
+    "direct/company/url_slug": 18630,
+    "direct/conflict_attack/title": 19504,
+    "direct/conflict_attack/url_slug": 19094,
+    "direct/demand_macro/title": 16973,
+    "direct/demand_macro/url_slug": 16052,
+    "direct/eia_inventories/title": 8251,
+    "direct/eia_inventories/url_slug": 9347,
+    "direct/logistics/title": 15045,
+    "direct/logistics/url_slug": 21394,
+    "direct/market_report/title": 18117,
+    "direct/market_report/url_slug": 16036,
+    "direct/opec_policy/title": 24846,
+    "direct/opec_policy/url_slug": 36883,
+    "direct/opinion/title": 1208,
+    "direct/opinion/url_slug": 1280,
+    "direct/other/title": 136191,
+    "direct/other/url_slug": 154446,
+    "direct/rates_usd/title": 5227,
+    "direct/rates_usd/url_slug": 4563,
+    "direct/sanctions_geopolitics/title": 11491,
+    "direct/sanctions_geopolitics/url_slug": 11254,
+    "direct/supply_disruption/title": 8713,
+    "direct/supply_disruption/url_slug": 11347,
+    "direct/weather/title": 1153,
+    "direct/weather/url_slug": 1176
+  },
+  "seed": 20261017,
+  "n_bootstrap": 10000
+}
