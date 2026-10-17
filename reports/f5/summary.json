@@ -1,0 +1,18 @@
+{
+  "sealed_start": "2025-07-01 00:00:00+00:00",
+  "cutoff": "2025-06-24 00:00:00+00:00",
+  "latency_s": 60.0,
+  "commit": "96ee6d01710950cee41907cdba66c0b13afad869-dirty",
+  "n_events_research": 15144,
+  "n_events_with_entry": 12310,
+  "n_baseline_instants": 316957,
+  "vol_terciles_2018_2020": [
+    0.0025407813000822154,
+    0.004610874419545669
+  ],
+  "seed": 20261017,
+  "n_placebo": 500,
+  "n_boot": 1000,
+  "exclusion_hours": 4.0,
+  "n_tests_per_variant": 35
+}

@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F4 terminada (`feat-v1`); siguiente F5 (EDA y estudio de eventos, puerta G3). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F5 hecha; **puerta G3: decisión del usuario pendiente** (`reports/G3_eventos.md`). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -14,6 +14,13 @@
 | FRED/ALFRED (5 series diarias, historial de vintages) | Hecho y revisado | `fred-alfred-v2`, `reports/f2/fred_alfred_normalized.md` (ADR-024/025) |
 | Noticias con `first_available_at` | Hecho y revisado (decisiones del usuario en ADR-026) | `gdelt-news-v2`, `reports/f2/gdelt_news_normalized.md` |
 | Puerta G1 | Aprobada (ADR-027) | `reports/G1_cierre.md` |
+
+### F5: estado
+| Bloque | Estado | Salida |
+|---|---|---|
+| Núcleo del estudio de eventos (tests a mano y de propiedad) | Hecho | `eda/event_study.py` |
+| Estudio con placebos emparejados (hora; hora + volatilidad) y BH | Hecho | `reports/f5/`, `reports/G3_eventos.md` |
+| Puerta G3 | **Pendiente (usuario)** | |
 
 ### F4: estado
 | Bloque | Estado | Salida |
