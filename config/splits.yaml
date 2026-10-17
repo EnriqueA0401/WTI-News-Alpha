@@ -1,4 +1,5 @@
-# Splits temporales. ESTADO: fracciones y embargo propuestos (Documento §10.1, se fijan en F6);
+# Splits temporales. Walk-forward trimestral + embargo 1 día aprobados (ADR-040). Las fracciones
+# del Documento §10.1 quedan como referencia (no se usan con walk-forward);
 # el test sellado está FIJADO Y CONGELADO por el usuario (ADR-036, 2026-10-17).
 train_fraction:
   value: 0.65
@@ -13,9 +14,13 @@ test_fraction:
   status: proposed
   source_ref: "Documento §10.1 (15-20 %)"
 embargo:
-  value: null
-  status: proposed
-  source_ref: "Documento §10.1: definir desde el máximo horizonte de etiqueta"
+  value: "1d"
+  status: approved
+  source_ref: "ADR-040 (usuario, 2026-10-17): purga por intervalo de etiqueta + 1 día de embargo"
+fold_step:
+  value: quarter
+  status: approved
+  source_ref: "ADR-040 (usuario, 2026-10-17): walk-forward trimestral con ventana creciente"
 sealed_test_window:
   value: {start: "2025-07-01T00:00:00Z", end: "2026-08-01T00:00:00Z"}
   status: approved

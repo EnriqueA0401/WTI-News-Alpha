@@ -554,3 +554,20 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - La evidencia preliminar es débil: reacción de pequeño tamaño en horizontes ≤ 30 min, que no sobrevive al control por volatilidad previa.
   - El horizonte principal y la métrica del pre-registro se fijan en F6 con el usuario, sin mirar estos resultados por familia para elegirlos (CLAUDE.md §11.1).
 - **Pendiente de F5** (ADR-038), aplazado sin bloquear: RV posterior frente a previa, tiempos hasta el umbral, segmentos por novedad, fuentes y sesión, y control de baja relevancia.
+
+## ADR-040 — Diseño de la prueba principal: horizontes, objetivo y validación (usuario, 2026-10-17)
+- **Decisión del usuario:**
+  1. **Dos horizontes principales que se complementan:**
+     - **60 min**: fijado antes de ver los datos (PROTOCOL A8);
+     - **15 min**: elegido **después de ver F5**, donde aparece una reacción pequeña ≤ 30 min. Queda declarado como informado por los datos; solo vale si se confirma fuera de muestra y, al final, en el test sellado.
+  2. **Objetivo:**
+     - la prueba principal es la **dirección en 3 clases** (alcista / neutral / bajista), con **log loss** como métrica;
+     - la secundaria pre-registrada es el **tamaño** del movimiento (|retorno|), con error cuadrático.
+  3. **Validación:**
+     - walk-forward **trimestral** con ventana creciente: se entrena con todo lo anterior y se prueba el trimestre siguiente;
+     - **purga** por intervalo de etiqueta y **embargo de 1 día**;
+     - agrupación por evento.
+- **Multiplicidad:**
+  - las dos pruebas principales (M4 frente a M3 a 15 y a 60 min) se corrigen con **Holm** a α = 0,05: la más significativa necesita p < 0,025;
+  - la prueba de tamaño y los análisis por familia o régimen son secundarios y llevan BH aparte.
+- **Consecuencias:** las etiquetas `label-v1` se calculan a 15 y 60 min (y a 4 h, fin de sesión y 1–3 sesiones como análisis secundarios). Todo esto se copia al pre-registro (`preregistration/H1.yaml`) antes de mirar ningún resultado de modelos.

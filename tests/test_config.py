@@ -177,6 +177,7 @@ def _splits(train: float | None, val: float | None, test: float | None) -> dict[
         "validation_fraction": _param(val, "proposed"),
         "test_fraction": _param(test, "proposed"),
         "embargo": _param(None, "proposed"),
+        "fold_step": _param(None, "proposed"),
         "sealed_test_window": _param(None, "proposed"),
     }
 

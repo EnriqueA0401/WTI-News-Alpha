@@ -182,6 +182,7 @@ class SplitsConfig(_Strict):
     validation_fraction: Param[UnitFraction]
     test_fraction: Param[UnitFraction]
     embargo: Param[NonEmptyStr]
+    fold_step: Param[Literal["quarter", "half"]]
     sealed_test_window: Param[SealedWindow]
 
     @model_validator(mode="after")
