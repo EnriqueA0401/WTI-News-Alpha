@@ -634,3 +634,19 @@ Ninguna cambia modelos, features, folds ni criterios del pre-registro; se aplica
 6. **(Bajo) Constantes del script** (semilla, n bootstrap, α, 60 %, primer test, embargo, grupos de M3/M4): se comprueban contra el pre-registro; si no coinciden, falla.
 7. **(Bajo) `news_source_ok` (booleana) no entra en M4:** ya ocurría al congelar el pre-registro y en el placebo de F6. Las features de noticias ya son nulas cuando la fuente falla, así que la información es redundante. **No se cambia** (cambiar features tras congelar no se permite); ahora se informa en `excluded_non_numeric`.
 8. **(Bajo) Reproducibilidad:** se comprueba repitiendo la corrida y comparando el sha256 de las predicciones OOS.
+
+## ADR-046 — Revisión adversarial de F8: correcciones (2026-10-17)
+Sin hallazgos altos. Sin leakage. El reajuste SHAP reproduce exactamente F7.
+1. **(Medio) BH:**
+   - los subgrupos condicionados en el resultado `y` quedan fuera de la familia BH (eran anticonservadores);
+   - un solo juego de q;
+   - p **bilateral**, para que el desglose pueda señalar también daño.
+2. **(Medio) Magnitud:** el error cuadrático está dominado por los días de precios negativos (2020-04-20/21). Se mantiene la pérdida pre-registrada y se añaden, marcados **no pre-registrados**, la d por fold, la media sin cada fold y la versión sin esos dos días. Predicciones guardadas con sha256; mismas filas que la dirección (comprobado); folds omitidos informados.
+3. **(Medio) Nulos en subgrupos:** se cuentan (`n_null_excluded`). `news_source_ok` con nulos hace fallar el script.
+4. **(Bajo):**
+   - terciles de volatilidad calculados sobre las filas OOS de cada horizonte;
+   - ECE por clase;
+   - `brier_rows` valida etiquetas y probabilidades;
+   - `bh_qvalues` rechaza p inválidos (antes un NaN daba q falsos);
+   - saltarse el PIT exige el flag explícito del canario también en `validate_run`;
+   - el SHAP es una sola instantánea (último fold) y así se reporta.

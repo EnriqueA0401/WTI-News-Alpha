@@ -180,16 +180,17 @@ class WalkForwardResult:
     excluded: list[str] = field(default_factory=list)  # columnas no numéricas de sus grupos
 
 
-def validate_run(
+def validate_run(  # noqa: PLR0913 - todo lo que se valida es explícito
     df: pl.DataFrame,
-    spec: ModelSpec | None,
+    spec: ModelSpec,
     folds: list[splits.Fold],
     *,
     horizon_min: int,
     sealed_start: datetime,
+    unsafe_skip_pit_check_for_canary: bool = False,
 ) -> None:
     """Sin filas selladas; folds del mismo DataFrame y horizonte; PIT de los grupos de ``spec``
-    (``None`` solo para el canario de leakage)."""
+    (saltarlo solo con el flag del canario de leakage)."""
     n_sealed = df.filter(pl.col(pit.DECISION) >= sealed_start).height
     if n_sealed:
         raise SealedTestError(f"{n_sealed} filas en el periodo sellado (ADR-036)")
@@ -199,7 +200,7 @@ def validate_run(
             raise SchemaError(f"fold {f.fold_id}: calculado sobre otro DataFrame u otro orden")
         if f.horizon != f"{horizon_min}m":
             raise SchemaError(f"fold {f.fold_id}: purgado para {f.horizon}, no {horizon_min}m")
-    if spec is not None:
+    if not unsafe_skip_pit_check_for_canary:
         check_features_pit(df, spec)
 
 
@@ -219,10 +220,14 @@ def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explí
     ``unsafe_skip_pit_check_for_canary`` solo existe para el canario de leakage de F6
     (CLAUDE.md §8.5): demuestra que, si se fuerza, la métrica sale casi perfecta.
     """
-    if not unsafe_skip_pit_check_for_canary:
-        validate_run(df, spec, folds, horizon_min=horizon_min, sealed_start=sealed_start)
-    else:
-        validate_run(df, None, folds, horizon_min=horizon_min, sealed_start=sealed_start)
+    validate_run(
+        df,
+        spec,
+        folds,
+        horizon_min=horizon_min,
+        sealed_start=sealed_start,
+        unsafe_skip_pit_check_for_canary=unsafe_skip_pit_check_for_canary,
+    )
     cols = feature_columns(df, spec, allowed)
     d = add_z(df, horizon_min)
     out, skipped = [], []

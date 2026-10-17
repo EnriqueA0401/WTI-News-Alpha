@@ -4,8 +4,10 @@
   error cuadrático por fila. Mismas filas que la dirección (``_z`` no nulo) y mismos folds.
 - XGBoost regresión con los hiperparámetros fijos de la dirección (``XGB_PARAMS``); ajuste solo
   con el train de cada fold. Mismas validaciones que ``pipeline.run_walk_forward``.
+- Revisión F8: los folds omitidos (train < ``MIN_TRAIN``) se devuelven en ``skipped``.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
 
 import polars as pl
@@ -19,6 +21,12 @@ from wti_news_alpha.models import pipeline
 BPS = 1e4
 
 
+@dataclass(frozen=True)
+class MagnitudeResult:
+    predictions: pl.DataFrame
+    skipped: list[int]
+
+
 def run_magnitude(  # noqa: PLR0913 - todo lo que define la corrida es explícito
     df: pl.DataFrame,
     spec: pipeline.ModelSpec,
@@ -27,18 +35,19 @@ def run_magnitude(  # noqa: PLR0913 - todo lo que define la corrida es explícit
     horizon_min: int,
     allowed: frozenset[str],
     sealed_start: datetime,
-) -> pl.DataFrame:
+) -> MagnitudeResult:
     """``decision_time``, ``fold``, ``target_bps``, ``pred_bps`` y ``loss`` OOS por fila."""
     if spec.learner != "xgb":
         raise SchemaError(f"{spec.name}: magnitud solo con XGBoost")
     pipeline.validate_run(df, spec, folds, horizon_min=horizon_min, sealed_start=sealed_start)
     cols = pipeline.feature_columns(df, spec, allowed)
     d = pipeline.add_z(df, horizon_min).with_columns(_t=pl.col(f"ret_{horizon_min}m").abs() * BPS)
-    out = []
+    out, skipped = [], []
     for f in folds:
         tr = d.filter(f.train & pl.col("_z").is_not_null())
         te = d.filter(f.test & pl.col("_z").is_not_null())
         if tr.height < pipeline.MIN_TRAIN or te.height == 0:
+            skipped.append(f.fold_id)
             continue
         model = xgb.XGBRegressor(objective="reg:squarederror", **spec.params)
         model.fit(tr.select(cols).to_numpy(), tr["_t"].to_numpy())
@@ -51,4 +60,4 @@ def run_magnitude(  # noqa: PLR0913 - todo lo que define la corrida es explícit
     if not out:
         raise SchemaError(f"{spec.name}: ningún fold con datos (magnitud)")
     res = pl.concat(out).with_columns(loss=(pl.col("pred_bps") - pl.col("target_bps")) ** 2)
-    return res.with_columns(model=pl.lit(spec.name))
+    return MagnitudeResult(res.with_columns(model=pl.lit(spec.name)), skipped)

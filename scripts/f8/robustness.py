@@ -2,13 +2,17 @@
 
 - Usa las predicciones OOS **oficiales** de F7 (``data/runs/f7/``); su sha256 debe coincidir con
   ``reports/f7/h1_primary.json``.
-- Subgrupos (exploratorios, BH conjunta sobre los dos horizontes): evento nuevo por familia en
-  la última hora, con/sin noticias, fuente de noticias caída, tercil de volatilidad previa,
-  tramo de sesión (ET), año, época de titulares (slug hasta 2019-08 / título), y lado según el
-  resultado ``y`` (descriptivo: condiciona en el resultado).
-- Brier (calibración) M3 frente a M4; frecuencias medias predichas frente a observadas.
-- Magnitud ``|ret_h|`` (error cuadrático) M3 frente a M4, mismos folds; BH aparte (2 pruebas).
-- SHAP de M4 en el último fold (asociación, no causa): parte de |SHAP| por grupo.
+- Subgrupos (exploratorios): evento nuevo por familia en la última hora, con/sin noticias,
+  fuente de noticias caída, tercil de volatilidad previa (cortes sobre las filas OOS del
+  horizonte), tramo de sesión (ET), año y época de titulares (slug hasta 2019-08 / título).
+  **BH conjunta** sobre los dos horizontes con el p **bilateral** (busca ayuda o daño).
+  Los subgrupos por resultado ``y`` son descriptivos y quedan **fuera** de la BH (revisión F8).
+  Las filas con condición nula se cuentan; ``news_source_ok`` no puede tener nulos.
+- Brier y ECE por clase (calibración) M3 frente a M4; sin corrección (secundario).
+- Magnitud ``|ret_h|`` (error cuadrático) M3 frente a M4, mismas filas y folds que la dirección;
+  BH aparte (2 pruebas). Además (no pre-registrado): d por fold, sin cada fold y sin los días
+  de precios negativos (2020-04-20/21), que dominan el error cuadrático.
+- SHAP de M4 en el último fold (una sola instantánea; asociación, no causa).
 
 Salida: ``reports/f8/robustness.json`` y filas de magnitud en ``runs/registry.csv``.
 Uso: uv run python -I scripts/f8/robustness.py
@@ -33,11 +37,12 @@ from wti_news_alpha.config import (
 from wti_news_alpha.eda.event_study import bh_qvalues
 from wti_news_alpha.evaluation import sealed_guard as sg
 from wti_news_alpha.labels import labels, splits
-from wti_news_alpha.models import compare, data, magnitude, pipeline, robustness
+from wti_news_alpha.models import compare, data, h1, magnitude, pipeline, robustness
 from wti_news_alpha.runlog import REPO_ROOT, current_commit
 
 OUT = REPO_ROOT / "reports" / "f8"
 PRED_DIR = REPO_ROOT / "data" / "runs" / "f7"
+MAG_DIR = REPO_ROOT / "data" / "runs" / "f8"
 F7_REPORT = REPO_ROOT / "reports" / "f7" / "h1_primary.json"
 REGISTRY = REPO_ROOT / "runs" / "registry.csv"
 SEED = 20261017
@@ -76,6 +81,16 @@ def official_preds(h: int, f7: dict[str, Any]) -> dict[str, pl.DataFrame]:
             raise RuntimeError(f"{name} h{h}: predicciones distintas de las oficiales de F7")
         out[name] = p
     return out
+
+
+DESCRIPTIVE = frozenset(
+    {
+        "resultado_sube_(descriptivo)",
+        "resultado_baja_(descriptivo)",
+        "resultado_neutral_(descriptivo)",
+    }
+)
+NEGATIVE_PRICE_DAYS = ("2020-04-20", "2020-04-21")
 
 
 def subgroups(rv_cuts: tuple[float, float]) -> dict[str, pl.Expr]:
@@ -163,14 +178,10 @@ def main() -> None:
         "news_new_all_60m",
         *[f"news_new_{f}_60m" for f in FAMILIES],
     )
-    q = rf.df["mkt_rv_60m"].quantile(1 / 3), rf.df["mkt_rv_60m"].quantile(2 / 3)
-    rv_cuts = (float(q[0]), float(q[1]))  # type: ignore[arg-type]
-    groups = subgroups(rv_cuts)
     report: dict[str, Any] = {
         "commit": commit,
         "prereg_sha256": prereg_sha,
         "f7_commit": f7["commit"],
-        "rv_tercile_cuts": rv_cuts,
         "bootstrap": {"kind": "bloques móviles de días (ADR-043)", "n_boot": N_BOOT, "seed": SEED},
     }
     rows: list[dict[str, str]] = []
@@ -200,7 +211,19 @@ def main() -> None:
         )
         if j.height != p["M3"].height:
             raise RuntimeError(f"h{h}: M3 y M4 no tienen las mismas filas")
-        sub = robustness.subgroup_tests(j, groups, "M3", "M4", n_boot=N_BOOT, seed=SEED)
+        if j["news_source_ok"].null_count():
+            raise RuntimeError(f"h{h}: news_source_ok con nulos en filas OOS")
+        rv = j["mkt_rv_60m"]
+        rv_cuts = (float(rv.quantile(1 / 3)), float(rv.quantile(2 / 3)))  # type: ignore[arg-type]
+        sub = robustness.subgroup_tests(
+            j,
+            subgroups(rv_cuts),
+            "M3",
+            "M4",
+            n_boot=N_BOOT,
+            seed=SEED,
+            descriptive=DESCRIPTIVE,
+        )
         y = j["y"].to_numpy()
         p3, p4 = np.vstack(j["p3"].to_list()), np.vstack(j["p4"].to_list())
         b3, b4 = robustness.brier_rows(p3, y), robustness.brier_rows(p4, y)
@@ -218,11 +241,21 @@ def main() -> None:
             }
             for name, pr in (("M3", p3), ("M4", p4))
         }
+        for name, pr in (("M3", p3), ("M4", p4)):
+            calib[name]["ece"] = robustness.ece_by_class(pr, y)
         folds = folds_for(rf.df, h, sealed_start)
         kw = {"horizon_min": h, "allowed": rf.allowed, "sealed_start": sealed_start}
-        m3 = magnitude.run_magnitude(rf.df, M3, folds, **kw)  # type: ignore[arg-type]
-        m4 = magnitude.run_magnitude(rf.df, M4, folds, **kw)  # type: ignore[arg-type]
-        jm = m3.select("decision_time", pl.col("loss").alias("a")).join(
+        r3 = magnitude.run_magnitude(rf.df, M3, folds, **kw)  # type: ignore[arg-type]
+        r4 = magnitude.run_magnitude(rf.df, M4, folds, **kw)  # type: ignore[arg-type]
+        m3, m4 = r3.predictions, r4.predictions
+        if not m3["decision_time"].sort().equals(j["decision_time"].sort()):
+            raise RuntimeError(f"h{h}: la magnitud no tiene las mismas filas OOS que la dirección")
+        MAG_DIR.mkdir(parents=True, exist_ok=True)
+        mag_sha = {}
+        for name, m in (("M3", m3), ("M4", m4)):
+            m.write_parquet(MAG_DIR / f"{name}_mag_h{h}.parquet")
+            mag_sha[name] = hashlib.sha256(m.sort("decision_time").write_csv().encode()).hexdigest()
+        jm = m3.select("decision_time", "fold", pl.col("loss").alias("a")).join(
             m4.select("decision_time", pl.col("loss").alias("b")),
             on="decision_time",
             validate="1:1",
@@ -235,6 +268,17 @@ def main() -> None:
             seed=SEED,
         )
         mag_p[f"h{h}"] = cm.p_dm
+        jm_mag = h1.primary_summary(jm, "a", "b", n_boot=N_BOOT, seed=SEED)
+        no_neg = jm.filter(
+            ~pl.col("decision_time").dt.strftime("%Y-%m-%d").is_in(NEGATIVE_PRICE_DAYS)
+        )
+        cn = compare.compare_losses(
+            no_neg["a"].to_list(),
+            no_neg["b"].to_list(),
+            no_neg["decision_time"].dt.strftime("%Y-%m-%d").to_list(),
+            n_boot=N_BOOT,
+            seed=SEED,
+        )
         for name, m in (("M3", m3), ("M4", m4)):
             by = m.group_by("fold").agg(pl.col("loss").mean()).sort("fold")
             rows.append(
@@ -275,13 +319,24 @@ def main() -> None:
                 "ci95": [cm.lo, cm.hi],
                 "p_dm": cm.p_dm,
                 "n_days": cm.n_blocks,
+                "skipped_folds": {"M3": r3.skipped, "M4": r4.skipped},
+                "oos_sha256": mag_sha,
+                "no_preregistrado": {
+                    "d_by_fold": jm_mag["d_by_fold"],
+                    "share_folds_d_positive": jm_mag["share_folds_d_positive"],
+                    "leave_one_fold_out_mean_d": jm_mag["leave_one_fold_out_mean_d"],
+                    "sin_dias_precio_negativo": {
+                        "days_excluded": list(NEGATIVE_PRICE_DAYS),
+                        "mean_diff_M3_minus_M4": cn.mean_diff,
+                        "ci95": [cn.lo, cn.hi],
+                        "p_dm": cn.p_dm,
+                    },
+                },
             },
             "shap_M4_last_fold": shap_last_fold(rf.df, folds, h, rf.allowed),
         }
-    tested = [r for h in (15, 60) for r in report[f"h{h}"]["subgroups"] if r["status"] == "ok"]
-    for r, qv in zip(tested, bh_qvalues([r["p_dm"] for r in tested]), strict=True):
-        r["q_bh_joint"] = qv
-    report["n_subgroup_tests"] = len(tested)
+    all_rows = [r for h in (15, 60) for r in report[f"h{h}"]["subgroups"]]
+    report["n_subgroup_tests_bh"] = robustness.joint_bh(all_rows)
     report["magnitude_bh"] = dict(zip(mag_p, bh_qvalues(list(mag_p.values())), strict=True))
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "robustness.json").write_text(json.dumps(report, indent=2, default=str) + "\n")
@@ -302,7 +357,8 @@ def main() -> None:
             if s["status"] == "ok":
                 print(
                     f"  {s['subgroup']:38s} d={s['mean_diff_a_minus_b']:+.5f} "
-                    f"p={s['p_dm']:.3f} q={s['q_bh_joint']:.3f} días={s['n_days']}"
+                    f"p2={s['p_two_sided']:.3f} q={s.get('q_bh', float('nan')):.3f} "
+                    f"días={s['n_days']} nulas={s['n_null_excluded']}"
                 )
             else:
                 print(f"  {s['subgroup']:38s} {s['status']}")

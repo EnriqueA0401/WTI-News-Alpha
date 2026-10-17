@@ -33,30 +33,49 @@ def _j() -> pl.DataFrame:
 
 
 def test_subgroup_tests_with_bh_and_too_few_days() -> None:
+    j = _j().with_columns(
+        maybe=pl.when(pl.col("decision_time").dt.day() == 1).then(None).otherwise(pl.col("news"))
+    )
     groups = {
         "news": pl.col("news"),
         "no_news": ~pl.col("news"),
         "first_10_days": pl.col("decision_time") < T0 + timedelta(days=10),
+        "maybe": pl.col("maybe"),
+        "outcome": pl.col("news"),
     }
-    res = {
-        r["subgroup"]: r
-        for r in robustness.subgroup_tests(_j(), groups, "A", "B", n_boot=200, seed=1)
-    }
+    rows = robustness.subgroup_tests(
+        j, groups, "A", "B", n_boot=200, seed=1, descriptive=frozenset({"outcome"})
+    )
+    res = {r["subgroup"]: r for r in rows}
     assert res["news"]["mean_diff_a_minus_b"] == pytest.approx(0.2)
     assert res["news"]["p_dm"] < 0.01
+    assert res["news"]["p_two_sided"] == pytest.approx(2 * res["news"]["p_dm"])
     assert res["no_news"]["mean_diff_a_minus_b"] == pytest.approx(0.0, abs=1e-12)
     assert res["first_10_days"]["status"].startswith("no evaluado")
+    assert res["maybe"]["n_null_excluded"] == 6  # días 1 de ene, feb y mar; 2 filas cada uno
+    assert res["news"]["n_null_excluded"] == 0
+    assert robustness.joint_bh(rows) == 3  # news, no_news, maybe; sin descriptiva ni corta
+    assert "q_bh" not in res["outcome"]
     assert "q_bh" not in res["first_10_days"]
-    assert res["news"]["q_bh"] == pytest.approx(min(1.0, 2 * res["news"]["p_dm"]))
+    tested = [res[k]["p_two_sided"] for k in ("news", "no_news", "maybe")]
+    assert res["news"]["q_bh"] == pytest.approx(min(1.0, 3 * min(tested)))
 
 
-def test_brier_hand_case() -> None:
+def test_brier_and_ece_hand_cases() -> None:
     proba = np.array([[0.2, 0.5, 0.3], [1.0, 0.0, 0.0]])
     y = np.array([1, -1])
     # (0,04 + 0,25 + 0,49) = 0,78 ; 0
     assert robustness.brier_rows(proba, y) == pytest.approx([0.78, 0.0])
-    with pytest.raises(SchemaError):
+    with pytest.raises(SchemaError, match="desalineadas"):
         robustness.brier_rows(proba, np.array([1]))
+    with pytest.raises(SchemaError, match="fuera de"):
+        robustness.brier_rows(proba, np.array([1, -2]))
+    with pytest.raises(SchemaError, match="no suman 1"):
+        robustness.brier_rows(np.array([[0.5, 0.5, 0.5]]), np.array([0]))
+    p = np.array([[0.45, 0.45, 0.1], [0.45, 0.45, 0.1], [0.05, 0.05, 0.9], [0.05, 0.05, 0.9]])
+    yy = np.array([0, -1, 1, 0])
+    # up: bin 0,1 → |0,1 - 0| por 0,5 ; bin 0,9 → |0,9 - 0,5| por 0,5 → 0,25
+    assert robustness.ece_by_class(p, yy)["up"] == pytest.approx(0.25)
 
 
 def test_shap_shares_hand_case() -> None:
@@ -88,13 +107,14 @@ def test_magnitude_runs_and_validates() -> None:
     df = synthetic.make_dataset(n_days=200, signal=0.0, seed=5)
     spec = pipeline.ModelSpec("M3", ("mkt", "wpsr", "cal"))
     kw = {"horizon_min": 15, "allowed": synthetic.FEATURES, "sealed_start": SEALED}
-    res = magnitude.run_magnitude(df, spec, _folds(df), **kw)  # type: ignore[arg-type]
+    res = magnitude.run_magnitude(df, spec, _folds(df), **kw).predictions  # type: ignore[arg-type]
     assert res["loss"].is_finite().all()
     assert (res["target_bps"] >= 0).all()
     exp = (res["pred_bps"] - res["target_bps"]) ** 2
     assert res["loss"].to_numpy() == pytest.approx(exp.to_numpy())
     again = magnitude.run_magnitude(df, spec, _folds(df), **kw)  # type: ignore[arg-type]
-    assert again.equals(res)
+    assert again.predictions.equals(res)
+    assert again.skipped == []
     with pytest.raises(SchemaError, match="solo con XGBoost"):
         magnitude.run_magnitude(
             df,
@@ -103,7 +123,8 @@ def test_magnitude_runs_and_validates() -> None:
             **kw,  # type: ignore[arg-type]
         )
     early = magnitude.run_magnitude(df, spec, _folds(df, T0), **kw)  # type: ignore[arg-type]
-    assert early["fold"].min() > 0  # el primer fold (train < 100 filas) se omite
+    assert early.skipped == [0]  # el primer fold (train < 100 filas) se omite y se informa
+    assert early.predictions["fold"].min() > 0
     with pytest.raises(SchemaError, match="ningún fold"):
         magnitude.run_magnitude(df, spec, [], **kw)  # type: ignore[arg-type]
     late = df.with_columns(decision_time=pl.col("decision_time") + timedelta(days=7 * 365))

@@ -178,3 +178,11 @@ def test_percentile_test_null_and_effect() -> None:
 
 def test_bh_qvalues_hand_case() -> None:
     assert es.bh_qvalues([0.01, 0.04, 0.03, 0.005]) == pytest.approx([0.02, 0.04, 0.04, 0.02])
+
+
+def test_bh_qvalues_rejects_invalid_p() -> None:
+    """Revisión F8: un NaN daba q falsos."""
+    with pytest.raises(SchemaError, match=r"\[0, 1\]"):
+        es.bh_qvalues([float("nan"), 0.01, 0.2])
+    with pytest.raises(SchemaError, match=r"\[0, 1\]"):
+        es.bh_qvalues([1.5])

@@ -252,7 +252,12 @@ def percentile_test(
 
 
 def bh_qvalues(pvals: list[float]) -> list[float]:
-    """Benjamini-Hochberg: q-valores en el orden de entrada (CLAUDE.md §11.4)."""
+    """Benjamini-Hochberg: q-valores en el orden de entrada (CLAUDE.md §11.4).
+
+    Revisión F8: un p no finito o fuera de [0, 1] lanza ``SchemaError`` (antes un NaN daba q
+    falsos)."""
+    if any(not 0.0 <= p <= 1.0 for p in pvals):
+        raise SchemaError(f"p fuera de [0, 1] en BH: {pvals}")
     m = len(pvals)
     order = sorted(range(m), key=lambda i: (pvals[i], i))
     q = [0.0] * m
