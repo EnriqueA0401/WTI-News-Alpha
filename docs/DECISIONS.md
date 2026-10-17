@@ -438,3 +438,15 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - la consistencia intra-anotador no se puede medir: las 26 repeticiones copian la etiqueta del original;
   - el % de correcciones del usuario es 0 por construcción, no por evidencia.
 - **Mitigación propuesta:** que el usuario revise a mano una submuestra pequeña antes de aprobar las reglas finales (queda como opción en el informe G2).
+
+## ADR-032 — Puerta G2: simplificar la ontología y volver a medir (usuario, 2026-10-17)
+- **Contexto:** `reports/G2_eventos.md`. Las reglas `rules-v2` aciertan bien en 5 familias y mal en el resto. La dirección (mecanismo) acierta en 17 de 50 casos.
+- **Decisión (opción recomendada, elegida por el usuario):**
+  1. **Solo 5 familias generan eventos:** `opec_policy`, `eia_inventories`, `sanctions_geopolitics`, `weather` y `conflict_attack`. Las demás (`company`, `demand_macro`, `logistics`, `rates_usd`, `supply_disruption`, además de `other`, `market_report` y `opinion`) siguen anotadas por artículo, pero no abren ni alimentan eventos (`events-v3`).
+  2. **El mecanismo de las reglas no se usa como señal de dirección** en features ni en modelos hasta tener un extractor medido mejor. Se conserva en la capa solo como información.
+  3. **Las reglas no cambian** (`rules-v2`): no se ajustan con la muestra de G2, para no medir de forma optimista.
+  4. **Segunda medición:** una muestra nueva de 150 titulares (30 por familia, mitad con título real y mitad con titular de la URL), sin artículos de la primera muestra. La etiqueta Claude con el mismo protocolo (ADR-031).
+- **Consecuencias:**
+  - menos eventos y menos categorías para M4;
+  - la prueba M4 frente a M3 se hace sobre familias con extracción medida;
+  - G2 sigue abierta hasta el informe de la segunda medición.

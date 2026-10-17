@@ -2,7 +2,8 @@
 # (no son horizontes, etiquetas, costes ni timestamps): se revisan con la muestra auditada de G2
 # y cualquier cambio es una versión nueva (ADR-029).
 # events-v2 (2026-10-17): correcciones de la revisión adversarial de F3 (ADR-030).
-version: events-v2
+# events-v3 (2026-10-17): solo las 5 familias con precisión aceptable en G2 generan eventos (ADR-032).
+version: events-v3
 news_version: gdelt-news-v2
 title_dedup_window_hours:
   value: 48
@@ -21,6 +22,6 @@ event_max_span_hours:
   status: approved
   source_ref: "ADR-030: un evento dura como máximo 72 h desde su primer artículo (rachas que no se cierran)"
 families_without_events:
-  value: [other, market_report, opinion]
+  value: [other, market_report, opinion, company, demand_macro, logistics, rates_usd, supply_disruption]
   status: approved
-  source_ref: "ADR-030: estas familias no son acontecimientos; no abren ni alimentan eventos (tampoco el país XX)"
+  source_ref: "ADR-030 (other, market_report, opinion: no son acontecimientos) y ADR-032 (precisión baja en G2); tampoco el país XX"
