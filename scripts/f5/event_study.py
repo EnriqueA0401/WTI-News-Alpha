@@ -255,10 +255,10 @@ def write_segments(er: pl.DataFrame) -> None:
     seg_rows = []
     for seg in ("epoch", "vol_regime", "k_year"):
         groups = er.filter(pl.col("ret_15m").is_not_null()).group_by("family", seg)
-        for (fam, val), g in groups:
-            if g.height < 10 or val is None:
+        for (fam, val), grp in groups:
+            if grp.height < 10 or val is None:
                 continue
-            g = g.sort("t0", "event_id")
+            g = grp.sort("t0", "event_id")
             ci = es.block_bootstrap_ci(
                 g["ret_15m"].abs().to_list(), g["day"].to_list(), n_boot=N_BOOT, seed=SEED
             )
