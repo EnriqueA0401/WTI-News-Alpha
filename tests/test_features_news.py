@@ -1,4 +1,5 @@
-"""Features de noticias desde ``events-v3`` (FASE_04.md): casos a mano y truncamiento."""
+"""Features de noticias desde ``events-v3`` (FASE_04.md, ADR-035): casos a mano, huecos de la
+fuente y truncamiento."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -13,6 +14,13 @@ from wti_news_alpha.features import news, pit
 T0 = datetime(2024, 3, 8, 15, 0, tzinfo=UTC)
 M = timedelta(minutes=1)
 FAMS = ["opec_policy", "weather"]
+P = news.NewsParams(
+    families=FAMS,
+    windows=[15, 60],
+    slot_lag=timedelta(minutes=15),
+    slot_deadline=timedelta(minutes=20),
+    min_slot_articles=5,
+)
 
 
 def _arts(rows: list[tuple[int, str, bool, bool, str]]) -> pl.DataFrame:
@@ -29,15 +37,34 @@ def _arts(rows: list[tuple[int, str, bool, bool, str]]) -> pl.DataFrame:
     )
 
 
+def _slots(
+    start: int,
+    end: int,
+    *,
+    missing: frozenset[int] = frozenset(),
+    late: frozenset[int] = frozenset(),
+    weak: frozenset[int] = frozenset(),
+) -> pl.DataFrame:
+    """Ficheros nominales cada 15 min en [start, end] (minutos desde T0); disponibles a +15 min."""
+    noms = [m for m in range(start, end + 1, 15) if m not in missing]
+    return pl.DataFrame(
+        {
+            "source_file_ts": [T0 + m * M for m in noms],
+            "available_at": [T0 + (m + (60 if m in late else 15)) * M for m in noms],
+            "n": [1 if m in weak else 50 for m in noms],
+        },
+        schema_overrides={
+            "source_file_ts": pl.Datetime("us", "UTC"),
+            "available_at": pl.Datetime("us", "UTC"),
+        },
+    )
+
+
 def _grid(minutes: list[int]) -> pl.DataFrame:
     return pl.DataFrame(
         {"decision_time": [T0 + m * M for m in minutes]},
         schema={"decision_time": pl.Datetime("us", "UTC")},
     )
-
-
-def _run(arts: pl.DataFrame, grid: pl.DataFrame, start: datetime = T0) -> pl.DataFrame:
-    return news.news_features(grid, arts, families=FAMS, windows=[15, 60], coverage_start=start)
 
 
 def test_counts_hand_case() -> None:
@@ -50,7 +77,8 @@ def test_counts_hand_case() -> None:
             (20, "company", False, False, "title"),  # no elegible: no cuenta
         ]
     )
-    out = _run(arts, _grid([0, 15, 20, 75]), start=T0 - timedelta(hours=2))
+    out = news.news_features(_grid([0, 15, 20, 75]), arts, _slots(-180, 120), P)
+    assert out["news_source_ok"].to_list() == [True] * 4
     assert out["news_n_all_15m"].to_list() == [2, 1, 2, 0]  # ventana (t-15, t]
     assert out["news_n_all_60m"].to_list() == [2, 3, 4, 1]
     assert out["news_n_opec_policy_15m"].to_list() == [2, 0, 1, 0]
@@ -63,21 +91,45 @@ def test_counts_hand_case() -> None:
     pit.check_no_leakage(out)
 
 
-def test_before_coverage_is_null_not_zero() -> None:
-    arts = _arts([(30, "weather", True, True, "title")])
-    out = _run(arts, _grid([5, 40, 80]), start=T0 + 20 * M)
-    # En 5 no hay cobertura; en 40 la ventana de 60 min empieza antes de la cobertura.
-    assert out["news_n_all_15m"].to_list() == [None, 1, 0]
-    assert out["news_n_all_60m"].to_list() == [None, None, 1]
-    assert out["news_title_share_60m"].to_list() == [None, None, 1.0]
+@pytest.mark.parametrize("kind", ["missing", "late", "weak"])
+def test_source_hole_is_null_not_zero(kind: str) -> None:
+    """Hueco en el nominal 30 (falta, llega tarde o está degradado): nada de ceros falsos."""
+    arts = _arts([(0, "opec_policy", True, True, "title")])
+    slots = _slots(-180, 300, **{kind: frozenset({30})})  # type: ignore[arg-type]
+    out = news.news_features(_grid([50, 65, 110]), arts, slots, P)
+    # 50: el fichero necesario (nominal 30) es el hueco.
+    assert out["news_source_ok"].to_list() == [False, True, True]
+    assert out["news_n_all_15m"].to_list() == [None, 0, 0]
+    assert out["news_n_all_60m"].to_list() == [None, None, 0]  # 65: la ventana cubre el hueco
+    assert out["news_event_age_min_opec_policy"].to_list() == [None, None, None]
+    assert out["news_available_at"].to_list()[0] is None
+    pit.check_no_leakage(out)
+
+
+def test_stale_source_and_before_coverage_are_null() -> None:
+    arts = _arts([(35, "weather", True, True, "title")])
+    out = news.news_features(_grid([5, 40, 90, 200]), arts, _slots(15, 120), P)
+    assert out["news_source_ok"].to_list() == [False, True, True, False]  # 200: sin ficheros
+    assert out["news_n_all_15m"].to_list() == [None, 1, 0, None]
+    assert out["news_n_all_60m"].to_list() == [None, None, 1, None]
+    assert out["news_title_share_60m"].to_list() == [None, None, 1.0, None]
+    assert out["news_event_age_min_weather"].to_list() == [None, 5.0, 55.0, None]
 
 
 def test_validation() -> None:
     arts = _arts([(0, "weather", True, True, "title")])
-    with pytest.raises(SchemaError, match="faltan"):
-        _run(arts.drop("eligible"), _grid([0]))
+    slots = _slots(-30, 30)
+    with pytest.raises(SchemaError, match="faltan columnas de artículos"):
+        news.news_features(_grid([0]), arts.drop("eligible"), slots, P)
+    with pytest.raises(SchemaError, match="faltan columnas de ficheros"):
+        news.news_features(_grid([0]), arts, slots.drop("n"), P)
+    p = news.NewsParams(FAMS, [], P.slot_lag, P.slot_deadline, 5)
     with pytest.raises(SchemaError, match="windows"):
-        news.news_features(_grid([0]), arts, families=FAMS, windows=[], coverage_start=T0)
+        news.news_features(_grid([0]), arts, slots, p)
+    with pytest.raises(SchemaError, match="ningún fichero"):
+        news.news_features(_grid([0]), arts, _slots(-30, 30, weak=frozenset(range(-30, 31))), P)
+    with pytest.raises(SchemaError, match="duplicado"):
+        news.news_features(_grid([0]), arts, pl.concat([slots, slots]), P)
 
 
 @settings(max_examples=40, deadline=None)
@@ -93,14 +145,32 @@ def test_validation() -> None:
         min_size=1,
         max_size=60,
     ),
+    st.frozensets(st.sampled_from(list(range(0, 300, 15)))),
+    st.frozensets(st.sampled_from(list(range(0, 300, 15)))),
     st.integers(0, 300),
 )
-def test_property_truncation(rows: list[tuple[int, str, bool, bool, str]], cut: int) -> None:
+def test_property_truncation(
+    rows: list[tuple[int, str, bool, bool, str]],
+    missing: frozenset[int],
+    late: frozenset[int],
+    cut: int,
+) -> None:
     arts = _arts(rows)
+    slots = _slots(-60, 300, missing=missing, late=late)
     grid = _grid(list(range(0, 305, 5)))
     t_cut = T0 + cut * M
-    full = _run(arts, grid)
-    trunc = _run(arts.filter(pl.col("first_available_at") <= t_cut), grid)
+    full = news.news_features(grid, arts, slots, P)
+    trunc_slots = slots.filter(pl.col("available_at") <= t_cut)
+    if (
+        trunc_slots.filter(
+            pl.col("available_at") <= pl.col("source_file_ts") + P.slot_deadline
+        ).height
+        == 0
+    ):
+        return  # sin ningún fichero bueno aún: la función rechaza la entrada (probado aparte)
+    trunc = news.news_features(
+        grid, arts.filter(pl.col("first_available_at") <= t_cut), trunc_slots, P
+    )
     keep = pl.col("decision_time") <= t_cut
     assert full.filter(keep).equals(trunc.filter(keep))
     pit.check_no_leakage(full)

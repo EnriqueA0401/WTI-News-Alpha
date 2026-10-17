@@ -17,6 +17,7 @@ from typing import Annotated, Any, Literal, Self
 import yaml
 from pydantic import (
     AfterValidator,
+    AwareDatetime,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -487,6 +488,19 @@ class FeatureInputs(_Strict):
     fred: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
 
 
+class FeaturePeriod(_Strict):
+    """Periodo ``[start, end)`` en UTC."""
+
+    start: AwareDatetime
+    end: AwareDatetime
+
+    @model_validator(mode="after")
+    def _ordered(self) -> "FeaturePeriod":
+        if self.end <= self.start:
+            raise ValueError("periodo vacío o invertido")
+        return self
+
+
 class FeaturesConfig(_Strict):
     """Features point-in-time (``config/features.yaml``, FASE_04.md)."""
 
@@ -498,6 +512,10 @@ class FeaturesConfig(_Strict):
     return_minutes: Param[list[PositiveInt]]
     vol_window_minutes: Param[PositiveInt]
     news_windows_minutes: Param[list[PositiveInt]]
+    periods: Param[list[FeaturePeriod]]
+    news_slot_lag_minutes: Param[PositiveInt]
+    news_slot_deadline_minutes: Param[PositiveInt]
+    news_min_slot_articles: Param[PositiveInt]
 
 
 def load_features_config(config_dir: Path = CONFIG_DIR) -> FeaturesConfig:

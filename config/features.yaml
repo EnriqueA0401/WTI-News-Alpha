@@ -31,3 +31,21 @@ news_windows_minutes:
   value: [15, 60, 240]
   status: approved
   source_ref: "Documento §7 (menú de noticias): conteos 15 min / 1 h / 4 h"
+periods:
+  value:
+    - {start: "2018-01-01T00:00:00Z", end: "2021-01-01T00:00:00Z"}
+    - {start: "2024-01-01T00:00:00Z", end: "2027-01-01T00:00:00Z"}
+  status: approved
+  source_ref: "ADR-019 (G0): intradía con Darwinex en 2018-2020 y 2024-2026; la rejilla se limita a esos periodos (revisión F4, hallazgo 6)"
+news_slot_lag_minutes:
+  value: 15
+  status: approved
+  source_ref: "ADR-012/026: first_available_at = fichero GDELT nominal + 15 min"
+news_slot_deadline_minutes:
+  value: 20
+  status: approved
+  source_ref: "ADR-035: un fichero GDELT que llega > 20 min después de su nominal (tardío, ADR-026) cuenta como hueco"
+news_min_slot_articles:
+  value: 5
+  status: approved
+  source_ref: "ADR-035: un fichero con < 5 artículos en la capa (mediana 54, percentil 0,1 % = 5) es degradado = hueco (reports/f1/gdelt.md §2)"

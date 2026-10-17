@@ -160,3 +160,75 @@ def test_fred_property_truncation(raw: list[tuple[int, int, float]], cut: int) -
     keep = pl.col("decision_time") <= t_cut
     assert full.filter(keep).equals(trunc.filter(keep))
     pit.check_no_leakage(full)
+
+
+def test_wpsr_backfilled_week_is_not_used_before_it_is_known() -> None:
+    """Revisión F4 (hallazgo 2): la semana 10-ene se publica el 23, después de la del 17."""
+    d22 = datetime(2024, 1, 22, 15, 30, tzinfo=UTC)
+    d23 = d22 + timedelta(days=1)
+    rows = [("A", date(2024, 1, 17), 30.0, d22), ("A", date(2024, 1, 10), 20.0, d23)]
+    out = fu.wpsr_features(_grid([d22 + timedelta(hours=1), d23 + timedelta(hours=1)]), _wpsr(rows))
+    assert out["wpsr_A_chg"].to_list() == [None, None]
+    assert out["wpsr_A_value"].to_list() == [30.0, 30.0]  # no retrocede a la semana atrasada
+    assert out["wpsr_data_lag_d"].to_list() == [5, 6]
+
+
+def test_cot_holiday_shifted_report_keeps_change_and_data_lag() -> None:
+    f = datetime(2019, 1, 1, 20, 30, tzinfo=UTC)
+    rows = [
+        (date(2018, 12, 18), 300, 100, f),
+        (date(2018, 12, 24), 280, 100, f + timedelta(days=7)),  # lunes por festivo
+        (date(2019, 1, 1), 250, 100, f + timedelta(days=14)),
+        (date(2019, 1, 22), 200, 100, f + timedelta(days=21)),  # hueco de 3 semanas
+    ]
+    times = [f + timedelta(days=d, hours=1) for d in (7, 14, 21)]
+    out = fu.cot_features(_grid(times), _cot(rows))
+    assert out["cot_mm_net_chg"].to_list() == [-20, -30, None]
+    assert out["cot_data_lag_d"].to_list() == [15, 14, 0]
+
+
+def test_fred_null_revision_of_latest_fails_loudly() -> None:
+    a = datetime(2024, 1, 3, 21, 0, tzinfo=UTC)
+    rows = [
+        ("S", date(2024, 1, 1), 1.0, a - timedelta(days=1)),
+        ("S", date(2024, 1, 2), 2.0, a),
+        ("S", date(2024, 1, 2), None, a + timedelta(days=2)),  # borra la última
+    ]
+    with pytest.raises(SchemaError, match="borran la última"):
+        fu.fred_features(_grid([a]), _fred(rows))  # type: ignore[arg-type]
+    old = [rows[0], rows[1], ("S", date(2024, 1, 1), None, a + timedelta(days=2))]
+    out = fu.fred_features(_grid([a + timedelta(days=3)]), _fred(old))  # type: ignore[arg-type]
+    assert out["fred_S_value"].to_list() == [2.0]  # borrar una antigua no afecta
+
+
+@settings(max_examples=40, deadline=None)
+@given(
+    st.lists(st.tuples(st.integers(0, 20), st.integers(0, 40)), min_size=1, max_size=25),
+    st.integers(0, 200),
+)
+def test_wpsr_and_cot_property_truncation(raw: list[tuple[int, int]], cut: int) -> None:
+    """WPSR y COT: features en t idénticas con datos completos o truncados en t."""
+    seen_w: set[int] = set()
+    seen_at: set[int] = set()
+    wrows, crows = [], []
+    for week, delay in raw:
+        at = R1 + timedelta(days=7 * week + delay)
+        if week in seen_w or (7 * week + delay) in seen_at:
+            continue
+        seen_w.add(week)
+        seen_at.add(7 * week + delay)
+        wd = date(2024, 1, 5) + timedelta(days=7 * week)
+        wrows += [("A", wd, float(week), at), ("B", wd, float(-week), at)]
+        crows.append((wd, 100 + week, 50, at))
+    grid = _grid([R1 + timedelta(days=d, hours=1) for d in range(0, 200, 3)])
+    t_cut = R1 + timedelta(days=cut, hours=1)
+    keep = pl.col("decision_time") <= t_cut
+    for fn, src in ((fu.wpsr_features, _wpsr(wrows)), (fu.cot_features, _cot(crows))):
+        full = fn(grid, src)  # type: ignore[operator]
+        tsrc = src.filter(pl.col("available_at") <= t_cut)
+        if tsrc.height == 0:
+            continue
+        trunc = fn(grid, tsrc)  # type: ignore[operator]
+        cols = [c for c in full.columns if c in trunc.columns]
+        assert full.filter(keep).select(cols).equals(trunc.filter(keep).select(cols))
+        pit.check_no_leakage(full)

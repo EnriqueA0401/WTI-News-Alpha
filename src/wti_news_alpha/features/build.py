@@ -88,6 +88,14 @@ def assemble(
     bar_cols = [*market.REQUIRED]
     bars = pl.concat([pl.read_parquet(p, columns=bar_cols) for p in files["price"].values()])
     grid = pit.decision_grid(bars, step=step, max_bar_age=age)
+    # Solo los periodos aprobados en G0 (ADR-019); las barras previas sirven de historia.
+    in_period = pl.any_horizontal(
+        pl.col(pit.DECISION).is_between(pr.start, pr.end, closed="left")
+        for pr in cfg.periods.require("periods")
+    )
+    grid = grid.filter(in_period)
+    if grid.height == 0:
+        raise SchemaError("rejilla vacía en los periodos configurados")
     out = market.market_features(grid, bars, mp)
     del bars
     wpsr = pl.read_parquet(_one(files["wpsr"], "values.parquet"))
@@ -96,23 +104,22 @@ def assemble(
     out = fundamentals.wpsr_features(out, wpsr)
     out = fundamentals.cot_features(out, cot)
     out = fundamentals.fred_features(out, fred)
-    arts_paths = [p for n, p in files["events"].items() if Path(n).name.startswith("articles_")]
-    arts = pl.concat(
-        [
-            pl.read_parquet(p, columns=NEWS_COLUMNS).filter(pl.col("eligible"))
-            for p in sorted(arts_paths)
-        ]
+    arts_paths = sorted(
+        p for n, p in files["events"].items() if Path(n).name.startswith("articles_")
     )
-    coverage = pl.concat(
-        [pl.read_parquet(p, columns=["first_available_at"]).min() for p in arts_paths]
-    )["first_available_at"].min()
-    out = news.news_features(
-        out,
-        arts,
+    arts = pl.concat(
+        [pl.read_parquet(p, columns=NEWS_COLUMNS).filter(pl.col("eligible")) for p in arts_paths]
+    )
+    np_ = news.NewsParams(
         families=families,
         windows=cfg.news_windows_minutes.require("news_windows_minutes"),
-        coverage_start=coverage,  # type: ignore[arg-type]
+        slot_lag=timedelta(minutes=cfg.news_slot_lag_minutes.require("news_slot_lag_minutes")),
+        slot_deadline=timedelta(
+            minutes=cfg.news_slot_deadline_minutes.require("news_slot_deadline_minutes")
+        ),
+        min_slot_articles=cfg.news_min_slot_articles.require("news_min_slot_articles"),
     )
+    out = news.news_features(out, arts, gdelt_slots(arts_paths), np_)
     out = calendar.calendar_features(out)
     if out.height != grid.height:
         raise SchemaError(f"features: {grid.height} instantes → {out.height} filas")
@@ -120,6 +127,26 @@ def assemble(
     return out.with_columns(
         data_cutoff_time=pl.col(pit.DECISION), feature_version=pl.lit(cfg.version)
     )
+
+
+def gdelt_slots(article_paths: list[Path]) -> pl.DataFrame:
+    """Ficheros GDELT de 15 min presentes en la capa de eventos: nominal, disponibilidad y
+    número de artículos (todas las relevancias). Todos los artículos de un fichero comparten
+    ``first_available_at``; si no, ``SchemaError``."""
+    per = (
+        pl.scan_parquet(article_paths)
+        .group_by(news.NOMINAL)
+        .agg(
+            n=pl.len(),
+            available_at=pl.col("first_available_at").min(),
+            _max=pl.col("first_available_at").max(),
+        )
+        .collect()
+        .sort(news.NOMINAL)
+    )
+    if per.filter(pl.col("available_at") != pl.col("_max")).height:
+        raise SchemaError("un fichero GDELT con varias horas de disponibilidad")
+    return per.drop("_max")
 
 
 def _one(files: dict[str, Path], name: str) -> Path:

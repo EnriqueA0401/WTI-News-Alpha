@@ -126,3 +126,10 @@ def test_property_truncation(minutes: list[int], cut: int) -> None:
     keep = pl.col("decision_time") <= t_cut
     assert full.filter(keep).equals(trunc.filter(keep))
     pit.check_no_leakage(full)
+
+
+def test_no_new_bar_gives_null_return_not_zero() -> None:
+    """Revisión F4 (hallazgo 8): sin barra nueva en (t-1, t], el retorno de 1 min es nulo."""
+    out = _run(_bars([1, 2, 3], [100.0, 101.0, 102.0]), _grid([5]))
+    assert out["mkt_ret_1m"].to_list() == [None]
+    assert out["mkt_ret_5m"].to_list() == [None]  # 15:00: sin barra en los 5 min previos

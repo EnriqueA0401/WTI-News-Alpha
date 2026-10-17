@@ -473,3 +473,31 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   2. las features de volumen de eventos llevan un indicador de época o se normalizan por época, porque la tasa de duplicados es del 23 % sin título y del 44 % con título (ADR-033);
   3. la familia es una categoría con ~30 % de error: se usa como agrupación gruesa y no se interpreta fina;
   4. `events-v2` no se usa para features.
+
+## ADR-035 — Revisión adversarial de F4: correcciones y alcance de `feat-v1` (2026-10-17)
+- **Revisión:** subagente independiente, con datos reales de mar–abr 2020.
+  - Truncamiento idéntico en 49 instantes, incluidas las publicaciones de WPSR y COT.
+  - Determinista.
+  - Sin fugas en el ensamblado.
+- **Correcciones:**
+  1. **(Alto) Hueco de GDELT ≠ "sin noticias".** Antes, los cortes (p. ej. 17 días desde el 2025-06-14) daban conteos 0.
+     - Ahora un fichero de 15 min es *bueno* si tiene ≥ 5 artículos en la capa (mediana 54) y llega ≤ 20 min tras su nominal.
+     - En t, una ventana es nula si el fichero necesario aún no está o si cubre un hueco; lo mismo la edad del último evento si hubo un hueco después.
+     - Nuevas columnas `news_source_ok` y `news_slot_available_at`.
+     - Test de propiedad con huecos y ficheros tardíos.
+  2. **WPSR:** el cambio semanal solo usa la semana anterior si ya se conocía. Una semana atrasada publicada después no sustituye a la más reciente. Hay test de truncamiento de WPSR y COT.
+  3. **COT:** el informe anterior de la secuencia está a 6–8 días; los festivos desplazan el as-of.
+  4. **Antigüedad del dato:** `wpsr_data_lag_d` y `cot_data_lag_d`, en días desde la fecha de los datos. En las recuperaciones tras un cierre los datos tienen semanas.
+  5. **Rejilla limitada a los periodos de G0:** 2018–2020 y 2024–2026 (`periods`); las barras previas solo sirven de historia.
+  6. **FRED:** si una vintage borra la observación que era la última, falla ruidosamente. En los datos reales solo se borran observaciones antiguas, que no afectan.
+  7. **Mercado:** sin barra nueva en (t-k, t], el retorno es nulo (antes 0).
+  8. **Reproducibilidad:** la división de polars no era bit a bit estable según el tamaño de la tabla. `cot_mm_net_oi` se calcula fila a fila.
+- **Aceptado:** la barra de t-k puede tener hasta 5 min de antigüedad, así que `ret_60m` abarca entre 60 y 65 min.
+- **Aplazado a F7 (o a una versión posterior si la ablación lo justifica):**
+  - retorno, rango y volatilidad de 1 sesión;
+  - volumen de ticks relativo a su hora: se normaliza en F7 dentro de cada fold, porque ajustarlo con todo el periodo sería una fuga;
+  - sorpresa ingenua de FRED;
+  - fuentes distintas;
+  - festivos y vísperas;
+  - minutos desde la apertura (aproximados por `mkt_minutes_since_break`).
+  - Motivo: CLAUDE.md §13 (lo más simple primero) y que no son necesarias para la prueba M4 frente a M3.

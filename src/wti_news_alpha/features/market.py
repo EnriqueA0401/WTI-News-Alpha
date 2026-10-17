@@ -126,7 +126,11 @@ def market_features(grid: pl.DataFrame, bars: pl.DataFrame, p: MarketParams) -> 
         )
         then = then.select(pl.col("_t").alias(DECISION), "then_bid_close", "then_available_at")
         out = out.join(then, on=DECISION, how="left", validate="1:1")
-        ok = pl.col("then_available_at") >= pl.col("mkt__break_at")
+        # Sin corte entre ambas barras, y barras distintas: si no hubo barra nueva en
+        # (t - k, t], el retorno es nulo, no 0 (revisión F4, hallazgo 8).
+        ok = (pl.col("then_available_at") >= pl.col("mkt__break_at")) & (
+            pl.col("then_available_at") < pl.col("mkt_available_at")
+        )
         out = out.with_columns(
             pl.when(ok)
             .then((pl.col("mkt_close") / pl.col("then_bid_close")).log())
