@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F7 (modelos M0–M4) en curso. **G4 aprobada y pre-registro H1 congelado (ADR-044).** G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F7 hecha: **H1 no se sostiene** (M4 ≈ M3 a 15 y 60 min; `reports/F7_modelos.md`). Siguiente: F8 (robustez) → puerta G5. **G4 aprobada y pre-registro H1 congelado (ADR-044).** G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -14,6 +14,12 @@
 | FRED/ALFRED (5 series diarias, historial de vintages) | Hecho y revisado | `fred-alfred-v2`, `reports/f2/fred_alfred_normalized.md` (ADR-024/025) |
 | Noticias con `first_available_at` | Hecho y revisado (decisiones del usuario en ADR-026) | `gdelt-news-v2`, `reports/f2/gdelt_news_normalized.md` |
 | Puerta G1 | Aprobada (ADR-027) | `reports/G1_cierre.md` |
+
+### F7: estado
+| Bloque | Estado | Salida |
+|---|---|---|
+| M1 logística, Holm, dejar-un-fold-fuera, comprobación del pre-registro | Hecho y revisado (ADR-045) | `models/`, `models/h1.py` |
+| Corrida oficial M0–M4 (15 y 60 min), reproducida con el mismo sha256 | Hecha: H1 no pasa ningún criterio | `reports/F7_modelos.md`, `reports/f7/h1_primary.json` |
 
 ### F6: estado
 | Bloque | Estado | Salida |
