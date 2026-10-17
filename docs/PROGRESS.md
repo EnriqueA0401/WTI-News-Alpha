@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F4 (features point-in-time). **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F4 terminada (`feat-v1`); siguiente F5 (EDA y estudio de eventos, puerta G3). **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -14,6 +14,14 @@
 | FRED/ALFRED (5 series diarias, historial de vintages) | Hecho y revisado | `fred-alfred-v2`, `reports/f2/fred_alfred_normalized.md` (ADR-024/025) |
 | Noticias con `first_available_at` | Hecho y revisado (decisiones del usuario en ADR-026) | `gdelt-news-v2`, `reports/f2/gdelt_news_normalized.md` |
 | Puerta G1 | Aprobada (ADR-027) | `reports/G1_cierre.md` |
+
+### F4: estado
+| Bloque | Estado | Salida |
+|---|---|---|
+| Núcleo PIT: asof, guardia de fugas, rejilla | Hecho | `features/pit.py` |
+| Mercado, WPSR/COT/FRED, noticias (con huecos de GDELT), calendario | Hecho | `features/*.py` |
+| Revisión adversarial | Resuelta (ADR-035) | 1 alto, 4 medios y 3 bajos corregidos; 6 features aplazadas |
+| Capa `feat-v1` | Publicada | 392.465 instantes (2018–2020, 2024–jul 2026) · 110 columnas · 26 MB · `manifests/normalized/features/feat-v1.json` |
 
 ### F3: estado
 | Bloque | Estado | Salida |
