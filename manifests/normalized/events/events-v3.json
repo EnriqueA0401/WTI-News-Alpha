@@ -1,0 +1,427 @@
+{
+  "source": "events",
+  "version": "events-v3",
+  "n_articles": 12002831,
+  "n_events": 20312,
+  "relevance_counts": {
+    "direct": 957206,
+    "indirect": 10580023,
+    "not_relevant": 465602
+  },
+  "dup_counts": {
+    "none": 7773690,
+    "same_source_title": 604156,
+    "syndicated_title": 3480167,
+    "url": 144818
+  },
+  "n_eligible": 115930,
+  "family_counts_eligible": {
+    "conflict_attack": 29866,
+    "eia_inventories": 14046,
+    "opec_policy": 49934,
+    "sanctions_geopolitics": 20154,
+    "weather": 1930
+  },
+  "inputs": {
+    "gdelt_news/gdelt-news-v2/201801.parquet": "a4f18e89818983f2894ffcdf2dfabd46883998514c1f0a88083a4c030fb4b9ea",
+    "gdelt_news/gdelt-news-v2/201802.parquet": "601d323720eae77215c74efd01548c18c27feadde5f98fdb96bd495bfc8bffa8",
+    "gdelt_news/gdelt-news-v2/201803.parquet": "e06f1a523114aec344a1e4a5fa67abd24d2803c62f63d9b953664c4beee0c81f",
+    "gdelt_news/gdelt-news-v2/201804.parquet": "c6ba22c86dc859d5c0998fc529d13460ffd4a97f8a4ff14a71a7ee500678ee5c",
+    "gdelt_news/gdelt-news-v2/201805.parquet": "9a9a2fbfcdccea6579300fb0cdd13e38e3d371389101a67ef366ab3c862d8187",
+    "gdelt_news/gdelt-news-v2/201806.parquet": "519272e0c49e1110a1a219a47cb692cd4353525cf3d2807a15dffc8ea79f545e",
+    "gdelt_news/gdelt-news-v2/201807.parquet": "a3d506ba71ccc4a7e11e676ef7f38cc7c1af5c9873d478e8f03c660843432ea8",
+    "gdelt_news/gdelt-news-v2/201808.parquet": "a8cfe4315ea4090f21366677062666a6ee49545f78d1e760e57cf58851e43172",
+    "gdelt_news/gdelt-news-v2/201809.parquet": "ba8e9f008a276a39cec6478292dc3513b1440f6f11e7b4f5556c286f360571ef",
+    "gdelt_news/gdelt-news-v2/201810.parquet": "97c505f72e9bfd461dbd6fce15fac2dca09ad28d2261c0bb0a646c5724dbbbfd",
+    "gdelt_news/gdelt-news-v2/201811.parquet": "6707f35cc13dd0439385fcd84a989cf8794351c9a61b75eea38a49b79a6d410b",
+    "gdelt_news/gdelt-news-v2/201812.parquet": "36ed76ab141b0563f10642bdd8c6264bbe384dd684482edeaedc082cb40acdf3",
+    "gdelt_news/gdelt-news-v2/201901.parquet": "ee787702f22953a9cc05b0df7f61080d8401fece4c14f972ea30a2a92330faf7",
+    "gdelt_news/gdelt-news-v2/201902.parquet": "b9cd3112fbffab500130c2f2ef9dbb8b9f98ec20da18f830a9f35b91265c8dfc",
+    "gdelt_news/gdelt-news-v2/201903.parquet": "9e35c07f84a001dd95f42867b08160c5e2befe411d5f1e84d1c7336d7f28a00d",
+    "gdelt_news/gdelt-news-v2/201904.parquet": "cdc18216e6b663215a91810208cf6b397fd3a87f593a54fa4fdc8582a3ebfd6b",
+    "gdelt_news/gdelt-news-v2/201905.parquet": "d942af431d7268ee9bb32fe8f902e64d4348c560e3cccb897c435e3eef4459ce",
+    "gdelt_news/gdelt-news-v2/201906.parquet": "f4ee37c310db6e4f508af8d11b658509391172037bc95a6c3acbc3c873d5b00b",
+    "gdelt_news/gdelt-news-v2/201907.parquet": "153f09e6fd8f4f4bc03f9be20235a17d6c79ac9f7f23de715e779ab689d91798",
+    "gdelt_news/gdelt-news-v2/201908.parquet": "a55faae24a87bb31cc8ca931be1661246edb091adfc3a1cfc033ebd4a48c1c0a",
+    "gdelt_news/gdelt-news-v2/201909.parquet": "1f90d87dafdc3bdcd8211a8a338146bb19fe5d08adb318eb9a22adf418e95804",
+    "gdelt_news/gdelt-news-v2/201910.parquet": "7afd15321a998aab19e9ab5388a12db44fd5d913f1d0da824a9f2953b7318d41",
+    "gdelt_news/gdelt-news-v2/201911.parquet": "8f2fac4416a21ef89618da71c8530a309db92ff43d1c59ed195dd5fd4226af00",
+    "gdelt_news/gdelt-news-v2/201912.parquet": "6df3c72fe080a6d483f2a39d73b352245842c4093fafab6a3fd1df8137622d1e",
+    "gdelt_news/gdelt-news-v2/202001.parquet": "fccc9a4c677f6129a609a983f6eb0357ba144dc49405da95b6f4fd07dd19d2a1",
+    "gdelt_news/gdelt-news-v2/202002.parquet": "374b258c412c2a4378e3e9f9cf738baf7dd2c898e716771fa8449fcedcec1fb7",
+    "gdelt_news/gdelt-news-v2/202003.parquet": "fd3cd0fa43ed3fe994ea972c0fa9d209f0fcb6792e58a86feb7d34ce693dd6a7",
+    "gdelt_news/gdelt-news-v2/202004.parquet": "b8c5240f9e977e5c672206c792382f72fedb3ebfb54c8177c56de082384bac1e",
+    "gdelt_news/gdelt-news-v2/202005.parquet": "0ae0439331a7546b39a60d7398df5dea0dcc2cf6e50fe72ae75cacb261d960e8",
+    "gdelt_news/gdelt-news-v2/202006.parquet": "9a0868172c34d4d9452dc2d7bcedc7b8a380849789ac3c94537d4c9a6c06cc81",
+    "gdelt_news/gdelt-news-v2/202007.parquet": "b1e50f21f5ba3d6171dda00c4891ec51c8ff1e36f5e776ef1147cc27f38d42a9",
+    "gdelt_news/gdelt-news-v2/202008.parquet": "ae4df7e44f8364c710a6433cd0105e2f1d899eae8e707c8045da029898998075",
+    "gdelt_news/gdelt-news-v2/202009.parquet": "8bef68bbc8834e524c4268b4124f1da0ad92f2556349d4522f07c409907950ef",
+    "gdelt_news/gdelt-news-v2/202010.parquet": "0cf85d2acee7652c3bcade236d1c2f32642bd08c92d56038c38028f33ca1a05f",
+    "gdelt_news/gdelt-news-v2/202011.parquet": "08925332d48b6c07ed4e5857ae3cb1e7e6d606ee4a3d45e72d447fa68751b045",
+    "gdelt_news/gdelt-news-v2/202012.parquet": "b716bc8f55388e54e7326e46c78501a5157fd7bde56b0fc25f4e82475cd3a4f9",
+    "gdelt_news/gdelt-news-v2/202401.parquet": "3d69e63fe074b9525eb8e55d2d71fe5071409458289b280a3a7f05fce9f928a2",
+    "gdelt_news/gdelt-news-v2/202402.parquet": "7969c56fb226d4b7730a4ec97307f2ffa0db3740e79df6a19776188aa0b40e20",
+    "gdelt_news/gdelt-news-v2/202403.parquet": "bfa611d810d9aaa2004618788313925d5f11d6836ff3cf548fd1e11c4ad018c8",
+    "gdelt_news/gdelt-news-v2/202404.parquet": "dc3469d9eb8d696cdc5770926177a327528414766eaf62955451981dcb44036e",
+    "gdelt_news/gdelt-news-v2/202405.parquet": "fec475f42a84e61302800b6809a62302812c9338b895bb1fe52bf5326f16ad3f",
+    "gdelt_news/gdelt-news-v2/202406.parquet": "a96fb3b30d525410ea6ba61f888fc3c626dac4aaff5c06f46d90d43855b62530",
+    "gdelt_news/gdelt-news-v2/202407.parquet": "712ed2d674bc9c2933ef665ccff6caead46206f71a9e99ab992ec47ce6129caa",
+    "gdelt_news/gdelt-news-v2/202408.parquet": "74448aeac43df37ea2f12093925a72d581d41e90f1795a51bc504473f899509d",
+    "gdelt_news/gdelt-news-v2/202409.parquet": "8967a7bc11a55ee4d2c57642977328b9c4a987b1cec51c53b1159a10b2017553",
+    "gdelt_news/gdelt-news-v2/202410.parquet": "00bd0bff66df572ce60eb82b1e43ac87ff73e8b762dc3efe42d4ba2a8dd27eff",
+    "gdelt_news/gdelt-news-v2/202411.parquet": "13ebbb25e3848467363dd89d69777dfd3ec94e72fc98856b0bf0c7549954b17f",
+    "gdelt_news/gdelt-news-v2/202412.parquet": "fac6d15de6a97a8f8ab04ff2f401e293f18a5fa919e4bce7546b8bda452b5cce",
+    "gdelt_news/gdelt-news-v2/202501.parquet": "7d7d9b1c8ba055e424830ada67f693118750dff2698acaf0d674bef16db6a0ca",
+    "gdelt_news/gdelt-news-v2/202502.parquet": "58244043ed81190b9cc1a69a0382e7b951979c3242f02cf297dd7f960275f3f8",
+    "gdelt_news/gdelt-news-v2/202503.parquet": "94625c8b5d491ca571ec6d7595c0dff92afa47881f19160fa09cd0615d380aa0",
+    "gdelt_news/gdelt-news-v2/202504.parquet": "941e1bd57620e56b3ce15b6f1b3bc45043595bf75c0ace96045e0a1ed67c87ab",
+    "gdelt_news/gdelt-news-v2/202505.parquet": "8f3eee569b283e5005cb5c6d9bd8ee26739d540309b6e6b161487729b930b0bd",
+    "gdelt_news/gdelt-news-v2/202506.parquet": "113d823edeeeb2df60e12a72fe00edaf5d7dfb301a384afcc518c1fe69313cad",
+    "gdelt_news/gdelt-news-v2/202507.parquet": "014857260bb02e11b527670f892fc863dfe12246af065c19b60bae4c3b74b8bb",
+    "gdelt_news/gdelt-news-v2/202508.parquet": "828581f6f91d5238103119f86630ffee5e3899a098ab105f5ec1efd1b756cd0e",
+    "gdelt_news/gdelt-news-v2/202509.parquet": "82bfb5ced85ead5109515de32ad523365e9daa6f83926971442639c210a354c3",
+    "gdelt_news/gdelt-news-v2/202510.parquet": "fe25a5f5f6240590d3248369caf0121209d6062c97797e175d05410c4ee170c6",
+    "gdelt_news/gdelt-news-v2/202511.parquet": "a4624794f0fb80e68b6e7f6626d7e8eddb536299e34f4e38ba76b788527da4d9",
+    "gdelt_news/gdelt-news-v2/202512.parquet": "f2e519e05c64ac79b64e57aa4a50b000ec81426b7f7721acdacdf2916ad68480",
+    "gdelt_news/gdelt-news-v2/202601.parquet": "5740abe82023269fe5b4e7e5c4bbacb5f2f122b420ef8cbaa0cf99410857fb89",
+    "gdelt_news/gdelt-news-v2/202602.parquet": "ea9535472e1a5655b9537b0bbb185b2e181d82e47cb96d0a297154b24a3f74ab",
+    "gdelt_news/gdelt-news-v2/202603.parquet": "474427198774c25ef90536299c6de19de310c1bb36d3d77f0a51bbaae74cf1bd",
+    "gdelt_news/gdelt-news-v2/202604.parquet": "f7720695140bfa020964ef53f72dab7b9ecd9742c8e55de1218d376783b3cfc1",
+    "gdelt_news/gdelt-news-v2/202605.parquet": "6c9368c846aaad14f1e9c2f72b6e46aa624f0357e495e1401c004cac28357438",
+    "gdelt_news/gdelt-news-v2/202606.parquet": "c638c4b5dcba5f2ee8e81e2fd923513061c0fcf1a8841d9b842530ab0bebacd7",
+    "gdelt_news/gdelt-news-v2/202607.parquet": "f6d65ab723f1888761bbfbe70f045c27bf082f6cd2761a8b9dd287536215b76a",
+    "gdelt_news/gdelt-news-v2/202608.parquet": "caf9aa78ac5c5ddd2b5a14f1fa5996a9418b1843362b50f3125342ad2ffdfb47",
+    "gdelt_news/gdelt-news-v2/202609.parquet": "5f4e32c10b700016f1c9a00b65dd3242063045d6260c2173bd3d8aa04fe6b6da",
+    "gdelt_news/gdelt-news-v2/202610.parquet": "4ac0917767345c86d6d89c044219bb12b32155ad48f76a7f199b8feb0219d8cd"
+  },
+  "params": {
+    "events": {
+      "eligible_relevance": {
+        "note": "",
+        "source_ref": "ADR-029: solo artículos directamente relevantes abren o alimentan eventos",
+        "status": "approved",
+        "value": [
+          "direct"
+        ]
+      },
+      "event_gap_hours": {
+        "note": "",
+        "source_ref": "ADR-029: un evento se cierra tras 24 h sin artículos elegibles de su clave (familia, país)",
+        "status": "approved",
+        "value": 24
+      },
+      "event_max_span_hours": {
+        "note": "",
+        "source_ref": "ADR-030: un evento dura como máximo 72 h desde su primer artículo (rachas que no se cierran)",
+        "status": "approved",
+        "value": 72
+      },
+      "families_without_events": {
+        "note": "",
+        "source_ref": "ADR-030 (other, market_report, opinion: no son acontecimientos) y ADR-032 (precisión baja en G2); tampoco el país XX",
+        "status": "approved",
+        "value": [
+          "other",
+          "market_report",
+          "opinion",
+          "company",
+          "demand_macro",
+          "logistics",
+          "rates_usd",
+          "supply_disruption"
+        ]
+      },
+      "news_version": "gdelt-news-v2",
+      "title_dedup_window_hours": {
+        "note": "",
+        "source_ref": "ADR-029: re-publicación = mismo título normalizado con huecos <= 48 h",
+        "status": "approved",
+        "value": 48
+      }
+    },
+    "rules": {
+      "defaults": {
+        "family": "other",
+        "mechanism": "ambiguous",
+        "relevance": "not_relevant"
+      },
+      "family": [
+        {
+          "field": "title",
+          "name": "eia_inventories",
+          "only_without_title": false,
+          "regex": "\\b(eia|api|inventor(y|ies)|stockpiles?|crude stocks|cushing|spr|strategic petroleum reserve)\\b",
+          "value": "eia_inventories"
+        },
+        {
+          "field": "title",
+          "name": "opec_policy",
+          "only_without_title": false,
+          "regex": "\\b(opec\\+?|output cuts?|production cuts?|quotas?|ministerial meeting)\\b",
+          "value": "opec_policy"
+        },
+        {
+          "field": "title",
+          "name": "weather",
+          "only_without_title": false,
+          "regex": "\\b(hurricane|tropical storm|storm|cyclone|typhoon|freeze|winter storm|floods|flooding|flooded)\\b",
+          "value": "weather"
+        },
+        {
+          "field": "title",
+          "name": "price_war",
+          "only_without_title": false,
+          "regex": "\\bprice war\\b",
+          "value": "opec_policy"
+        },
+        {
+          "field": "title",
+          "name": "trade_war",
+          "only_without_title": false,
+          "regex": "\\b(trade|tariff) wars?\\b",
+          "value": "demand_macro"
+        },
+        {
+          "field": "title",
+          "name": "conflict_attack",
+          "only_without_title": false,
+          "regex": "\\b(attack(s|ed)?|drone|missile|strike(s)?|explosion|blast|houthis?|bomb(ing)?|war)\\b",
+          "value": "conflict_attack"
+        },
+        {
+          "field": "title",
+          "name": "sanctions_geopolitics",
+          "only_without_title": false,
+          "regex": "\\b(sanction(s|ed)?|embargo|price cap|tariffs?|nuclear deal|ceasefire|peace talks|tensions?)\\b",
+          "value": "sanctions_geopolitics"
+        },
+        {
+          "field": "title",
+          "name": "supply_disruption",
+          "only_without_title": false,
+          "regex": "\\b(outage|shut ?down|shut|halt(s|ed)?|disruption|force majeure|leak|spill|fire|blockade|seized?)\\b",
+          "value": "supply_disruption"
+        },
+        {
+          "field": "title",
+          "name": "logistics",
+          "only_without_title": false,
+          "regex": "\\b((super)?tankers?|shipping|strait|hormuz|suez|red sea|ports?|pipelines?|freight)\\b",
+          "value": "logistics"
+        },
+        {
+          "field": "title",
+          "name": "rates_usd",
+          "only_without_title": false,
+          "regex": "\\b(fed|federal reserve|interest rates?|rate (cut|hike)|dollar|inflation|treasury yields?)\\b",
+          "value": "rates_usd"
+        },
+        {
+          "field": "title",
+          "name": "demand_macro",
+          "only_without_title": false,
+          "regex": "\\b(demand|consumption|gdp|recession|pmi|economy|economic growth|imports?|travel|jet fuel)\\b",
+          "value": "demand_macro"
+        },
+        {
+          "field": "title",
+          "name": "company",
+          "only_without_title": false,
+          "regex": "\\b(earnings|profits?|quarterly|exxon|chevron|shell|bp|totalenergies|conocophillips|merger|acquisition|ipo|shares)\\b",
+          "value": "company"
+        },
+        {
+          "field": "url",
+          "name": "opinion_url",
+          "only_without_title": false,
+          "regex": "/(opinion|opinions|column|columns|commentary|editorial|blogs?)/",
+          "value": "opinion"
+        },
+        {
+          "field": "title",
+          "name": "market_report",
+          "only_without_title": false,
+          "regex": "\\b(oil prices?|crude|brent|wti)\\b.*\\b(rise|rises|rose|fall|falls|fell|jump|jumps|slip|slips|gain|gains|drop|drops|climb|climbs|steady|edge|edges|settle|settles|bounce|bounces|rebound|rebounds|tumble|tumbles|plunge|plunges|surge|surges|soar|soars|sink|sinks)\\b",
+          "value": "market_report"
+        }
+      ],
+      "mechanism": [
+        {
+          "field": "title",
+          "name": "loosens_supply",
+          "only_without_title": false,
+          "regex": "\\b(raise|raises|boost|boosts|increase|increases|hike|hikes) (oil )?(output|production|supply)\\b|\\b(crude|oil|gasoline|distillate|fuel) (inventor(y|ies)|stocks|stockpiles) (build|rise|rises|jump|jumps|swell)|\\bease[sd]? sanctions\\b|\\bresum(e|es|ed) (output|production|exports)\\b",
+          "value": "loosens_supply"
+        },
+        {
+          "field": "title",
+          "name": "tightens_supply",
+          "only_without_title": false,
+          "regex": "\\b(cut|cuts|curb|curbs|reduce|reduces|deepen|deepens) (oil )?(output|production|supply|exports)\\b|\\b(output|production|supply|export) (cuts?|curbs?)\\b|\\b(crude|oil|gasoline|distillate|fuel) (inventor(y|ies)|stocks|stockpiles) (draw|draws|fall|falls|drop|drops|decline|declines)|\\b(outage|shut(s|ting)?( ?down| in)?|halt(s|ed)?|disruption|force majeure|attack(s|ed)?|sanction(s|ed)?|embargo|blockade)\\b",
+          "value": "tightens_supply"
+        },
+        {
+          "field": "title",
+          "name": "raises_demand",
+          "only_without_title": false,
+          "regex": "\\bdemand (rise|rises|jump|jumps|rebound|rebounds|recover|recovers|strong|surge|surges|grow|grows)\\b|\\bstrong demand\\b",
+          "value": "raises_demand"
+        },
+        {
+          "field": "title",
+          "name": "lowers_demand",
+          "only_without_title": false,
+          "regex": "\\bdemand (fall|falls|drop|drops|slump|slumps|weak|weakens|slow|slows)\\b|\\bweak demand\\b|\\brecession\\b",
+          "value": "lowers_demand"
+        },
+        {
+          "field": "title",
+          "name": "raises_risk",
+          "only_without_title": false,
+          "regex": "\\b(threat(s|ens)?|tensions?|escalat(e|es|ion)|uncertain(ty)?|fears?|risk)\\b",
+          "value": "raises_risk"
+        }
+      ],
+      "relevance": [
+        {
+          "field": "title",
+          "name": "title_false_crude",
+          "only_without_title": false,
+          "regex": "\\bcrude (bombs?|jokes?|remarks?|language|comments?|humou?r|drawings?|weapons?|devices?|attempts?)\\b",
+          "value": "not_relevant"
+        },
+        {
+          "field": "title",
+          "name": "title_market_research_spam",
+          "only_without_title": false,
+          "regex": "\\bmarket (share|size|report|analysis|forecast|research|outlook|growth|trends?|insights?|status)\\b.*\\b20\\d\\d\\b|\\b20\\d\\d\\b.*\\bmarket (share|size|report|analysis|forecast|research|outlook|growth|trends?)\\b",
+          "value": "not_relevant"
+        },
+        {
+          "field": "title",
+          "name": "title_direct",
+          "only_without_title": false,
+          "regex": "\\b(crude|oil prices?|wti|brent (crude|oil|futures|prices?|benchmark|contracts?)|opec\\+?|(million|thousand|bn|billion|mln) barrels|barrels (a|per) day|bpd|per barrel|a barrel|refiner(y|ies)|oil (output|production|supply|demand|exports?|imports?|market|futures|tankers?|facilit(y|ies)|fields?|terminals?|platforms?|rigs?|wells?|pipelines?|majors?|producers?)|petroleum|shale|rig count|cushing|oilfield|aramco)\\b",
+          "value": "direct"
+        },
+        {
+          "field": "title",
+          "name": "title_oil_moves",
+          "only_without_title": false,
+          "regex": "\\boil (rises?|rose|falls?|fell|jumps?|slips?|gains?|drops?|climbs?|extends|steadies|edges|tumbles|plunges|surges|rebounds|hits|settles|slides|dips|soars|sinks|retreats|rallies)\\b",
+          "value": "direct"
+        },
+        {
+          "field": "themes",
+          "name": "theme_oilprice",
+          "only_without_title": true,
+          "regex": "(^|;)ECON_OILPRICE(;|$)",
+          "value": "direct"
+        },
+        {
+          "field": "organizations",
+          "name": "org_opec",
+          "only_without_title": true,
+          "regex": "\\bopec\\b|organization of the petroleum exporting countries",
+          "value": "direct"
+        },
+        {
+          "field": "themes",
+          "name": "theme_oil_context",
+          "only_without_title": false,
+          "regex": "(^|;)(ECON_OILPRICE|ENV_OIL|WB_539_OIL_AND_GAS_POLICY_STRATEGY_AND_INSTITUTIONS|WB_2299_PIPELINES|ENV_NATURALGAS|FUELPRICES)(;|$)",
+          "value": "indirect"
+        },
+        {
+          "field": "title",
+          "name": "title_energy",
+          "only_without_title": false,
+          "regex": "\\b(oil|gas|fuel|gasoline|diesel|energy|pipeline)\\b",
+          "value": "indirect"
+        }
+      ],
+      "version": "rules-v2"
+    }
+  },
+  "code": {
+    "wti_news_alpha.events.cluster": "b13e32e3bf1a5546ef9915c95ed089060f15e6529268a59ef3ead65cb3fd22e7",
+    "wti_news_alpha.events.dedup": "7d7fa0fce453a20583d5723af873928c047d1ddee358b79c7349db6cc40cc838",
+    "wti_news_alpha.events.pipeline": "788fe0b98895b1f67183f176f5a3e2cbd412217e98a48a9d1b0b2cc3ad5772be",
+    "wti_news_alpha.events.rules": "daf5298c3680cf2b7e56a60022c30974871d9b47980d3a45f3d28c7ff41e072a"
+  },
+  "outputs": {
+    "articles_201801.parquet": "0357dcd525f42d9caf8de17f8a87abfd52a742fbc65c4dd0b56eee49e9dd4bc5",
+    "articles_201802.parquet": "51d20a7732b54f5715969baeeb7eac75c025b356b0d0271f539a1d475461fd77",
+    "articles_201803.parquet": "0fb0aff3730139b9c7571e12b230c276ed4e630bc4b24fba4fa28669a989ae97",
+    "articles_201804.parquet": "8610c2c1f34cb9a3fbeb35cfe6916ca84e2acf29b11f76a2abc11d81ed470d26",
+    "articles_201805.parquet": "02df4d0ca3976bd14ed3e56468f112e1f40e53ff1aadc956a18615bab3f18494",
+    "articles_201806.parquet": "242ece9f1bff7eb00838cf14c79fd16a576d37067db1bdcc1135498626c91dfd",
+    "articles_201807.parquet": "5981bf4708268c79a908488c43f0066081fdc001de2b1d572fb0ff55a714e9f8",
+    "articles_201808.parquet": "3253fdeb93c13b82f83e18b9b7fd185bf1ed2d1116cb223d4821e94d820ca3ac",
+    "articles_201809.parquet": "01294a1572e39031e1ec88a9b38e1b562bd09c604f935e118296eb6d8eb6a5eb",
+    "articles_201810.parquet": "58d2e4ebc38c565c5cc52df9cba2e6b37f71dc4b7d647ce6f8fb677d4d986892",
+    "articles_201811.parquet": "d2fc4531cc532ae7be280c3b3b714f1eb7a3f870fef95a0567397ff798365b58",
+    "articles_201812.parquet": "9341684ecf68c9374c8b799ca0add0954f0c32df609f7fc9c130b081c4597a77",
+    "articles_201901.parquet": "f63d04ec7269635766ef03fe51cd8cbf418491dfa94b07ab398f5851dff60fc0",
+    "articles_201902.parquet": "ae4b061a64863ad4b13b52dc7530dc02961b5e368a8ace86e300d1e2e9670704",
+    "articles_201903.parquet": "9e2a552e9417673764daa02f57699e17d60b6bf36a4ea5a6e6d367a8ea815bec",
+    "articles_201904.parquet": "484b3d2e6a50d94fd48b17d4f7eaaf5b14786f882e3fc55af6db9cf58a4f2c48",
+    "articles_201905.parquet": "44ae301a2da6dde79102949f8c0e3998b2f0948670f60a8a01e13c00ced5c518",
+    "articles_201906.parquet": "3a8093c3c87b92ff501ac8e11eae0c3934bf09abc3543cf1b92c8cc80e9d82b4",
+    "articles_201907.parquet": "2d785e76c05657938e5b3fd7b5ef718dadb5d3522b6b1a54b6e91bbee4b26980",
+    "articles_201908.parquet": "835d0e7fc45309b2959d3d3dce22649716dc2623391fb79b7e9f37bd09ea3d1d",
+    "articles_201909.parquet": "51d132f8acee7b87ff12e271110aed499c7faad8cd92225b347be4c171005a17",
+    "articles_201910.parquet": "d4717de4cc8056c0b4de30bd693b6561e741baecec0fca997952dc88e09110cb",
+    "articles_201911.parquet": "8cc2ea1f805165e4766947e693913caa76cc2289d1b66a03723c5f07e46028c0",
+    "articles_201912.parquet": "aeeb1a7e16ef6ea0aa23eb7cf1990ac50d86f81047682796113908779a108d43",
+    "articles_202001.parquet": "129e78f0b4e28655dcdedfb34e29e8930fb2e959f70cbcbd4333914caadcad1b",
+    "articles_202002.parquet": "98b7ca94994cf0d5946d29822bca3bace8fbdb2aae61b72843434d064e2fd9f1",
+    "articles_202003.parquet": "1fb72f9754c9521796926a9871cd7ddb0c354a5f5cb827f9e47874286409b038",
+    "articles_202004.parquet": "9370c1d9e4703f366556058caade7fccb56a8b334b6c0087693f0b9de75e0e55",
+    "articles_202005.parquet": "46512d414bba123e2b22fd4ab9b5ea7ea525c83f94237ee8371b7e61fe3b141a",
+    "articles_202006.parquet": "ce5098e33c3bc9cc7aa0498ef95fbdb0152a30bfb148c99123af8babf295460f",
+    "articles_202007.parquet": "bc8bac184e598f6bd04b8d32a707f4839e84e696a16f9b4379608b4ce18b3a95",
+    "articles_202008.parquet": "987f1520483b0f03cf9c359c69d27a74919db7e0a43a2703a7c17aed42debe5e",
+    "articles_202009.parquet": "165e835d497c2a7c9856d27bd437777e0f1b4967cb12282dd856a7af6f3c0eb9",
+    "articles_202010.parquet": "25c2ab1a5c6d4927dc836846a0c9b4d5940a1c3db79f22c4f91c3b39ee1e46f9",
+    "articles_202011.parquet": "7225349271f4f81cba4a4b0bcb9bcd91a9fb5e28aa471f737cc95253ca7b1de6",
+    "articles_202012.parquet": "819a5afeb211b6aae0676d897ee0dec06d07b12c4cb206f371e68f91bdb72fb1",
+    "articles_202401.parquet": "5c812274c5c4f9111af64930150f6308630cfa1c3b97cdd1a609c4d807de9daf",
+    "articles_202402.parquet": "1a0ef3210bec6bbb68f4567231cbd616e50f68d2eed8d501b19bb49373e89345",
+    "articles_202403.parquet": "c00dcaded50465b913d60e385efd81286f12ecf40f797f917ffb5b6953b62e63",
+    "articles_202404.parquet": "443d3640fac12c26b657754a7e3da0f9f50d2849ee749cd8d39d93f7dedf1dc1",
+    "articles_202405.parquet": "ccafff271edc0c8b1da31d4d373ac11d31867500b5663c50f5ee5415c65c626c",
+    "articles_202406.parquet": "6e3f09622bd77d51101e8543a5efe8cd738c6233022cb67de4c86d12a0b6899d",
+    "articles_202407.parquet": "3f0663440f1c6df2d305b7ca8cb33d83468e998311bbacc4be85c516bd230efb",
+    "articles_202408.parquet": "acde29c3b66314d6ac0f018f489a63f9facd26ca5dd7e77f3f0ad99f1b45cc77",
+    "articles_202409.parquet": "a85541f9dbb3aaf45266e9913a35199421ce077d74929554c6d70cfd5a4fdddd",
+    "articles_202410.parquet": "bee7c3617501da5c3a3eba7f0db03a6e696c00ccad52a9dfc42177d81f1596ee",
+    "articles_202411.parquet": "6c5f3c910a56cda0a4cfc483ca1b8e6652c4c72f8b3d0f164fbd0aaeccca9848",
+    "articles_202412.parquet": "8e2640c17b4201864cd0eb6b9854ed574feb29c9b558edf9012c7238b16f8ec5",
+    "articles_202501.parquet": "cecbb6f7c10da441a64d4ec7b0a7488177979054f8e735237b1454ba9b569ab6",
+    "articles_202502.parquet": "66f1f42c80ec0b9bbfb2d9378acaa6530296eb3200c8235baf88a99a94c34141",
+    "articles_202503.parquet": "bb1918fac145d3e5c84d262b27b38a5c8dc13478c500d1b96207939f30d9f7d0",
+    "articles_202504.parquet": "a06d82881ab7909bf28c55947849ce5a367d1f8726eed561b1f8d718f4029a2c",
+    "articles_202505.parquet": "d8723122a7d8eb359a52851694257ffde0c20a73f88bdc772cf3439eea931c09",
+    "articles_202506.parquet": "5250adaf5ebfd8ca4db6544f078d7732de8f09e48ebf8b9b6a1f4bc49a80d0e5",
+    "articles_202507.parquet": "11f0b7315aff9ed36bc385f888f6907a8720afdb9d980eb82e8444c41b5788a0",
+    "articles_202508.parquet": "b122e14c784cc4dda2c9edd1367544590aadce7fc3f0bfc87de5e4ef938df6aa",
+    "articles_202509.parquet": "697c25155be7ceaa04daad04f45e663f32f230841e4e6ba4180817c51f4bf197",
+    "articles_202510.parquet": "142e7997d0a910c5ab515aaa60235c3289532ea33b35824b63d18c75bda4826e",
+    "articles_202511.parquet": "5d6c4fb58eaba21f9917e45abfbc757a242d3335fd2826d500376a9fec347ca4",
+    "articles_202512.parquet": "23c718f8fb4b7f232b7c3cf6a8cff366418fe58d50e51e62dbcfb30d905f284f",
+    "articles_202601.parquet": "16b29e8b841327f7067d7977d448fc7dc622f27f1536e8931017921a2df4be7a",
+    "articles_202602.parquet": "048e0f9a60fc7dd08d50c1e78c0734e095d5b8db6e237bd482afce99e2cb909f",
+    "articles_202603.parquet": "a6e2c67f8bb6a261223b94405d63d1fbf0247c124c7ab492736ba235b2716a2d",
+    "articles_202604.parquet": "2c330b3eab1c2df7f4a7da130cf77bce636bab5e263480354fed69736c7b6118",
+    "articles_202605.parquet": "e266b6930101347103841b2e2d3c3c09db417703bf485b018f13ef9e207aa85f",
+    "articles_202606.parquet": "af6cffb59f91a19dc593f71dafac4061a177422dc4f416a40762c17864254500",
+    "articles_202607.parquet": "0f4e992b625a2723a7c51e350d09585e57608d3afbcaa4cd4aca6fd7139102c2",
+    "articles_202608.parquet": "23f4ff9651f3f81c20e2fde79264a0547ea99bbae75fcbc3a7fc60745b6ce208",
+    "articles_202609.parquet": "2b18d52bd617ca5fd4bcf7375e676881685b03af8bc2d7549d120739e40f7958",
+    "articles_202610.parquet": "d36742f6b8981ba45169ec1b6948ec9b74405b1b4da66c2c162f20c1f391fbde",
+    "events.parquet": "127b0f37e0f58808fa674a64e399cb7897bbe4ce6c88cdb9581e776b69ebe5fc"
+  },
+  "code_commit": "83e917f0dfc4c0bc64f105b33bb2e70c3b4ab438",
+  "polars_version": "2.0.0"
+}

@@ -101,3 +101,26 @@ Muestra nueva de 150 artículos elegibles: 30 por familia, mitad con título rea
 - Las 5 familias tienen **relevancia alta** (95 %). La **familia acierta en 7 de cada 10**.
 - La dirección sigue sin ser fiable (50 %). Se mantiene fuera de la señal (ADR-032).
 - Con 30 por familia, los intervalos siguen siendo de unos ±15 puntos.
+
+## Capa `events-v3` construida (commit 83e917f, 13 min)
+- **Totales:**
+  - 12.002.831 artículos;
+  - **115.930 elegibles** (eran 254.584 en v2), todos de las 5 familias;
+  - **20.312 eventos** (eran 49.810).
+- **Duplicados entre los artículos directos:**
+
+  | Origen del titular | v2 | v3 |
+  |---|---|---|
+  | Titular de la URL (2018-01 → 2019-08) | 1,8 % | **23,1 %** |
+  | Título real | 44,1 % | 44,2 % |
+
+- **Riesgo residual:** la diferencia que queda entre las dos épocas (23 % frente a 44 %) sigue siendo un cambio de régimen en los conteos por evento.
+  - En F4, las features de volumen (`event_seq`, `event_sources_so_far`) necesitarán un indicador de época o normalizarse por época.
+  - Si no, el modelo puede aprender la época en lugar de la noticia.
+
+## Decisión requerida (puerta G2)
+- **Aprobar G2 con `events-v3` (recomendado):**
+  - relevancia del 95 % y familia correcta en el 71 % de las 5 familias;
+  - sin dirección de las reglas como señal;
+  - con el riesgo de época anotado para F4.
+- **No aprobar:** mejorar las reglas de familia (sobre todo explosión frente a conflicto) y volver a medir.
