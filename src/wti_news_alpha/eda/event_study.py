@@ -17,6 +17,7 @@ Invariantes:
 - Un evento solo usa barras hasta el final de su ventana (test de propiedad).
 """
 
+import bisect
 import random
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
@@ -190,3 +191,73 @@ def check_research_only(events: pl.DataFrame, *, sealed_start: datetime) -> None
     ).height
     if bad:
         raise SealedTestError(f"{bad} eventos tocan el periodo sellado (ADR-036)")
+
+
+def cell_percentile(value: float, pool_sorted: list[float]) -> float:
+    """Percentil (rango medio, empates a la mitad) de ``value`` en ``pool_sorted`` (ascendente).
+
+    Bajo la hipótesis nula (el evento se comporta como sus momentos comparables) es
+    ~U(0, 1), con media 0,5, sea cual sea la escala de la celda.
+    """
+    if not pool_sorted:
+        raise SchemaError("percentil: celda de comparación vacía")
+    lo = bisect.bisect_left(pool_sorted, value)
+    hi = bisect.bisect_right(pool_sorted, value)
+    return (lo + hi) / 2 / len(pool_sorted)
+
+
+@dataclass(frozen=True)
+class PercentileTest:
+    mean: float
+    lo: float
+    hi: float
+    p_greater: float
+    n: int
+    n_blocks: int
+
+
+def percentile_test(
+    u: list[float], blocks: list[str], *, n_boot: int, seed: int, level: float = 0.95
+) -> PercentileTest:
+    """Media de los percentiles frente a 0,5, con bootstrap por bloques (revisión F5: los
+    eventos del mismo día o semana no son independientes; el sorteo instante a instante
+    subestimaba la varianza).
+
+    ``p_greater``: bootstrap centrado, ``(1 + #{m* - m ≥ m - 0,5}) / (n_boot + 1)``.
+    Determinista: bloques ordenados y semilla fija.
+    """
+    if not u or len(u) != len(blocks):
+        raise SchemaError("percentiles vacíos o desalineados con los bloques")
+    groups: dict[str, list[float]] = {}
+    for x, g in zip(u, blocks, strict=True):
+        groups.setdefault(g, []).append(x)
+    keys = sorted(groups)
+    sums = {k: (sum(groups[k]), len(groups[k])) for k in keys}
+    rng = random.Random(seed)  # noqa: S311 (bootstrap, no criptografía)
+    mean = sum(u) / len(u)
+    boots = []
+    for _ in range(n_boot):
+        tot = cnt = 0.0
+        for k in rng.choices(keys, k=len(keys)):
+            s, c = sums[k]
+            tot += s
+            cnt += c
+        boots.append(tot / cnt)
+    boots.sort()
+    a = (1 - level) / 2
+    lo, hi = boots[int(a * n_boot)], boots[min(n_boot - 1, int((1 - a) * n_boot))]
+    excess = mean - 0.5
+    p = (1 + sum(1 for b in boots if b - mean >= excess)) / (n_boot + 1)
+    return PercentileTest(mean, lo, hi, p, len(u), len(keys))
+
+
+def bh_qvalues(pvals: list[float]) -> list[float]:
+    """Benjamini-Hochberg: q-valores en el orden de entrada (CLAUDE.md §11.4)."""
+    m = len(pvals)
+    order = sorted(range(m), key=lambda i: (pvals[i], i))
+    q = [0.0] * m
+    running = 1.0
+    for rank, i in reversed(list(enumerate(order, start=1))):
+        running = min(running, pvals[i] * m / rank)
+        q[i] = running
+    return q

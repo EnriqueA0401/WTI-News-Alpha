@@ -149,3 +149,32 @@ def test_property_future_beyond_window_is_irrelevant(minutes: list[int], t0: int
     horizon_end = T0 + (t0 + 1 + 5 + 15 + 15) * M  # latencia + espera máx. + horizonte máx.
     trunc = es.event_returns(ev, bars.filter(pl.col("available_at") <= horizon_end), p)
     assert full.equals(trunc)
+
+
+def test_cell_percentile_mid_rank() -> None:
+    pool = [1.0, 2.0, 2.0, 3.0]
+    assert es.cell_percentile(0.5, pool) == 0.0
+    assert es.cell_percentile(2.0, pool) == 0.5  # empates a la mitad
+    assert es.cell_percentile(9.0, pool) == 1.0
+    with pytest.raises(SchemaError):
+        es.cell_percentile(1.0, [])
+
+
+def test_percentile_test_null_and_effect() -> None:
+    rng = __import__("random").Random(3)
+    null = [rng.random() for _ in range(400)]
+    days = [f"d{i // 4}" for i in range(400)]
+    t0 = es.percentile_test(null, days, n_boot=400, seed=1)
+    assert t0.n_blocks == 100
+    assert t0.p_greater > 0.05
+    shifted = [min(1.0, x + 0.1) for x in null]
+    t1 = es.percentile_test(shifted, days, n_boot=400, seed=1)
+    assert t1.p_greater < 0.01
+    assert t1.lo > 0.5
+    assert es.percentile_test(shifted, days, n_boot=400, seed=1) == t1  # determinista
+    with pytest.raises(SchemaError):
+        es.percentile_test([], [], n_boot=10, seed=1)
+
+
+def test_bh_qvalues_hand_case() -> None:
+    assert es.bh_qvalues([0.01, 0.04, 0.03, 0.005]) == pytest.approx([0.02, 0.04, 0.04, 0.02])
