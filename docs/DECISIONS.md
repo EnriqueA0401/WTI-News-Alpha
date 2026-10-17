@@ -582,3 +582,8 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - largo: compra a `bid_e + spread_e + slip` y vende a `bid_x - slip`;
   - corto: vende a `bid_e - slip` y recompra a `bid_x + spread_x + slip`.
 - **Riesgo:** si el bróker cobra comisión, el caso base es optimista. Se reporta junto a 2× y 3×.
+
+## ADR-042 — Dependencias de modelado en F6 (2026-10-17)
+- **Contexto:** los controles sintéticos de F6 (CLAUDE.md §8.5) ejecutan la línea M3/M4 completa, así que necesitan el stack de modelos de §6.1 antes de F7.
+- **Decisión:** `scikit-learn` 1.9.1, `xgboost-cpu` 3.4.1 (sin GPU, más ligero) y `numpy` 2.5.4, fijados en `uv.lock`. Son gratuitas: sin coste ni registro.
+- `mypy` ignora la falta de stubs de `sklearn`, `xgboost` y `scipy`.

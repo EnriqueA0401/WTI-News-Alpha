@@ -7,12 +7,15 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "duckdb",
     "httpx",
+    "numpy>=2.5.4",
     "pandera[polars]",
     "polars",
     "pyarrow",
     "pydantic>=2",
     "pyyaml",
+    "scikit-learn>=1.9.1",
     "typer",
+    "xgboost-cpu>=3.4.1",
 ]
 
 [project.scripts]
@@ -54,6 +57,11 @@ strict = true
 python_version = "3.12"
 files = ["src"]
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# Sin stubs publicados (F6/F7, ADR-042).
+module = ["sklearn.*", "xgboost.*", "scipy.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
