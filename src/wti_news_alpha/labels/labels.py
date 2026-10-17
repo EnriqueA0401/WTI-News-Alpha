@@ -9,8 +9,9 @@ Invariantes:
 - **Sellado (ADR-036):** ningún ``decision_time`` puede estar en el sellado (``SealedTestError``)
   y toda etiqueta cuyo intervalo termina en él se anula. Las del sellado se calcularán en F10,
   detrás de la guardia.
-- 3 clases: ``z = r / sigma`` (sigma = volatilidad previa escalada, PIT); el umbral tau se ajusta **solo
-  con el train** de cada fold (``fit_threshold``) y se aplica después (``three_class``).
+- 3 clases: ``z = r / sigma`` (sigma = volatilidad previa escalada, PIT); el umbral tau se
+  ajusta **solo con el train** de cada fold (``fit_threshold``) y se aplica después
+  (``three_class``).
 """
 
 from dataclasses import dataclass
