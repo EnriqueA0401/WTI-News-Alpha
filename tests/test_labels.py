@@ -96,3 +96,14 @@ def test_three_class_threshold_fit_on_train_only() -> None:
     assert lb.three_class(test, tau).to_list() == [0, 1, -1, None]
     with pytest.raises(SchemaError):
         lb.fit_threshold(pl.Series("z", [None, None], dtype=pl.Float64), neutral_share=1 / 3)
+
+
+def test_label_input_errors() -> None:
+    grid = pl.DataFrame(
+        {"decision_time": [T0, T0 + timedelta(milliseconds=500)]},
+        schema={"decision_time": pl.Datetime("us", "UTC")},
+    )
+    with pytest.raises(SchemaError, match="segundo"):
+        lb.build_labels(grid, _bars([1, 2, 3]), P)
+    with pytest.raises(SchemaError, match="no válido"):
+        lb.fit_threshold(pl.Series("z", [0.0, 0.0, 1.0]), neutral_share=1 / 3)
