@@ -615,3 +615,11 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
 8. **Folds omitidos** (train < 100 filas): se devuelven y se reportan.
 9. **Aplazado a F9 (`label-v2`):** MFE/MAE con "lo adverso primero", retorno neto y bid/spread de salida. No hacen falta para la prueba principal en log loss.
 10. **Aceptado (bajo):** con empates, `fit_threshold` deja algo más de 1/3 en neutral. Es despreciable con n grande, y la fracción real se reporta.
+
+## ADR-044 — G4 aprobada y pre-registro H1 congelado (2026-10-17)
+- **Contexto:** F6 cerrada (`reports/G4_etiquetas_splits.md`): controles sintéticos y placebo real se comportan como se espera.
+- **Decisión del usuario:** aprobar G4 y congelar `preregistration/H1.yaml` (`status: approved`) antes de ejecutar M4 con las noticias reales.
+- **Consecuencias:**
+  - F7 ejecuta exactamente lo pre-registrado: M0, M3 y M4 a 15 y 60 min, Holm sobre las 2 pruebas principales.
+  - El resultado no se ajusta: ni hiperparámetros, ni features, ni folds, ni criterios.
+  - Cualquier cambio posterior del pre-registro exige un ADR nuevo y se reporta.

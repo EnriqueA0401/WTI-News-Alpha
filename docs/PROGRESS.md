@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F6 hecha; **puerta G4 y pre-registro H1: decisión del usuario pendiente** (`reports/G4_etiquetas_splits.md`). G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F7 (modelos M0–M4) en curso. **G4 aprobada y pre-registro H1 congelado (ADR-044).** G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -21,7 +21,7 @@
 | Etiquetas `label-v1`, splitter, costes, guardia del sellado | Hecho y revisado (ADR-043) | `labels/`, `evaluation/sealed_guard.py` |
 | Línea M0/M3/M4, comparación DM/bootstrap | Hecho | `models/` |
 | Controles sintéticos y placebo real | Se comportan como se espera | `reports/G4_etiquetas_splits.md`, `reports/f6/placebo.json` |
-| Pre-registro H1 | **Borrador: pendiente de aprobación** | `preregistration/H1.yaml` |
+| Pre-registro H1 | Congelado (ADR-044) | `preregistration/H1.yaml` |
 
 ### F5: estado
 | Bloque | Estado | Salida |

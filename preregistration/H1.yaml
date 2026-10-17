@@ -1,12 +1,13 @@
-# Pre-registro H1 — BORRADOR (CLAUDE.md §11.1). Se congela con la aprobación del usuario en G4,
-# antes de ejecutar M3/M4 con noticias reales (F7). Cambiarlo después exige un ADR y se reporta.
-status: draft
+# Pre-registro H1 — CONGELADO (CLAUDE.md §11.1). Aprobado por el usuario en G4 (ADR-044), antes
+# de ejecutar M3/M4 con noticias reales (F7). Cambiarlo después exige un ADR y se reporta.
+status: approved
+approved_on: "2026-10-17"
 id: H1
 hypothesis: >
   Las features estructuradas de noticias (M4 = M3 + news_*) reducen la log loss OOS de la
   dirección en 3 clases frente a M3 (mercado + fundamentales + posicionamiento + calendario),
   en las mismas observaciones y folds.
-decisions: [ADR-036, ADR-037, ADR-040, ADR-041]
+decisions: [ADR-036, ADR-037, ADR-040, ADR-041, ADR-044]
 data:
   features: feat-v1
   labels: label-v1
