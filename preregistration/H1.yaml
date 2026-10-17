@@ -1,0 +1,44 @@
+# Pre-registro H1 — BORRADOR (CLAUDE.md §11.1). Se congela con la aprobación del usuario en G4,
+# antes de ejecutar M3/M4 con noticias reales (F7). Cambiarlo después exige un ADR y se reporta.
+status: draft
+id: H1
+hypothesis: >
+  Las features estructuradas de noticias (M4 = M3 + news_*) reducen la log loss OOS de la
+  dirección en 3 clases frente a M3 (mercado + fundamentales + posicionamiento + calendario),
+  en las mismas observaciones y folds.
+decisions: [ADR-036, ADR-037, ADR-040, ADR-041]
+data:
+  features: feat-v1
+  labels: label-v1
+  research_period: "2018-01-01 → 2020-12-31 y 2024-01-01 → 2025-06-30 (UTC)"
+  sealed_test: "2025-07-01 → 2026-08-01; solo F10, una vez, con este mismo pre-registro"
+target:
+  definition: "three_class(z), z = ret_h / (mkt_rv_60m · sqrt(h/60)); 1 si z > τ, -1 si z < -τ, 0 si no"
+  threshold: "τ = cuantil de |z| que deja 1/3 en neutral, ajustado solo con el train de cada fold"
+  entry: "cierre bid de la primera barra completa ≥ t + 1 min (ADR-037)"
+primary:
+  horizons_min: [15, 60]
+  horizon_notes:
+    60: "fijado antes de ver datos (PROTOCOL A8)"
+    15: "elegido tras ver F5 (ADR-040): informado por los datos; solo vale si se confirma OOS y en el sellado"
+  metric: "log loss media por fila (3 clases)"
+  comparison: "d = loss(M3) - loss(M4) por fila, media por día UTC; Diebold-Mariano con HAC (Newey-West), unilateral; IC por bootstrap de días (1.000, semilla 20261017)"
+  multiplicity: "Holm sobre las 2 pruebas principales a α = 0,05"
+  acceptance:
+    - "p_DM ajustado por Holm < 0,05 en al menos un horizonte"
+    - "media de d > 0 y el IC 95 % por bootstrap de días excluye 0 en ese horizonte"
+    - "d > 0 en al menos el 60 % de los folds trimestrales con test"
+    - "dejando fuera cada trimestre de test por turnos, la media de d sigue siendo > 0 en todos los casos"
+validation:
+  scheme: "walk-forward trimestral, ventana creciente; primer test 2019-01-01; último test hasta 2025-07-01"
+  purge: "fila de train solo si decision_time y label_end < test_start - 1 día"
+models:
+  M3: {groups: [mkt, wpsr, cot, fred, cal]}
+  M4: {groups: [mkt, wpsr, cot, fred, cal, news]}
+  learner: "XGBoost multiclase, hiperparámetros fijos de models/pipeline.py (sin búsqueda); semilla 7"
+secondary:
+  - "Tamaño: |ret_h| con error cuadrático, M4 frente a M3, mismos folds (BH aparte)"
+  - "H2: desglose por familia, régimen de volatilidad, época (slug/título) y año (BH)"
+  - "Horizontes 4 h, fin de sesión y 1-3 sesiones (exploratorios)"
+planned_tests: {primary: 2, secondary_estimate: 40}
+reporting: "Todas las corridas en runs/registry.csv, incluidas las fallidas; nº total de configuraciones probadas"
