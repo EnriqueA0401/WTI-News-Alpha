@@ -12,6 +12,8 @@ Invariantes:
 - Revisión F6: el log debe estar dentro del repo; si falta pero existe en ``HEAD``, falla
   (borrarlo no reinicia el contador). Un ``SealedAccess`` solo lo crea ``open``. Tras cada
   acceso hay que **commitear el log**: un log sin commitear podría reescribirse entero.
+- ``require_approved_prereg`` (F7): el pre-registro debe estar commiteado, sin cambios y con
+  ``status: approved``; devuelve su sha256 para registrarlo con cada corrida.
 """
 
 import hashlib
@@ -22,6 +24,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import polars as pl
+import yaml
 
 from wti_news_alpha.errors import SealedTestError
 from wti_news_alpha.timeutils import require_utc_column
@@ -88,6 +91,14 @@ class SealedGuard:
         if _git(self.repo, "diff", "--quiet", "HEAD", "--", self.prereg).returncode != 0:
             raise SealedTestError(f"pre-registro {self.prereg} con cambios sin commitear")
         return hashlib.sha256((self.repo / self.prereg).read_bytes()).hexdigest()
+
+    def require_approved_prereg(self) -> str:
+        """sha256 del pre-registro si está commiteado, sin cambios y aprobado."""
+        sha = self._prereg_sha()
+        doc = yaml.safe_load((self.repo / self.prereg).read_text(encoding="utf-8"))
+        if not isinstance(doc, dict) or doc.get("status") != "approved":
+            raise SealedTestError(f"el pre-registro {self.prereg} no está aprobado")
+        return sha
 
     def _history(self) -> list[dict[str, object]]:
         rel = self.log.relative_to(self.repo).as_posix()

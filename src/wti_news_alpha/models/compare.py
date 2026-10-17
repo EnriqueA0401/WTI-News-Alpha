@@ -8,6 +8,9 @@
      t de Student de n-1 grados de libertad.
 - Mínimo ``MIN_DAYS`` días: con menos, el tamaño de las pruebas no es fiable (revisión F6).
 - Determinista: días ordenados y semilla fija.
+- ``holm``: p ajustados de Holm (paso descendente, monótonos, tope 1) para las pruebas
+  principales; ``group_means`` y ``leave_one_group_out`` para los criterios por fold del
+  pre-registro (media de la serie diaria por grupo y sin cada grupo).
 """
 
 import math
@@ -103,3 +106,41 @@ def compare_losses(
     p_boot = (1 + sum(1 for b in boots if b - mean >= mean)) / (n_boot + 1)
     stat, p_dm = diebold_mariano(daily)
     return Comparison(mean, lo, hi, p_boot, stat, p_dm, len(diffs), len(daily))
+
+
+def holm(pvals: dict[str, float]) -> dict[str, float]:
+    """p ajustados de Holm-Bonferroni (FWER), en el mismo orden de claves."""
+    if not pvals:
+        raise SchemaError("Holm sin pruebas")
+    m = len(pvals)
+    order = sorted(pvals, key=lambda k: (pvals[k], k))
+    out: dict[str, float] = {}
+    running = 0.0
+    for i, k in enumerate(order):
+        running = max(running, min(1.0, (m - i) * pvals[k]))
+        out[k] = running
+    return {k: out[k] for k in pvals}
+
+
+def _grouped(daily: list[float], groups: list[str]) -> dict[str, list[float]]:
+    if not daily or len(daily) != len(groups):
+        raise SchemaError("serie diaria vacía o desalineada con los grupos")
+    acc: dict[str, list[float]] = {}
+    for v, g in zip(daily, groups, strict=True):
+        acc.setdefault(g, []).append(v)
+    return acc
+
+
+def group_means(daily: list[float], groups: list[str]) -> dict[str, float]:
+    """Media de la serie diaria dentro de cada grupo (p. ej. fold trimestral)."""
+    acc = _grouped(daily, groups)
+    return {g: sum(acc[g]) / len(acc[g]) for g in sorted(acc)}
+
+
+def leave_one_group_out(daily: list[float], groups: list[str]) -> dict[str, float]:
+    """Media de la serie diaria sin cada grupo, por turnos."""
+    acc = _grouped(daily, groups)
+    if len(acc) < 2:
+        raise SchemaError("dejar-un-grupo-fuera con un solo grupo")
+    total, n = sum(daily), len(daily)
+    return {g: (total - sum(acc[g])) / (n - len(acc[g])) for g in sorted(acc)}

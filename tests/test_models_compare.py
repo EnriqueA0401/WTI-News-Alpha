@@ -60,3 +60,23 @@ def test_size_under_autocorrelated_null() -> None:
         rej_bs += res.p_bootstrap < 0.05
     assert rej_dm / reps < 0.12
     assert rej_bs / reps < 0.12
+
+
+def test_holm_hand_case() -> None:
+    # Orden 0,01 · 0,03 · 0,04 → por 3, 2 y 1 = 0,03 · 0,06 · 0,04 → monótono: 0,03 · 0,06 · 0,06.
+    adj = compare.holm({"a": 0.01, "b": 0.04, "c": 0.03})
+    assert adj == pytest.approx({"a": 0.03, "c": 0.06, "b": 0.06})
+    assert compare.holm({"x": 0.6, "y": 0.7}) == {"x": 1.0, "y": 1.0}
+    with pytest.raises(SchemaError):
+        compare.holm({})
+
+
+def test_group_means_and_leave_one_group_out() -> None:
+    daily = [1.0, 2.0, 3.0, 4.0]
+    groups = ["q1", "q1", "q2", "q2"]
+    assert compare.group_means(daily, groups) == {"q1": 1.5, "q2": 3.5}
+    assert compare.leave_one_group_out(daily, groups) == {"q1": 3.5, "q2": 1.5}
+    with pytest.raises(SchemaError, match="un solo grupo"):
+        compare.leave_one_group_out([1.0], ["q1"])
+    with pytest.raises(SchemaError):
+        compare.group_means([1.0], ["a", "b"])

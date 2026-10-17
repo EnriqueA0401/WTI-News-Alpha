@@ -34,6 +34,10 @@ class SealedTestError(WNAError):
     """Intento de acceso al periodo de test sellado sin pre-registro y flag explícito."""
 
 
+class ModelFitError(WNAError):
+    """Un modelo no se pudo ajustar de forma fiable (p. ej. no converge)."""
+
+
 class SourceAccessError(WNAError):
     """Una fuente de datos no es accesible (red, bloqueo, credencial ausente)."""
 

@@ -12,18 +12,25 @@
 - **Modelo:** XGBoost multiclase con hiperparámetros fijos y semilla (sin búsqueda en esta
   fase). Las pérdidas OOS se guardan por fila para comparar modelos sobre las mismas filas.
   Los folds omitidos (train < ``MIN_TRAIN``) se devuelven en ``skipped``.
+- **M1 (F7):** logística multinomial L2 fija. ``linear_design`` imputa por la mediana del
+  train, añade indicadores de faltante y escala con media/desviación del train (nunca del
+  test); las celdas imputadas se cuentan por fold. Un aviso de no convergencia es
+  ``ModelFitError``.
 """
 
 import math
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import polars as pl
 import xgboost as xgb
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.linear_model import LogisticRegression
 
-from wti_news_alpha.errors import SchemaError, SealedTestError
+from wti_news_alpha.errors import ModelFitError, SchemaError, SealedTestError
 from wti_news_alpha.features import pit
 from wti_news_alpha.labels import labels, splits
 
@@ -32,26 +39,35 @@ EPS = 1e-12
 MIN_TRAIN = 100
 
 
+# Regularizado (revisión F6: con 200 árboles de profundidad 3, M3 quedaba peor que la
+# climatología con ruido puro). Fijos antes de cualquier corrida real.
+XGB_PARAMS: dict[str, Any] = {
+    "n_estimators": 150,
+    "max_depth": 2,
+    "learning_rate": 0.03,
+    "min_child_weight": 100,
+    "reg_lambda": 10.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 7,
+    "n_jobs": 4,
+    "tree_method": "hist",
+}
+# M1 (F7): L2 con C = 1 sobre features estandarizadas; fijos, sin búsqueda.
+LOGIT_PARAMS: dict[str, Any] = {"C": 1.0, "max_iter": 2000}
+
+
 @dataclass(frozen=True)
 class ModelSpec:
     name: str
     groups: tuple[str, ...]  # prefijos de columnas: "mkt", "wpsr", "cot", "fred", "cal", "news"
-    params: dict[str, Any] = field(
-        default_factory=lambda: {
-            # Regularizado (revisión F6: con 200 árboles de profundidad 3, M3 quedaba peor que
-            # la climatología con ruido puro). Fijos antes de cualquier corrida real.
-            "n_estimators": 150,
-            "max_depth": 2,
-            "learning_rate": 0.03,
-            "min_child_weight": 100,
-            "reg_lambda": 10.0,
-            "subsample": 0.8,
-            "colsample_bytree": 0.8,
-            "random_state": 7,
-            "n_jobs": 4,
-            "tree_method": "hist",
-        }
-    )
+    learner: Literal["xgb", "logit"] = "xgb"
+    params: dict[str, Any] = field(default_factory=dict)  # vacío: los fijos del aprendiz
+
+    def __post_init__(self) -> None:
+        if not self.params:
+            fixed = XGB_PARAMS if self.learner == "xgb" else LOGIT_PARAMS
+            object.__setattr__(self, "params", dict(fixed))
 
 
 def feature_columns(df: pl.DataFrame, spec: ModelSpec, allowed: frozenset[str]) -> list[str]:
@@ -95,9 +111,59 @@ def log_loss_rows(proba: np.ndarray, y: np.ndarray) -> np.ndarray:
 
 
 @dataclass(frozen=True)
+class LinearDesign:
+    train: np.ndarray
+    test: np.ndarray
+    n_imputed_train: int
+    n_imputed_test: int
+
+
+def linear_design(xtr: np.ndarray, xte: np.ndarray) -> LinearDesign:
+    """Imputación por mediana del train + indicadores de faltante + escalado del train.
+
+    Columnas de salida: las originales y después un indicador de faltante por columna. Las
+    columnas constantes en el train solo se centran (desviación 0 → divisor 1).
+    """
+    if not (np.isfinite(xtr) | np.isnan(xtr)).all() or not (np.isfinite(xte) | np.isnan(xte)).all():
+        raise SchemaError("valores infinitos en las features de M1")
+    miss_tr, miss_te = np.isnan(xtr), np.isnan(xte)
+    empty = miss_tr.all(axis=0)
+    if empty.any():
+        raise SchemaError(f"{int(empty.sum())} columnas sin datos en el train")
+    med = np.nanmedian(xtr, axis=0)
+    ztr = np.hstack([np.where(miss_tr, med, xtr), miss_tr.astype(float)])
+    zte = np.hstack([np.where(miss_te, med, xte), miss_te.astype(float)])
+    mu, sd = ztr.mean(axis=0), ztr.std(axis=0)
+    sd = np.where(sd > 0, sd, 1.0)
+    return LinearDesign((ztr - mu) / sd, (zte - mu) / sd, int(miss_tr.sum()), int(miss_te.sum()))
+
+
+def _fit_predict(
+    spec: ModelSpec, xtr: np.ndarray, ytr: np.ndarray, xte: np.ndarray
+) -> tuple[np.ndarray, tuple[int, int] | None]:
+    """Probabilidades de test (columnas -1, 0, 1) y, en M1, celdas imputadas (train, test)."""
+    if spec.learner == "xgb":
+        model = xgb.XGBClassifier(objective="multi:softprob", num_class=3, **spec.params)
+        model.fit(xtr, ytr)
+        proba: np.ndarray = model.predict_proba(xte)
+        return proba, None
+    d = linear_design(xtr, xte)
+    logit = LogisticRegression(**spec.params)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ConvergenceWarning)
+        try:
+            logit.fit(d.train, ytr)
+        except ConvergenceWarning as e:
+            raise ModelFitError(f"{spec.name}: la logística no converge") from e
+    proba = logit.predict_proba(d.test)
+    return proba, (d.n_imputed_train, d.n_imputed_test)
+
+
+@dataclass(frozen=True)
 class WalkForwardResult:
     predictions: pl.DataFrame
     skipped: list[int]
+    imputed: dict[int, tuple[int, int]] = field(default_factory=dict)  # M1: fold → (train, test)
 
 
 def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explícito
@@ -130,6 +196,7 @@ def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explí
     cols = feature_columns(df, spec, allowed)
     d = add_z(df, horizon_min)
     out, skipped = [], []
+    imputed: dict[int, tuple[int, int]] = {}
     for f in folds:
         tr = d.filter(f.train & pl.col("_z").is_not_null())
         te = d.filter(f.test & pl.col("_z").is_not_null())
@@ -141,9 +208,11 @@ def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explí
         yte = labels.three_class(te["_z"], tau).to_numpy()
         if len(set(ytr.tolist())) < len(CLASSES):
             raise SchemaError(f"fold {f.fold_id}: el train no tiene las 3 clases")
-        model = xgb.XGBClassifier(objective="multi:softprob", num_class=3, **spec.params)
-        model.fit(tr.select(cols).to_numpy(), ytr)
-        proba = model.predict_proba(te.select(cols).to_numpy())
+        proba, n_imp = _fit_predict(
+            spec, tr.select(cols).to_numpy(), ytr, te.select(cols).to_numpy()
+        )
+        if n_imp is not None:
+            imputed[f.fold_id] = n_imp
         loss = log_loss_rows(proba, yte)
         out.append(
             te.select(pit.DECISION).with_columns(
@@ -158,7 +227,8 @@ def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explí
         )
     if not out:
         raise SchemaError(f"{spec.name}: ningún fold con datos")
-    return WalkForwardResult(pl.concat(out).with_columns(model=pl.lit(spec.name)), skipped)
+    preds = pl.concat(out).with_columns(model=pl.lit(spec.name))
+    return WalkForwardResult(preds, skipped, imputed)
 
 
 def climatology_loss(

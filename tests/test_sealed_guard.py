@@ -1,6 +1,7 @@
 """Guardia del test sellado (CLAUDE.md §3.5, §7; ADR-036): sin pre-registro commiteado y flag
 explícito no se abre; cada acceso queda en un log append-only; el segundo se reporta."""
 
+import hashlib
 import json
 import subprocess
 from datetime import UTC, datetime
@@ -131,3 +132,20 @@ def test_deleted_committed_log_and_forged_access_and_outside_log(tmp_path: Path)
         sg.SealedAccess(1, False, WIN)
     with pytest.raises(SealedTestError, match="dentro del repo"):
         sg.SealedGuard(WIN, repo=repo, prereg="preregistration/H1.yaml", log=tmp_path / "x.jsonl")
+
+
+def test_require_approved_prereg(tmp_path: Path) -> None:
+    repo = _repo(tmp_path, commit_prereg=True)
+    g = _guard(repo)
+    with pytest.raises(SealedTestError, match="no está aprobado"):
+        g.require_approved_prereg()
+    prereg = repo / "preregistration" / "H1.yaml"
+    prereg.write_text("status: approved\n")
+    with pytest.raises(SealedTestError, match="sin commitear"):
+        g.require_approved_prereg()
+    _git(repo, "commit", "-q", "-am", "approve")
+    assert g.require_approved_prereg() == hashlib.sha256(prereg.read_bytes()).hexdigest()
+    prereg.write_text("- no es un mapa\n")
+    _git(repo, "commit", "-q", "-am", "broken")
+    with pytest.raises(SealedTestError, match="no está aprobado"):
+        g.require_approved_prereg()
