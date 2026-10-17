@@ -14,6 +14,6 @@ time_basis:
   status: approved
   source_ref: "docs/PROTOCOL.md A2"
 session_end_reference:
-  value: settlement
+  value: globex_close
   status: approved
-  source_ref: "docs/PROTOCOL.md A3"
+  source_ref: "ADR-037 (usuario, 2026-10-17): fin de sesión = pausa diaria 17:00 ET, verificada en Darwinex (ADR-019); sustituye a settlement 14:30 (PROTOCOL A3), cuya hora no está verificada"

@@ -513,3 +513,12 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
      - Las etiquetas cuyo intervalo termina dentro del sellado se purgan.
   2. Solo se abre una vez, en F10, tras el pre-registro aprobado por el usuario (CLAUDE.md §3.5, §11.4).
   3. Cambiar la ventana es un punto de parada (CLAUDE.md §4).
+
+## ADR-037 — Fin de sesión 17:00 ET y latencia de 1 min (usuario, 2026-10-17)
+- **Contexto:** la hora del settlement (14:30 ET) no está verificada (`config/sessions.yaml`). La pausa diaria de las 17:00 ET sí lo está en Darwinex (ADR-019).
+- **Decisión del usuario (opciones recomendadas):**
+  1. **Fin de sesión:** la pausa diaria de las 17:00 ET (`session_end_reference: globex_close`). Sustituye a PROTOCOL A3 (settlement).
+  2. **Latencia:** 1 min. La entrada es el cierre de la primera barra completa disponible tras `t0 + 1 min`. Ya figuraba como `latency_seconds: 60` en `config/costs.yaml`.
+- **Consecuencias:**
+  - el retorno "a fin de sesión" se mide hasta la última barra antes de las 17:00 ET;
+  - las etiquetas de F6 usan la misma definición.
