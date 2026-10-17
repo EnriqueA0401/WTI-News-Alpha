@@ -90,6 +90,22 @@ def url_slug_title(url: pl.Expr) -> pl.Expr:
     return best.str.replace_all(r"[-_]+", " ").str.strip_chars()
 
 
+def dedup_slug_title(url: pl.Expr) -> pl.Expr:
+    """Titular del slug solo para deduplicar (ADR-033), más estricto que ``url_slug_title``.
+
+    - Solo el último segmento de la URL canónica (no secciones como
+      ``international-news-and-politics``); así ``.amp``/``/amp`` coinciden con la URL normal.
+    - Sin quitar números finales: ``...-above-70`` ≠ ``...-above-80``, y las plantillas
+      ``index-id-news-146483`` ≠ ``...-146516``.
+    - Nulo si el segmento no tiene al menos 4 palabras (ids, fechas, secciones cortas).
+    """
+    path = canonical_url(url).str.replace(r"^[^/?#]*", "").str.replace(r"[?#].*$", "")
+    last = path.str.extract(r"([^/]+)$", 1).str.replace(_SLUG_EXT, "")
+    return pl.when(last.str.count_matches(r"[a-zA-Z0-9]+[-_]") >= 3).then(
+        last.str.replace_all(r"[-_]+", " ").str.strip_chars()
+    )
+
+
 def normalized_title(title: pl.Expr) -> pl.Expr:
     """Título en minúsculas, sin sufijo de medio (`` - Medio``/`` | Medio``) ni puntuación.
 
@@ -115,7 +131,7 @@ def dedup_keys(df: pl.DataFrame) -> pl.DataFrame:
     canon = canonical_url(pl.col("url"))
     # Sin título (GDELT 2018-01 → 2019-08), el titular del slug: las copias sindicadas
     # comparten slug (ADR-033).
-    title = normalized_title(pl.coalesce(pl.col("title"), url_slug_title(pl.col("url"))))
+    title = normalized_title(pl.coalesce(pl.col("title"), dedup_slug_title(pl.col("url"))))
     return df.with_columns(
         _url_ok=(canon.is_not_null() & (canon != "")).fill_null(False),
         _url_key=canon.hash(seed=0),

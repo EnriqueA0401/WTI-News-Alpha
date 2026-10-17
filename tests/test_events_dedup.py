@@ -249,3 +249,54 @@ def test_slug_titles_deduplicate_when_title_missing() -> None:
         None,
     ]
     assert out["dup_of"].to_list() == [None, "a", "a", None, None, None]
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        (
+            "https://www.reuters.com/article/us-oil/oil-rises-on-opec-cuts-idUSKCN1VX0AB",
+            "oil rises on opec cuts idUSKCN1VX0AB",
+        ),
+        # Revisión adversarial (ADR-033): sección más larga que el titular → solo el último.
+        ("https://rabble.ca/babble/international-news-and-politics/race-war-iran", None),
+        # Los números finales no se quitan.
+        ("https://x.com/oil-prices-climb-above-70", "oil prices climb above 70"),
+        (
+            "https://b24.com/index-id-news-sc-national-byo-146483.html",
+            "index id news sc national byo 146483",
+        ),
+        # .amp como la URL normal.
+        (
+            "https://x.com/news/oil-prices-rise-on-opec-output-cuts.amp",
+            "oil prices rise on opec output cuts",
+        ),
+        ("https://x.com/news/12345", None),
+        (None, None),
+    ],
+)
+def test_dedup_slug_title(url: str | None, expected: str | None) -> None:
+    got = pl.DataFrame({"u": [url]}, schema={"u": pl.Utf8}).select(dd.dedup_slug_title(pl.col("u")))
+    assert got.item() == expected
+
+
+def test_slug_dedup_review_cases() -> None:
+    """Revisión adversarial (ADR-033): historias distintas no se colapsan; .amp sí."""
+    df = _df(
+        [
+            ("a", 0, "x.com", "https://x.com/markets-commodities-energy-news/opec-cuts", None),
+            (
+                "b",
+                15,
+                "x.com",
+                "https://x.com/markets-commodities-energy-news/iran-sanctions",
+                None,
+            ),
+            ("c", 30, "x.com", "https://x.com/oil-prices-climb-above-70", None),
+            ("d", 45, "y.com", "https://y.com/oil-prices-climb-above-80", None),
+            ("e", 60, "z.com", "https://z.com/news/oil-prices-rise-on-opec-output-cuts", None),
+            ("f", 75, "z.com", "https://z.com/news/oil-prices-rise-on-opec-output-cuts.amp", None),
+        ]
+    )
+    out = dd.mark_duplicates(df, WIN).sort("article_id")
+    assert out["dup_kind"].to_list() == [None, None, None, None, None, "url"]

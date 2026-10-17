@@ -455,6 +455,11 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
 - **Hallazgo (segunda muestra de G2):** de 2018-01 a 2019-08 GDELT no trae título, y la deduplicación por título no veía las copias sindicadas.
   - Medido en `events-v2`: en las 5 familias con eventos, 30.115 de 74.721 artículos elegibles con titular de slug son copias del mismo slug (26.463 de ellas en menos de 48 h).
   - Consecuencia: en 2018-2019 se inflaban `event_seq`, `event_sources_so_far` y el número de eventos, frente a 2019-09 en adelante. Es un cambio de régimen artificial en las futuras features.
-- **Corrección:** la clave de título usa `coalesce(título, titular del slug)`. Hay un test de regresión (`test_slug_titles_deduplicate_when_title_missing`).
+- **Corrección:** la clave de título usa `coalesce(título, dedup_slug_title(url))`. Hay un test de regresión (`test_slug_titles_deduplicate_when_title_missing`).
+- **Revisión adversarial del arreglo:** sin fugas ni efectos en el test de truncamiento. Encontró dos problemas medios y uno bajo, corregidos con una clave de slug propia y más estricta (`dedup_slug_title`), que no cambia lo que ven las reglas:
+  1. el slug elegido podía ser el nombre de una sección o una plantilla con id → ahora se usa solo el último tramo de la URL canónica, y debe tener al menos 4 palabras;
+  2. al quitar el número final se fusionaban "above 70" y "above 80", y los informes diarios fechados → ya no se quita ningún número; las re-publicaciones de WordPress (`-2`) quedan sin detectar, que es lo conservador;
+  3. `.amp` frente a la URL normal → el slug se calcula sobre la URL canónica.
+  - Riesgo bajo aceptado: si una copia tiene título real y la otra solo slug, únicamente coinciden cuando son el mismo texto.
 - **Versión:** entra en `events-v3`, que aún no estaba publicada. `events-v2` queda como está y no se usa para features.
 - **Proceso:** el test de `events-v2` tenía la versión fija y falló tras el cambio de configuración; ahora lee la versión de la configuración.
