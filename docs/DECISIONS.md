@@ -522,3 +522,28 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
 - **Consecuencias:**
   - el retorno "a fin de sesión" se mide hasta la última barra antes de las 17:00 ET;
   - las etiquetas de F6 usan la misma definición.
+
+## ADR-038 — Estudio de eventos: prueba de percentiles calibrada (revisión adversarial de F5, 2026-10-17)
+- **Hallazgos de la revisión:**
+  1. (Alto) los placebos no eran reproducibles: un `group_by` sin orden alteraba el uso de la semilla;
+  2. (Alto) los p-valores eran optimistas a fin de sesión y a 1–3 sesiones. El placebo sorteaba instantes sueltos, pero los eventos se agrupan por días y sus ventanas se solapan. Con eventos falsos agrupados como los reales salían entre un 16 % y un 32 % de falsos positivos a p ≤ 0,05;
+  3. lectura de EIA no respaldada;
+  4. contradicción en el informe;
+  5. análisis del plan sin hacer;
+  6. eventos y placebo medidos sobre conjuntos distintos;
+  7. volatilidad previa a veces antigua;
+  8. máscara dependiente del orden de filas;
+  9. etiquetas de las tablas.
+- **Nuevo método:**
+  - cada evento se sitúa en el **percentil** de su |retorno| dentro de su celda de instantes comparables. Bajo la hipótesis nula la media es 0,5;
+  - bootstrap por **días** (intradía y fin de sesión) o por **semanas ISO** (1 y 3 sesiones);
+  - BH por variante;
+  - sin sorteos, con salidas deterministas: dos ejecuciones dan el mismo sha256.
+- **Sesgo nuevo detectado al calibrar:** el 99,9 % de los eventos cae en un cuarto de hora exacto (:00/:15/:30/:45, por los ficheros GDELT), donde la volatilidad es mayor. Las celdas emparejan el **minuto exacto** (antes, solo la hora).
+- **Calibración** con eventos falsos agrupados por días (40 repeticiones, OPEP+ y conflicto): ≤ 5 % de falsos positivos a p ≤ 0,05 en los 5 horizontes probados.
+- **Desviaciones del plan FASE_05:**
+  - emparejamiento por minuto exacto, en lugar de hora ± 30 min;
+  - sin sorteos de placebo;
+  - **no hechos** (se aplazan, sin impacto en la decisión de G3): RV posterior frente a previa, tiempo hasta 1×ATR y hasta la retracción a la mitad, segmentos por novedad, nº de fuentes y sesión Asia/Europa/EE. UU., y el control de pseudo-eventos de baja relevancia;
+  - MFE/MAE se calcula pero no se reporta.
+- La volatilidad previa usa una tolerancia de 10 min, y el pool se une por `t0`.
