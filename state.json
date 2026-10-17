@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-17T17:45:01.206145Z",
+   "last_check_utc": "2026-10-17T17:50:01.376877Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -10,7 +10,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-17T17:45:00.924938Z",
+   "last_check_utc": "2026-10-17T17:50:01.099424Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00"
@@ -18,14 +18,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-17T17:45:00.722119Z",
+   "last_check_utc": "2026-10-17T17:50:00.764159Z",
    "seen": [
-    "20261017090000.gkg.csv.zip|available",
-    "20261017091500.gkg.csv.zip|available",
-    "20261017094500.export.CSV.zip|listed|5a1db0f63220c10414de5a1ebad4fa65",
-    "20261017094500.export.CSV.zip|available",
-    "20261017094500.mentions.CSV.zip|listed|99f04b8d2212dc7cbd3922b905dfa93a",
-    "20261017094500.mentions.CSV.zip|available",
     "20261017094500.gkg.csv.zip|listed|2ee680e92f504f184a0ae14b679b3395",
     "20261017094500.gkg.csv.zip|available",
     "20261017100000.export.CSV.zip|listed|b9140980af9441b05235788694750bd1",
@@ -219,11 +213,17 @@
     "20261017174500.mentions.CSV.zip|listed|d3d797b6618c1a1052362d2bca0cc3f1",
     "20261017174500.mentions.CSV.zip|available",
     "20261017174500.gkg.csv.zip|listed|31bd90069515f4b62e2fcc710888ccb9",
-    "20261017174500.gkg.csv.zip|available"
+    "20261017174500.gkg.csv.zip|available",
+    "20261017180000.export.CSV.zip|listed|2d10d296c269781af52a2c3ddf88af40",
+    "20261017180000.export.CSV.zip|available",
+    "20261017180000.mentions.CSV.zip|listed|264e39b541d9230b3e5e0c5a7ccfe197",
+    "20261017180000.mentions.CSV.zip|available",
+    "20261017180000.gkg.csv.zip|listed|959864b09b972d0d587acc42bdb03c93",
+    "20261017180000.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-10-17T17:45:00+00:00"
+    "last_nominal": "2026-10-17T18:00:00+00:00"
    }
   }
  }
