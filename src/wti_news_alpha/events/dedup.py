@@ -144,27 +144,21 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
         raise SchemaError(f"faltan columnas para deduplicar: {sorted(missing)}")
     if df["article_id"].is_duplicated().any():
         raise SchemaError("article_id duplicado")
-    d = df.sort(*ORDER)
-    fa = pl.col("first_available_at")
-
-    def session(keys: list[str]) -> pl.Expr:
-        gap = fa - fa.shift(1).over(keys)
-        return (gap > title_window).fill_null(True).cast(pl.UInt32).cum_sum().over(keys)
-
-    d = d.with_columns(_s_st=session(["_src_key", "_title_key"]), _s_t=session(["_title_key"]))
+    d = df.sort(*ORDER).with_row_index("_pos")
+    title_ok, url_ok = pl.col("_title_ok"), pl.col("_url_ok")
     d = d.with_columns(
+        _s_st=_session_ids(d, ["_src_key", "_title_key"], title_window),
+        _s_t=_session_ids(d, ["_title_key"], title_window),
         # Misma URL con titular distinto = actualización que puede cambiar el hecho: no se
         # colapsa (CLAUDE.md §7). Con título, la clave de URL incluye el título.
-        _f_url=pl.when(pl.col("_url_ok") & pl.col("_title_ok"))
-        .then(pl.col("article_id").first().over("_url_key", "_title_key"))
-        .when(pl.col("_url_ok"))
-        .then(pl.col("article_id").first().over("_url_key", "_title_ok")),
-        _f_st=pl.when(pl.col("_title_ok")).then(
-            pl.col("article_id").first().over("_src_key", "_title_key", "_s_st")
-        ),
-        _f_t=pl.when(pl.col("_title_ok")).then(
-            pl.col("article_id").first().over("_title_key", "_s_t")
-        ),
+        _url_group=pl.when(title_ok)
+        .then(pl.struct("_url_key", "_title_key").hash(seed=0))
+        .otherwise(pl.col("_url_key").hash(seed=1)),
+    )
+    d = d.with_columns(
+        _f_url=_first_per_group(d, ["_url_group"], url_ok),
+        _f_st=_first_per_group(d, ["_src_key", "_title_key", "_s_st"], title_ok),
+        _f_t=_first_per_group(d, ["_title_key", "_s_t"], title_ok),
     )
     is_url = (pl.col("_f_url") != pl.col("article_id")).fill_null(False)
     is_st = (pl.col("_f_st") != pl.col("article_id")).fill_null(False)
@@ -184,8 +178,30 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
         .when(is_t)
         .then(pl.col("_f_t"))
         .otherwise(pl.lit(None, dtype=pl.Utf8)),
-    ).drop(*KEY_COLUMNS, "_s_st", "_s_t", "_f_url", "_f_st", "_f_t")
+    ).drop(*KEY_COLUMNS, "_pos", "_s_st", "_s_t", "_url_group", "_f_url", "_f_st", "_f_t")
     return resolve_roots(out)
+
+
+def _session_ids(d: pl.DataFrame, keys: list[str], window: timedelta) -> pl.Series:
+    """Id de racha: misma clave y huecos ≤ ``window`` entre artículos consecutivos.
+
+    ``d`` debe venir ordenado por ``ORDER`` con ``_pos``. Vectorizado (orden + desplazamiento),
+    sin funciones de ventana por grupo, que son lentas con millones de grupos.
+    """
+    s = d.select(*keys, "first_available_at", "_pos").sort(*keys, "_pos")
+    same_key = pl.all_horizontal([pl.col(k) == pl.col(k).shift(1) for k in keys])
+    gap = pl.col("first_available_at") - pl.col("first_available_at").shift(1)
+    new = (~same_key | (gap > window)).fill_null(True)
+    return s.with_columns(_sid=new.cast(pl.UInt32).cum_sum()).sort("_pos")["_sid"]
+
+
+def _first_per_group(d: pl.DataFrame, keys: list[str], mask: pl.Expr) -> pl.Series:
+    """``article_id`` del primer artículo (menor ``_pos``) de su grupo entre las filas con
+    ``mask``; nulo en las demás."""
+    first = d.filter(mask).group_by(keys).agg(_first=pl.col("article_id").sort_by("_pos").first())
+    joined = d.select(*keys, "_pos", _m=mask).join(first, on=keys, how="left", validate="m:1")
+    joined = joined.sort("_pos")
+    return joined.select(pl.when(pl.col("_m")).then(pl.col("_first")))["_first"]
 
 
 def resolve_roots(df: pl.DataFrame, max_depth: int = 10) -> pl.DataFrame:
