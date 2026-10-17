@@ -95,7 +95,9 @@ def cot_features(grid: pl.DataFrame, cot: pl.DataFrame) -> pl.DataFrame:
 
 def fred_stream(fred: pl.DataFrame, series_id: str) -> pl.DataFrame:
     """Flujo de "última observación publicada" de una serie, por ``available_at``."""
-    s = fred.filter(pl.col("series_id") == series_id).sort(AT, "obs_date")
+    # Las observaciones sin valor (festivos: "." en FRED) no son "el último dato".
+    s = fred.filter((pl.col("series_id") == series_id) & pl.col("value").is_not_null())
+    s = s.sort(AT, "obs_date")
     s = s.with_columns(_latest=pl.col("obs_date").cum_max())
     s = s.filter(pl.col("obs_date") == pl.col("_latest"))
     return s.group_by(AT, maintain_order=True).last().select(AT, "obs_date", "value")

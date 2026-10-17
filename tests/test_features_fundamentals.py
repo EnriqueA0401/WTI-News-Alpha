@@ -125,6 +125,14 @@ def test_fred_latest_observation_with_revisions() -> None:
     pit.check_no_leakage(out)
 
 
+def test_fred_holiday_without_value_is_not_latest() -> None:
+    a1 = datetime(2024, 6, 18, 21, 15, tzinfo=UTC)
+    rows = [("S", date(2024, 6, 18), 2.3, a1), ("S", date(2024, 6, 19), None, a1 + timedelta(1))]
+    out = fu.fred_features(_grid([a1 + timedelta(days=1, hours=1)]), _fred(rows))  # type: ignore[arg-type]
+    assert out["fred_S_value"].to_list() == [2.3]
+    assert out["fred_S_obs_lag_d"].to_list() == [1]
+
+
 @settings(max_examples=40, deadline=None)
 @given(
     st.lists(
