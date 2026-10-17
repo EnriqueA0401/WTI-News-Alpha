@@ -63,9 +63,27 @@ def article_id() -> pl.Expr:
     )
 
 
+def rule_title() -> pl.Expr:
+    """Título para las reglas: título limpio o, si falta, titular del slug de la URL."""
+    return pl.coalesce(dedup.clean_title(pl.col("title")), dedup.url_slug_title(pl.col("url")))
+
+
+def title_source() -> pl.Expr:
+    return (
+        pl.when(pl.col("title").is_not_null())
+        .then(pl.lit("title"))
+        .when(dedup.url_slug_title(pl.col("url")).is_not_null())
+        .then(pl.lit("url_slug"))
+        .otherwise(pl.lit(None, dtype=pl.Utf8))
+    )
+
+
 def compact_month(df: pl.DataFrame, rcfg: EventRulesConfig) -> pl.DataFrame:
     """Un mes normalizado → filas compactas con reglas y claves de deduplicación."""
-    out = rules.apply_rules(df, rcfg).with_columns(
+    ruled = rules.apply_rules(
+        df.with_columns(title=rule_title()).select("title", "url", "themes", "organizations"), rcfg
+    ).drop("title", "url", "themes", "organizations")
+    out = pl.concat([df, ruled], how="horizontal").with_columns(
         article_id=article_id(),
         country=cluster.primary_country(pl.col("locations")),
     )
@@ -77,13 +95,17 @@ def annotate(compact: pl.DataFrame, cfg: EventsConfig) -> pl.DataFrame:
     """Deduplica, decide la elegibilidad y agrupa en eventos todo el periodo."""
     window = timedelta(hours=cfg.title_dedup_window_hours.require("title_dedup_window_hours"))
     gap = timedelta(hours=cfg.event_gap_hours.require("event_gap_hours"))
+    span = timedelta(hours=cfg.event_max_span_hours.require("event_max_span_hours"))
     eligible_rel = cfg.eligible_relevance.require("eligible_relevance")
+    no_events = cfg.families_without_events.require("families_without_events")
     d = dedup.mark_duplicates(compact, window).with_columns(
         eligible=pl.col("relevance").is_in(eligible_rel)
         & pl.col("dup_kind").is_null()
         & pl.col("exclude_reason").is_null()
+        & ~pl.col("family").is_in(no_events)
+        & (pl.col("country") != cluster.NO_COUNTRY)
     )
-    d = cluster.inherit_events(cluster.assign_events(d, gap))
+    d = cluster.inherit_events(cluster.assign_events(d, gap, span))
     return d.select(ANNOTATIONS)
 
 
@@ -149,6 +171,8 @@ def _writer(news_dir: Path, months: list[str], cfg: EventsConfig, rcfg: EventRul
         events = events_table(ann, fa)
         events.write_parquet(staging / "events.parquet", compression="zstd", statistics=True)
         keep = [
+            "title_source",
+            "rule_title",
             "source_file_ts",
             "row_in_file",
             "first_available_at",
@@ -160,8 +184,8 @@ def _writer(news_dir: Path, months: list[str], cfg: EventsConfig, rcfg: EventRul
         ]
         n_written = 0
         for m in months:
-            month = pl.read_parquet(news_dir / m, columns=keep).with_columns(
-                article_id=article_id()
+            month = pl.read_parquet(news_dir / m, columns=keep[2:]).with_columns(
+                article_id=article_id(), title_source=title_source(), rule_title=rule_title()
             )
             out = month.join(ann, on="article_id", how="inner", validate="1:1")
             if out.height != month.height:

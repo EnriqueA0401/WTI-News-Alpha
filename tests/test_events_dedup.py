@@ -64,6 +64,7 @@ def _df(rows: list[tuple[str, int, str, str, str | None]]) -> pl.DataFrame:
             "source_file_ts": pl.Datetime("us", "UTC"),
             "title": pl.Utf8,
             "url": pl.Utf8,
+            "source_common_name": pl.Utf8,
         },
     )
 
@@ -139,3 +140,86 @@ def test_property_truncation(rows: list[tuple[int, int, int, int]], cut: int) ->
     cols = ["article_id", "dup_kind", "dup_of"]
     expected = full.filter(pl.col("first_available_at") <= t_cut).select(cols).sort("article_id")
     assert trunc.select(cols).sort("article_id").equals(expected)
+
+
+def test_duplicate_chain_resolves_to_root() -> None:
+    # A original; B re-publicación de A (otro medio); C misma URL que B → dup_of = A.
+    df = _df(
+        [
+            ("a", 0, "a.com", "https://a.com/x", TITLE),
+            ("b", 15, "b.com", "https://b.com/x", TITLE),
+            ("c", 30, "b.com", "https://b.com/x", TITLE),
+        ]
+    )
+    out = dd.mark_duplicates(df, WIN).sort("article_id")
+    assert out["dup_of"].to_list() == [None, "a", "a"]
+
+
+def test_same_url_with_new_headline_is_not_collapsed() -> None:
+    df = _df(
+        [
+            (
+                "a",
+                0,
+                "a.com",
+                "https://a.com/x",
+                "Opec, Russia meet again to approve biggest-ever oil cut",
+            ),
+            (
+                "b",
+                60,
+                "a.com",
+                "https://a.com/x",
+                "Oil reverses early gains after record output cut",
+            ),
+            (
+                "c",
+                90,
+                "a.com",
+                "https://a.com/x",
+                "Oil reverses early gains after record output cut",
+            ),
+        ]
+    )
+    out = dd.mark_duplicates(df, WIN).sort("article_id")
+    assert out["dup_kind"].to_list() == [None, None, "url"]
+    assert out["dup_of"].to_list() == [None, None, "b"]
+
+
+def test_null_source_uses_host() -> None:
+    df = _df(
+        [
+            ("a", 0, None, "https://a.com/1", "OPEC agrees a new production cut for next year"),  # type: ignore[list-item]
+            ("b", 15, None, "https://b.com/2", "OPEC agrees a new production cut for next year"),  # type: ignore[list-item]
+        ]
+    )
+    out = dd.mark_duplicates(df, WIN).sort("article_id")
+    assert out["dup_kind"].to_list() == [None, "syndicated_title"]
+
+
+def test_tracking_strip_is_anchored() -> None:
+    url = "https://x.com/a?gift_ref=49&utm_source=x&id=1"
+    assert pl.select(dd.canonical_url(pl.lit(url))).item() == "x.com/a?gift_ref=49&id=1"
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        (
+            "http://wibqam.com/news/2018/may/31/us-and-brent-crude-part-ways-leaving-market/",
+            "us and brent crude part ways leaving market",
+        ),
+        (
+            "https://www.sfgate.com/news/article/Major-Colorado-energy-driller-closes-natural-gas-12958709.php",
+            "Major Colorado energy driller closes natural gas",
+        ),
+        ("http://www.miamiherald.com/news/business/article212306604.html", None),
+    ],
+)
+def test_url_slug_title(url: str, expected: str | None) -> None:
+    assert pl.select(dd.url_slug_title(pl.lit(url))).item() == expected
+
+
+def test_clean_title_decodes_entities_and_suffix() -> None:
+    t = "Oil &amp; gas &#x2013; prices rise as OPEC cuts | Hellenic Shipping News Worldwide"
+    assert pl.select(dd.clean_title(pl.lit(t))).item() == "Oil & gas - prices rise as OPEC cuts"

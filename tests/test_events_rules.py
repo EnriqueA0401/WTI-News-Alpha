@@ -30,7 +30,12 @@ def _one(
             "opec_policy",
             "tightens_supply",
         ),
-        ("US crude inventories draw sharply, EIA says", "direct", "eia_inventories", "ambiguous"),
+        (
+            "US crude inventories draw sharply, EIA says",
+            "direct",
+            "eia_inventories",
+            "tightens_supply",
+        ),
         (
             "Crude stocks fall for third week as exports climb",
             "direct",
@@ -50,6 +55,34 @@ def _one(
         ("Brent crude edges higher in quiet trade", "direct", "market_report", "ambiguous"),
         ("Local bakery opens new store downtown", "not_relevant", "other", "ambiguous"),
         ("Two crude bombs explode outside court", "not_relevant", "other", "ambiguous"),
+        # Falsos positivos y negativos reales encontrados en la revisión adversarial (rules-v2):
+        (
+            "Trump looks for deal to end Saudi-Russia oil price war",
+            "direct",
+            "opec_policy",
+            "ambiguous",
+        ),
+        (
+            "Saudis book more supertankers to help flood the oil market",
+            "direct",
+            "logistics",
+            "ambiguous",
+        ),
+        ("Oil Jumps on Reassurances by Central Bankers", "direct", "other", "ambiguous"),
+        ("Brent Castleman charged with criminal trespass", "not_relevant", "other", "ambiguous"),
+        ("Bernie barrels towards Super Tuesday", "not_relevant", "other", "ambiguous"),
+        (
+            "US stocks rise after volatile session as oil prices bounce",
+            "direct",
+            "market_report",
+            "ambiguous",
+        ),
+        (
+            "Oil Pipeline Leak Detection System Market Share and Forecast 2026",
+            "not_relevant",
+            "supply_disruption",
+            "ambiguous",
+        ),
     ],
 )
 def test_hand_cases(title: str, relevance: str, family: str, mechanism: str) -> None:

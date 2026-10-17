@@ -1,7 +1,8 @@
 # Construcción de eventos (docs/plans/FASE_03.md). Parámetros de diseño técnico de la línea base
 # (no son horizontes, etiquetas, costes ni timestamps): se revisan con la muestra auditada de G2
 # y cualquier cambio es una versión nueva (ADR-029).
-version: events-v1
+# events-v2 (2026-10-17): correcciones de la revisión adversarial de F3 (ADR-030).
+version: events-v2
 news_version: gdelt-news-v2
 title_dedup_window_hours:
   value: 48
@@ -15,3 +16,11 @@ eligible_relevance:
   value: [direct]
   status: approved
   source_ref: "ADR-029: solo artículos directamente relevantes abren o alimentan eventos"
+event_max_span_hours:
+  value: 72
+  status: approved
+  source_ref: "ADR-030: un evento dura como máximo 72 h desde su primer artículo (rachas que no se cierran)"
+families_without_events:
+  value: [other, market_report, opinion]
+  status: approved
+  source_ref: "ADR-030: estas familias no son acontecimientos; no abren ni alimentan eventos (tampoco el país XX)"

@@ -404,3 +404,28 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - los temas u organizaciones solo deciden "directo" si no hay título (2018).
   - Un ensayo sobre un mes real destapó falsos positivos ("crude bomb") que ya están corregidos.
 - **Limitación:** la clave (familia, país) es gruesa. Puede juntar acontecimientos distintos del mismo país y familia, o separar uno con varios países. La muestra G2 lo medirá.
+
+## ADR-030 — Revisión adversarial de F3: `rules-v2` y `events-v2` (2026-10-17)
+- **Revisión:** sin fugas de información. Hubo 3 hallazgos altos que invalidaban `events-v1`, que no llegó a publicarse: la ejecución se cortó.
+- **Cambios:**
+  1. **Eventos interminables:**
+     - las familias `other`, `market_report` y `opinion` y el país `XX` ya no abren ni alimentan eventos;
+     - un evento dura como máximo 72 h desde su primer artículo.
+  2. **Sin títulos de 2018-01 a 2019-08** (no solo 2018): si falta el título, las reglas usan el titular derivado del slug de la URL (`title_source = url_slug`). Si tampoco hay slug, deciden los temas.
+  3. **País principal:** la moda de los países de las localizaciones V1 (antes era la primera, que no está ordenada por relevancia). Los empates se resuelven por orden alfabético.
+  4. **Duplicados en cadena:** `dup_of` apunta siempre al original raíz.
+  5. **Misma URL con titular distinto:** ya no se colapsa. Es una actualización que puede cambiar el hecho (CLAUDE.md §7).
+  6. **Reglas `rules-v2`:**
+     - "price war" y "trade war" fuera de conflicto;
+     - "flood" del mercado fuera de clima;
+     - titulares "Oil rises/falls…" pasan a directos;
+     - "Brent" y "barrels" solo en contexto petrolero;
+     - inventarios solo de crudo o productos (no "stocks rise" de bolsa);
+     - spam de informes de mercado → no relevante.
+  7. Las reglas se aplican al título limpio: entidades HTML decodificadas y sin sufijo del medio.
+  8. `mechanism_differs` solo se marca entre mecanismos no ambiguos.
+  9. Detalles:
+     - tracking de URL anclado a `?`/`&`;
+     - medio nulo → dominio de la URL.
+  10. **Matiz de la ventana de 48 h:** se mide entre artículos encadenados, sin límite de duración total. Aceptado: son sobre todo titulares repetitivos.
+- **Riesgo aceptado:** `hash()` de polars solo es estable dentro de una misma versión de polars. Las claves no se persisten.

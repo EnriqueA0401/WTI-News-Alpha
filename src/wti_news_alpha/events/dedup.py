@@ -20,7 +20,7 @@ import polars as pl
 from wti_news_alpha.errors import SchemaError
 
 ORDER = ("first_available_at", "source_file_ts", "row_in_file")
-_TRACKING = r"(utm_[a-z_]+|fbclid|gclid|ocid|cmpid|mc_cid|mc_eid|ref|src)=[^&#]*"
+_TRACKING = r"(^|[?&])(utm_[a-z_]+|fbclid|gclid|ocid|cmpid|mc_cid|mc_eid|ref|src)=[^&#]*"
 MIN_TITLE_CHARS = 20
 # Sufijo de medio al final: " - Medio", " | Medio" o con raya (U+2013, U+2014), escapados para Rust.
 _SITE_SUFFIX = r"^(.{20,}?)\s+[-|\u2013\u2014]\s+[^-|\u2013\u2014]{1,40}$"
@@ -33,7 +33,7 @@ def canonical_url(url: pl.Expr) -> pl.Expr:
     host = host.str.replace(r":(80|443)$", "").str.replace(r"^(www\d?|m|amp|mobile)\.", "")
     rest = u.str.extract(r"^[^/?#]*(.*)$", 1).fill_null("")
     rest = rest.str.replace(r"#.*$", "")
-    rest = rest.str.replace_all(_TRACKING, "")
+    rest = rest.str.replace_all(_TRACKING, "$1")
     rest = rest.str.replace_all(r"\?&+", "?").str.replace_all(r"&{2,}", "&")
     rest = rest.str.replace(r"[?&]+$", "")
     rest = rest.str.replace(r"/amp/?$", "").str.replace(r"\.amp$", "")
@@ -41,12 +41,61 @@ def canonical_url(url: pl.Expr) -> pl.Expr:
     return pl.concat_str([host, rest])
 
 
+_ENTITIES = {
+    "&amp;": "&",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&#039;": "'",
+    "&apos;": "'",
+    "&rsquo;": "'",
+    "&lsquo;": "'",
+    "&#8217;": "'",
+    "&#x2019;": "'",
+    "&ldquo;": '"',
+    "&rdquo;": '"',
+    "&#8211;": " - ",
+    "&#x2013;": " - ",
+    "&ndash;": " - ",
+    "&#8212;": " - ",
+    "&#x2014;": " - ",
+    "&mdash;": " - ",
+    "&nbsp;": " ",
+    "&#160;": " ",
+}
+_SLUG_EXT = r"\.(html?|php|aspx?|shtml|cms|ece)$"
+
+
+def clean_title(title: pl.Expr) -> pl.Expr:
+    """Título legible: entidades HTML frecuentes decodificadas y sin sufijo de medio."""
+    t = title
+    for ent, ch in _ENTITIES.items():
+        t = t.str.replace_all(ent, ch, literal=True)
+    t = t.str.replace_all(r"\s+", " ").str.strip_chars()
+    return t.str.replace(_SITE_SUFFIX, "$1")
+
+
+def url_slug_title(url: pl.Expr) -> pl.Expr:
+    """Titular derivado del slug de la URL (segmento más largo con ≥ 4 palabras), o nulo.
+
+    Se usa solo cuando no hay ``PAGE_TITLE`` (GDELT 2018-01 → 2019-08).
+    """
+    path = url.str.replace(r"^[A-Za-z]+://[^/]*", "").str.replace(r"[?#].*$", "")
+    segs = path.str.split("/").list.eval(
+        pl.element()
+        .str.replace(_SLUG_EXT, "")
+        .str.replace(r"[-_]\d+$", "")
+        .filter(pl.element().str.count_matches(r"[a-zA-Z]+[-_]") >= 3)
+    )
+    best = segs.list.eval(pl.element().sort_by(pl.element().str.len_chars()).last()).list.first()
+    return best.str.replace_all(r"[-_]+", " ").str.strip_chars()
+
+
 def normalized_title(title: pl.Expr) -> pl.Expr:
     """Título en minúsculas, sin sufijo de medio (`` - Medio``/`` | Medio``) ni puntuación.
 
     Nulo si queda con menos de ``MIN_TITLE_CHARS`` caracteres (títulos genéricos).
     """
-    t = title.str.strip_chars().str.replace(_SITE_SUFFIX, "$1")
+    t = clean_title(title)
     t = t.str.to_lowercase().str.replace_all(r"[^\p{L}\p{N}]+", " ").str.strip_chars()
     return pl.when(t.str.len_chars() >= MIN_TITLE_CHARS).then(t)
 
@@ -70,7 +119,12 @@ def dedup_keys(df: pl.DataFrame) -> pl.DataFrame:
         _url_key=canon.hash(seed=0),
         _title_ok=title.is_not_null(),
         _title_key=title.hash(seed=0),
-        _src_key=pl.col("source_common_name").fill_null("").str.to_lowercase().hash(seed=0),
+        _src_key=pl.coalesce(
+            pl.col("source_common_name").str.to_lowercase(),
+            canon.str.extract(r"^([^/?#]*)", 1),
+        )
+        .fill_null("")
+        .hash(seed=0),
     ).drop("url", "title", "source_common_name")
 
 
@@ -99,7 +153,12 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
 
     d = d.with_columns(_s_st=session(["_src_key", "_title_key"]), _s_t=session(["_title_key"]))
     d = d.with_columns(
-        _f_url=pl.when(pl.col("_url_ok")).then(pl.col("article_id").first().over("_url_key")),
+        # Misma URL con titular distinto = actualización que puede cambiar el hecho: no se
+        # colapsa (CLAUDE.md §7). Con título, la clave de URL incluye el título.
+        _f_url=pl.when(pl.col("_url_ok") & pl.col("_title_ok"))
+        .then(pl.col("article_id").first().over("_url_key", "_title_key"))
+        .when(pl.col("_url_ok"))
+        .then(pl.col("article_id").first().over("_url_key", "_title_ok")),
         _f_st=pl.when(pl.col("_title_ok")).then(
             pl.col("article_id").first().over("_src_key", "_title_key", "_s_st")
         ),
@@ -110,7 +169,7 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
     is_url = (pl.col("_f_url") != pl.col("article_id")).fill_null(False)
     is_st = (pl.col("_f_st") != pl.col("article_id")).fill_null(False)
     is_t = (pl.col("_f_t") != pl.col("article_id")).fill_null(False)
-    return d.with_columns(
+    out = d.with_columns(
         dup_kind=pl.when(is_url)
         .then(pl.lit("url"))
         .when(is_st)
@@ -126,3 +185,16 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
         .then(pl.col("_f_t"))
         .otherwise(pl.lit(None, dtype=pl.Utf8)),
     ).drop(*KEY_COLUMNS, "_s_st", "_s_t", "_f_url", "_f_st", "_f_t")
+    return resolve_roots(out)
+
+
+def resolve_roots(df: pl.DataFrame, max_depth: int = 10) -> pl.DataFrame:
+    """``dup_of`` apunta al original raíz (un duplicado de un duplicado → el primero)."""
+    out = df
+    for _ in range(max_depth):
+        parent = out.select(pl.col("article_id").alias("dup_of"), pl.col("dup_of").alias("_up"))
+        nxt = out.join(parent, on="dup_of", how="left", validate="m:1")
+        if nxt["_up"].null_count() == nxt.height:
+            return nxt.drop("_up")
+        out = nxt.with_columns(dup_of=pl.coalesce("_up", "dup_of")).drop("_up")
+    raise SchemaError(f"cadenas de duplicados de más de {max_depth} niveles")

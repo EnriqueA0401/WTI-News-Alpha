@@ -12,6 +12,7 @@ from wti_news_alpha.events import cluster as cl
 
 T0 = datetime(2024, 1, 1, tzinfo=UTC)
 GAP = timedelta(hours=24)
+SPAN = timedelta(hours=72)
 
 
 def _df(rows: list[tuple[str, int, bool, str, str, str, str]]) -> pl.DataFrame:
@@ -53,12 +54,29 @@ def test_assign_events_hand_cases() -> None:
             ("f", 200, False, "opec_policy", "tightens_supply", "SA", "s5"),  # no elegible
         ]
     )
-    out = cl.assign_events(df, GAP).sort("article_id")
+    out = cl.assign_events(df, GAP, SPAN).sort("article_id")
     assert out["event_id"].to_list() == ["a", "a", "a", "d", "e", None]
     assert out["event_seq"].to_list() == [1, 2, 3, 1, 1, None]
     assert out["event_sources_so_far"].to_list() == [1, 2, 2, 1, 1, None]
     assert out["mechanism_differs"].to_list() == [False, False, True, False, False, None]
     assert out["is_event_first"].to_list() == [True, False, False, True, True, None]
+
+
+def test_max_span_splits_endless_chains() -> None:
+    # Un artículo cada 12 h durante 5 días: el hueco nunca supera 24 h, pero el evento se
+    # corta cada 72 h desde su inicio.
+    rows = [(f"x{i}", 60 * 12 * i, True, "opec_policy", "ambiguous", "SA", "s") for i in range(10)]
+    out = cl.assign_events(_df(rows), GAP, SPAN).sort("first_available_at")
+    assert out["event_id"].to_list() == ["x0"] * 6 + ["x6"] * 4
+
+
+def test_mechanism_differs_ignores_ambiguous() -> None:
+    rows = [
+        ("a", 0, True, "opec_policy", "ambiguous", "SA", "s1"),
+        ("b", 30, True, "opec_policy", "tightens_supply", "SA", "s2"),
+    ]
+    out = cl.assign_events(_df(rows), GAP, SPAN).sort("article_id")
+    assert out["mechanism_differs"].to_list() == [False, False]
 
 
 def test_inherit_events() -> None:
@@ -71,7 +89,7 @@ def test_inherit_events() -> None:
 
 def test_missing_columns() -> None:
     with pytest.raises(SchemaError, match="faltan"):
-        cl.assign_events(pl.DataFrame({"article_id": ["a"]}), GAP)
+        cl.assign_events(pl.DataFrame({"article_id": ["a"]}), GAP, SPAN)
 
 
 @settings(max_examples=100, deadline=None)
@@ -98,9 +116,9 @@ def test_property_truncation(rows: list[tuple[int, bool, int, int, int, int]], c
             for i, (m, e, f, c, s, k) in enumerate(rows)
         ]
     )
-    full = cl.assign_events(df, GAP)
+    full = cl.assign_events(df, GAP, SPAN)
     t_cut = T0 + timedelta(minutes=cut)
-    trunc = cl.assign_events(df.filter(pl.col("first_available_at") <= t_cut), GAP)
+    trunc = cl.assign_events(df.filter(pl.col("first_available_at") <= t_cut), GAP, SPAN)
     cols = [
         "article_id",
         "event_id",
