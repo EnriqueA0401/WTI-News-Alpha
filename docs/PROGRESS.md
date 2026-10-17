@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F7 hecha: **H1 no se sostiene** (M4 ≈ M3 a 15 y 60 min; `reports/F7_modelos.md`). F8 hecha (robustez: nada sobrevive, `reports/G5_valor_noticias.md`). **Puerta G5: decisión del usuario pendiente.** **G4 aprobada y pre-registro H1 congelado (ADR-044).** G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F7 hecha: **H1 no se sostiene** (M4 ≈ M3 a 15 y 60 min; `reports/F7_modelos.md`). F8 hecha (robustez: nada sobrevive, `reports/G5_valor_noticias.md`). **G5: NO-GO de señal; abrir el sellado una vez (ADR-047).** Siguiente: F10 (test sellado). **G4 aprobada y pre-registro H1 congelado (ADR-044).** G3 aprobada (ADR-039). **Test sellado fijado: 2025-07-01 → 2026-08-01 (ADR-036); no se toca hasta F10.** **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -19,7 +19,7 @@
 | Bloque | Estado | Salida |
 |---|---|---|
 | Subgrupos con BH, Brier/ECE, magnitud, SHAP | Hecho y revisado (ADR-046): ningún efecto | `reports/f8/robustness.json` |
-| Puerta G5 | **Pendiente del usuario** | `reports/G5_valor_noticias.md` |
+| Puerta G5 | NO-GO de señal (ADR-047) | `reports/G5_valor_noticias.md` |
 
 ### F7: estado
 | Bloque | Estado | Salida |

@@ -650,3 +650,11 @@ Sin hallazgos altos. Sin leakage. El reajuste SHAP reproduce exactamente F7.
    - `bh_qvalues` rechaza p inválidos (antes un NaN daba q falsos);
    - saltarse el PIT exige el flag explícito del canario también en `validate_run`;
    - el SHAP es una sola instantánea (último fold) y así se reporta.
+
+## ADR-047 — Puerta G5: NO-GO de señal; abrir el test sellado una vez (2026-10-17)
+- **Contexto:** `reports/G5_valor_noticias.md`. M4 no supera a M3 a 15 ni a 60 min, y en la robustez de F8 no sobrevive nada (menor q 0,58).
+- **Decisión del usuario:** cerrar G5 como **NO-GO de señal** con este dataset y pasar a F10. El test sellado (2025-07-01 → 2026-08-01) se abre **una sola vez** con el pre-registro H1 congelado (ADR-044), para confirmar el resultado con datos nunca vistos.
+- **Consecuencias:**
+  - F9 (simulación económica) se reduce a declarar "sin valor predictivo que monetizar". No se construye una regla de trading sobre un efecto nulo.
+  - No se redefine la hipótesis ni se escala complejidad (CLAUDE.md §12).
+  - Antes de abrir el sellado se fija y commitea el esquema exacto de evaluación (`docs/plans/FASE_10.md`).
