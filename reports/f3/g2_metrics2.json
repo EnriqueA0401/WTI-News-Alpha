@@ -1,0 +1,480 @@
+{
+  "round": 2,
+  "labels": "propuestas de Claude aceptadas sin revisión ítem a ítem (ADR-031)",
+  "n_originals": 150,
+  "n_direct_sample": 150,
+  "weighted_direct": {
+    "relevance_direct": {
+      "p": 0.9456,
+      "ci95_bootstrap": [
+        0.894,
+        0.9864
+      ]
+    },
+    "family_correct": {
+      "p": 0.7064,
+      "ci95_bootstrap": [
+        0.6186,
+        0.7905
+      ]
+    },
+    "event_eligible_correct": {
+      "p": 0.7339,
+      "ci95_bootstrap": [
+        0.6431,
+        0.8149
+      ]
+    }
+  },
+  "weighted_direct_event_families": {
+    "relevance_direct": {
+      "p": 0.9456,
+      "ci95_bootstrap": [
+        0.8939,
+        0.9854
+      ]
+    },
+    "family_correct": {
+      "p": 0.7064,
+      "ci95_bootstrap": [
+        0.6161,
+        0.7912
+      ]
+    }
+  },
+  "by_title_source": {
+    "title": {
+      "relevance_direct": {
+        "k": 72,
+        "n": 75,
+        "p": 0.96,
+        "ci95": [
+          0.8889,
+          0.9863
+        ]
+      },
+      "family_correct": {
+        "k": 51,
+        "n": 75,
+        "p": 0.68,
+        "ci95": [
+          0.5679,
+          0.7746
+        ]
+      }
+    },
+    "url_slug": {
+      "relevance_direct": {
+        "k": 67,
+        "n": 75,
+        "p": 0.8933,
+        "ci95": [
+          0.8034,
+          0.945
+        ]
+      },
+      "family_correct": {
+        "k": 50,
+        "n": 75,
+        "p": 0.6667,
+        "ci95": [
+          0.5542,
+          0.7629
+        ]
+      }
+    }
+  },
+  "by_family": {
+    "conflict_attack": {
+      "relevance_direct": {
+        "k": 30,
+        "n": 30,
+        "p": 1.0,
+        "ci95": [
+          0.8865,
+          1.0
+        ]
+      },
+      "family_correct": {
+        "k": 20,
+        "n": 30,
+        "p": 0.6667,
+        "ci95": [
+          0.4878,
+          0.8077
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 5,
+        "n": 15,
+        "p": 0.3333,
+        "ci95": [
+          0.1518,
+          0.5829
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 15,
+            "n": 15,
+            "p": 1.0,
+            "ci95": [
+              0.7961,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 11,
+            "n": 15,
+            "p": 0.7333,
+            "ci95": [
+              0.4805,
+              0.891
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 15,
+            "n": 15,
+            "p": 1.0,
+            "ci95": [
+              0.7961,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 9,
+            "n": 15,
+            "p": 0.6,
+            "ci95": [
+              0.3575,
+              0.8018
+            ]
+          }
+        }
+      }
+    },
+    "eia_inventories": {
+      "relevance_direct": {
+        "k": 30,
+        "n": 30,
+        "p": 1.0,
+        "ci95": [
+          0.8865,
+          1.0
+        ]
+      },
+      "family_correct": {
+        "k": 20,
+        "n": 30,
+        "p": 0.6667,
+        "ci95": [
+          0.4878,
+          0.8077
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 5,
+        "n": 9,
+        "p": 0.5556,
+        "ci95": [
+          0.2667,
+          0.8112
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 15,
+            "n": 15,
+            "p": 1.0,
+            "ci95": [
+              0.7961,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 10,
+            "n": 15,
+            "p": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 15,
+            "n": 15,
+            "p": 1.0,
+            "ci95": [
+              0.7961,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 10,
+            "n": 15,
+            "p": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        }
+      }
+    },
+    "opec_policy": {
+      "relevance_direct": {
+        "k": 27,
+        "n": 30,
+        "p": 0.9,
+        "ci95": [
+          0.7438,
+          0.9654
+        ]
+      },
+      "family_correct": {
+        "k": 22,
+        "n": 30,
+        "p": 0.7333,
+        "ci95": [
+          0.5555,
+          0.8582
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 6,
+        "n": 10,
+        "p": 0.6,
+        "ci95": [
+          0.3127,
+          0.8318
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 13,
+            "n": 15,
+            "p": 0.8667,
+            "ci95": [
+              0.6212,
+              0.9626
+            ]
+          },
+          "family_correct": {
+            "k": 10,
+            "n": 15,
+            "p": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 14,
+            "n": 15,
+            "p": 0.9333,
+            "ci95": [
+              0.7018,
+              0.9881
+            ]
+          },
+          "family_correct": {
+            "k": 12,
+            "n": 15,
+            "p": 0.8,
+            "ci95": [
+              0.5481,
+              0.9295
+            ]
+          }
+        }
+      }
+    },
+    "sanctions_geopolitics": {
+      "relevance_direct": {
+        "k": 28,
+        "n": 30,
+        "p": 0.9333,
+        "ci95": [
+          0.7868,
+          0.9815
+        ]
+      },
+      "family_correct": {
+        "k": 21,
+        "n": 30,
+        "p": 0.7,
+        "ci95": [
+          0.5212,
+          0.8334
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 13,
+        "n": 23,
+        "p": 0.5652,
+        "ci95": [
+          0.3681,
+          0.7437
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 14,
+            "n": 15,
+            "p": 0.9333,
+            "ci95": [
+              0.7018,
+              0.9881
+            ]
+          },
+          "family_correct": {
+            "k": 10,
+            "n": 15,
+            "p": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 14,
+            "n": 15,
+            "p": 0.9333,
+            "ci95": [
+              0.7018,
+              0.9881
+            ]
+          },
+          "family_correct": {
+            "k": 11,
+            "n": 15,
+            "p": 0.7333,
+            "ci95": [
+              0.4805,
+              0.891
+            ]
+          }
+        }
+      }
+    },
+    "weather": {
+      "relevance_direct": {
+        "k": 24,
+        "n": 30,
+        "p": 0.8,
+        "ci95": [
+          0.6269,
+          0.9049
+        ]
+      },
+      "family_correct": {
+        "k": 18,
+        "n": 30,
+        "p": 0.6,
+        "ci95": [
+          0.4232,
+          0.7541
+        ]
+      },
+      "mechanism_correct_when_rule_not_ambiguous": {
+        "k": 4,
+        "n": 9,
+        "p": 0.4444,
+        "ci95": [
+          0.1888,
+          0.7333
+        ]
+      },
+      "by_title_source": {
+        "title": {
+          "relevance_direct": {
+            "k": 15,
+            "n": 15,
+            "p": 1.0,
+            "ci95": [
+              0.7961,
+              1.0
+            ]
+          },
+          "family_correct": {
+            "k": 10,
+            "n": 15,
+            "p": 0.6667,
+            "ci95": [
+              0.4171,
+              0.8482
+            ]
+          }
+        },
+        "url_slug": {
+          "relevance_direct": {
+            "k": 9,
+            "n": 15,
+            "p": 0.6,
+            "ci95": [
+              0.3575,
+              0.8018
+            ]
+          },
+          "family_correct": {
+            "k": 8,
+            "n": 15,
+            "p": 0.5333,
+            "ci95": [
+              0.3012,
+              0.7519
+            ]
+          }
+        }
+      }
+    }
+  },
+  "mechanism_correct_when_rule_not_ambiguous": {
+    "k": 33,
+    "n": 66,
+    "p": 0.5,
+    "ci95": [
+      0.3827,
+      0.6173
+    ]
+  },
+  "rule_ambiguous_mechanism_share": {
+    "k": 84,
+    "n": 150,
+    "p": 0.56,
+    "ci95": [
+      0.48,
+      0.637
+    ]
+  },
+  "gold_relevance_in_other_strata": {
+    "indirect": {},
+    "hard_negative": {}
+  },
+  "population_by_stratum": {
+    "direct/conflict_attack/title": 18730,
+    "direct/conflict_attack/url_slug": 18349,
+    "direct/eia_inventories/title": 6598,
+    "direct/eia_inventories/url_slug": 8578,
+    "direct/opec_policy/title": 22867,
+    "direct/opec_policy/url_slug": 35613,
+    "direct/sanctions_geopolitics/title": 11003,
+    "direct/sanctions_geopolitics/url_slug": 11069,
+    "direct/weather/title": 1060,
+    "direct/weather/url_slug": 1112
+  },
+  "seed": 20261017,
+  "n_bootstrap": 10000
+}

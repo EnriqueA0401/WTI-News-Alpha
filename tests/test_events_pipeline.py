@@ -82,7 +82,7 @@ def _run(tmp_path: Path) -> object:
 def test_build_end_to_end(tmp_path: Path) -> None:
     _setup(tmp_path)
     res = _run(tmp_path)
-    base = tmp_path / "norm" / "events" / "events-v2"
+    base = tmp_path / "norm" / "events" / load_events_config(CONFIG_DIR).version
     jan = pl.read_parquet(base / "articles_202401.parquet").sort("row_in_file")
     feb = pl.read_parquet(base / "articles_202402.parquet")
     assert jan["relevance"].to_list() == ["direct", "direct", "direct", "indirect"]  # tema ENV_OIL

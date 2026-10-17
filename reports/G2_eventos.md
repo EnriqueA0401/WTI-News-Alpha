@@ -67,3 +67,37 @@ Según el Documento (§11, G2), si la precisión no es razonable: simplificar la
    - Después se mide con una muestra nueva de unas 150 noticias.
 2. **Corregir las reglas de todas las familias** y volver a medir. Es más trabajo, y la ganancia es incierta en `company` y `other`.
 3. **Aprobar G2 tal cual.** No lo recomiendo: casi la mitad de los artículos que generan eventos tienen la familia mal.
+
+---
+
+# Segunda medición (ADR-032): solo las 5 familias que generan eventos
+
+Muestra nueva de 150 artículos elegibles: 30 por familia, mitad con título real y mitad con titular de la URL, sin repetir ninguno de la primera muestra (`scripts/f3/g2_sample2.py`, semilla 20261018). Las reglas no cambiaron (`rules-v2`). Etiquetas: Claude, con el mismo protocolo (ADR-031). Ficheros: `reports/f3/g2_labels2.csv` y `reports/f3/g2_metrics2.json` (`g2_metrics.py --round 2`).
+
+## Resultados (ponderados por el tamaño de cada familia; 134.979 artículos elegibles)
+| Medida | Valor [IC 95 %] |
+|---|---|
+| Es de verdad una noticia directa del petróleo | **95 %** [89–99] |
+| Además, la familia es correcta | **71 %** [62–79] |
+| Es directa y de una de las 5 familias con evento | **73 %** [64–81] |
+| Mecanismo correcto cuando la regla no dice "ambiguo" (44 % de los casos) | 33/66 = **50 %** [38–62] |
+
+| Familia | % de la población | Directo | Familia correcta | Mecanismo correcto |
+|---|---|---|---|---|
+| opec_policy | 43,3 | 27/30 [74–97] | 22/30 [56–86] | 6/10 [31–83] |
+| conflict_attack | 27,5 | 30/30 [89–100] | 20/30 [49–81] | 5/15 [15–58] |
+| sanctions_geopolitics | 16,4 | 28/30 [79–98] | 21/30 [52–83] | 13/23 [37–74] |
+| eia_inventories | 11,2 | 30/30 [89–100] | 20/30 [49–81] | 5/9 [27–81] |
+| weather | 1,6 | 24/30 [63–90] | 18/30 [42–75] | 4/9 [19–73] |
+
+- **Título real frente a titular de la URL:** directo 96 % frente a 89 %; familia 68 % frente a 67 % (sin ponderar).
+- **Errores de familia más frecuentes:**
+  - explosiones e incendios de refinerías clasificados como `conflict_attack` cuando son `supply_disruption` (6);
+  - crónicas de precios con varias causas, que acaban en `demand_macro` o `market_report`.
+  - Casi siempre son noticias del petróleo reales con la categoría vecina, no ruido.
+- **Hallazgo nuevo:** en 2018-2019 no se detectaban las copias sindicadas por el slug. Ya está corregido en `events-v3` (ADR-033).
+
+## Lectura
+- Las 5 familias tienen **relevancia alta** (95 %). La **familia acierta en 7 de cada 10**.
+- La dirección sigue sin ser fiable (50 %). Se mantiene fuera de la señal (ADR-032).
+- Con 30 por familia, los intervalos siguen siendo de unos ±15 puntos.

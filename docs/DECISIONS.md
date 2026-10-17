@@ -450,3 +450,11 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - menos eventos y menos categorías para M4;
   - la prueba M4 frente a M3 se hace sobre familias con extracción medida;
   - G2 sigue abierta hasta el informe de la segunda medición.
+
+## ADR-033 — Deduplicación con el titular del slug cuando falta el título (2026-10-17)
+- **Hallazgo (segunda muestra de G2):** de 2018-01 a 2019-08 GDELT no trae título, y la deduplicación por título no veía las copias sindicadas.
+  - Medido en `events-v2`: en las 5 familias con eventos, 30.115 de 74.721 artículos elegibles con titular de slug son copias del mismo slug (26.463 de ellas en menos de 48 h).
+  - Consecuencia: en 2018-2019 se inflaban `event_seq`, `event_sources_so_far` y el número de eventos, frente a 2019-09 en adelante. Es un cambio de régimen artificial en las futuras features.
+- **Corrección:** la clave de título usa `coalesce(título, titular del slug)`. Hay un test de regresión (`test_slug_titles_deduplicate_when_title_missing`).
+- **Versión:** entra en `events-v3`, que aún no estaba publicada. `events-v2` queda como está y no se usa para features.
+- **Proceso:** el test de `events-v2` tenía la versión fija y falló tras el cambio de configuración; ahora lee la versión de la configuración.

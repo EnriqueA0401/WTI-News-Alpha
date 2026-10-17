@@ -223,3 +223,29 @@ def test_url_slug_title(url: str, expected: str | None) -> None:
 def test_clean_title_decodes_entities_and_suffix() -> None:
     t = "Oil &amp; gas &#x2013; prices rise as OPEC cuts | Hellenic Shipping News Worldwide"
     assert pl.select(dd.clean_title(pl.lit(t))).item() == "Oil & gas - prices rise as OPEC cuts"
+
+
+def test_slug_titles_deduplicate_when_title_missing() -> None:
+    """Regresión (G2, ADR-033): sin ``PAGE_TITLE`` (2018-01 → 2019-08) las copias sindicadas
+    solo comparten el slug de la URL; antes no se detectaban."""
+    slug = "oil-prices-spike-after-saudi-attack-disrupts-global-supply-idUSKCN1VX0AB"
+    df = _df(
+        [
+            ("a", 0, "a.com", f"https://a.com/article/{slug}", None),
+            ("b", 15, "b.com", f"https://b.com/news/{slug}", None),  # re-publicación
+            ("c", 30, "a.com", f"https://a.com/amp/{slug}", None),  # mismo medio
+            ("d", 45, "c.com", "https://c.com/news/oil-falls-as-stockpiles-grow-in-cushing", None),
+            ("e", 60 * 24 * 10, "d.com", f"https://d.com/{slug}", None),  # 10 días: nuevo
+            ("f", 75, "e.com", f"https://e.com/{slug}", "A real headline that differs from slug"),
+        ]
+    )
+    out = dd.mark_duplicates(df, WIN).sort("article_id")
+    assert out["dup_kind"].to_list() == [
+        None,
+        "syndicated_title",
+        "same_source_title",
+        None,
+        None,
+        None,
+    ]
+    assert out["dup_of"].to_list() == [None, "a", "a", None, None, None]

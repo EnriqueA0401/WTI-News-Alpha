@@ -113,7 +113,9 @@ def dedup_keys(df: pl.DataFrame) -> pl.DataFrame:
     if missing:
         raise SchemaError(f"faltan columnas para deduplicar: {sorted(missing)}")
     canon = canonical_url(pl.col("url"))
-    title = normalized_title(pl.col("title"))
+    # Sin título (GDELT 2018-01 → 2019-08), el titular del slug: las copias sindicadas
+    # comparten slug (ADR-033).
+    title = normalized_title(pl.coalesce(pl.col("title"), url_slug_title(pl.col("url"))))
     return df.with_columns(
         _url_ok=(canon.is_not_null() & (canon != "")).fill_null(False),
         _url_key=canon.hash(seed=0),
@@ -134,6 +136,7 @@ def mark_duplicates(df: pl.DataFrame, title_window: timedelta) -> pl.DataFrame:
     Entrada: ``article_id``, ``first_available_at``, ``source_file_ts``,
     ``row_in_file`` y, o bien ``source_common_name``, ``url``, ``title``, o bien
     las claves de ``dedup_keys``.
+    Sin título se usa el titular del slug de la URL (ADR-033).
     Por título solo se agrupan artículos encadenados con huecos ≤ ``title_window``
     (un titular genérico repetido meses después no es una re-publicación).
     """

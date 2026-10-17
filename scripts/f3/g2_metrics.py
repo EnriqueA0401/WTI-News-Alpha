@@ -12,26 +12,39 @@ Métricas (solo originales; las repeticiones no cuentan):
   bootstrap estratificado (semilla fija);
 - matriz de confusión de relevancia en los estratos ``indirect`` y ``hard_negative``.
 
-Salida: ``reports/f3/g2_metrics.json``. Imprime solo un resumen.
-Uso: uv run python -I scripts/f3/g2_metrics.py
+Segunda medición (ADR-032, ``--round 2``): ``reports/f3/g2_labels2.csv``, población =
+artículos ``eligible`` de las 5 familias que generan eventos en ``events-v3`` (las reglas
+son las mismas, así que se cuentan en ``events-v2``).
+
+Salida: ``reports/f3/g2_metrics.json`` (``g2_metrics2.json`` en la ronda 2). Imprime solo un
+resumen.
+Uso: uv run python -I scripts/f3/g2_metrics.py [--round 2]
 """
 
 import json
 import math
 import random
+import sys
 from typing import Any
 
 import polars as pl
 
 from wti_news_alpha.runlog import REPO_ROOT
 
-LABELS = REPO_ROOT / "reports" / "f3" / "g2_labels.csv"
+REPORTS = REPO_ROOT / "reports" / "f3"
 EVENTS = REPO_ROOT / "data" / "normalized" / "events" / "events-v2"
-OUT = REPO_ROOT / "reports" / "f3" / "g2_metrics.json"
 SEED = 20261017
 N_BOOT = 10_000
 Z = 1.959964
-NO_EVENT_FAMILIES = ("other", "market_report", "opinion")
+ROUND = 2 if sys.argv[1:] == ["--round", "2"] else 1
+if sys.argv[1:] not in ([], ["--round", "2"]):
+    raise SystemExit("uso: g2_metrics.py [--round 2]")
+LABELS = REPORTS / ("g2_labels.csv" if ROUND == 1 else "g2_labels2.csv")
+OUT = REPORTS / ("g2_metrics.json" if ROUND == 1 else "g2_metrics2.json")
+# Familias que no generan eventos: events-v2 (ADR-030) en la ronda 1, events-v3 (ADR-032) en la 2.
+NO_EVENT_FAMILIES = ("other", "market_report", "opinion") + (
+    () if ROUND == 1 else ("company", "demand_macro", "logistics", "rates_usd", "supply_disruption")
+)
 
 
 def wilson(k: int, n: int) -> tuple[float, float]:
@@ -51,15 +64,18 @@ def rate(flags: pl.Series) -> dict[str, Any]:
 
 
 def population() -> pl.DataFrame:
-    """Artículos por estrato en la población muestreada (mismo filtro que g2_sample.py)."""
+    """Artículos por estrato en la población muestreada (mismo filtro que g2_sample*.py)."""
+    base = (
+        pl.col("dup_kind").is_null()
+        & pl.col("exclude_reason").is_null()
+        & pl.col("rule_title").is_not_null()
+        & (pl.col("relevance") == "direct")
+    )
+    if ROUND == 2:
+        base = base & pl.col("eligible") & ~pl.col("family").is_in(NO_EVENT_FAMILIES)
     return (
         pl.scan_parquet(EVENTS / "articles_*.parquet")
-        .filter(
-            pl.col("dup_kind").is_null()
-            & pl.col("exclude_reason").is_null()
-            & pl.col("rule_title").is_not_null()
-            & (pl.col("relevance") == "direct")
-        )
+        .filter(base)
         .group_by("family", "title_source")
         .agg(N=pl.len())
         .collect()
@@ -69,7 +85,9 @@ def population() -> pl.DataFrame:
 
 
 def main() -> None:
-    lab = pl.read_csv(LABELS).filter(pl.col("repeat_of").is_null())
+    lab = pl.read_csv(LABELS)
+    if "repeat_of" in lab.columns:
+        lab = lab.filter(pl.col("repeat_of").is_null())
     lab = lab.with_columns(
         ok_rel=pl.col("gold_relevance") == "direct",
         ok_fam=(pl.col("gold_relevance") == "direct")
@@ -142,6 +160,7 @@ def main() -> None:
         for s in ("indirect", "hard_negative")
     }
     result = {
+        "round": ROUND,
         "labels": "propuestas de Claude aceptadas sin revisión ítem a ítem (ADR-031)",
         "n_originals": lab.height,
         "n_direct_sample": direct.height,
