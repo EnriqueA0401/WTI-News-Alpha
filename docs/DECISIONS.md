@@ -463,3 +463,13 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - Riesgo bajo aceptado: si una copia tiene título real y la otra solo slug, únicamente coinciden cuando son el mismo texto.
 - **Versión:** entra en `events-v3`, que aún no estaba publicada. `events-v2` queda como está y no se usa para features.
 - **Proceso:** el test de `events-v2` tenía la versión fija y falló tras el cambio de configuración; ahora lee la versión de la configuración.
+
+## ADR-034 — Puerta G2 aprobada (usuario, 2026-10-17)
+- **Decisión:** se aprueba G2 con `events-v3` y `rules-v2` (`reports/G2_eventos.md`, 2.ª medición).
+  - Relevancia: 95 % [89–99].
+  - Familia correcta: 71 % [62–79], en las 5 familias que generan eventos.
+- **Condiciones que pasan a F4:**
+  1. el mecanismo de las reglas no se usa como señal de dirección (ADR-032);
+  2. las features de volumen de eventos llevan un indicador de época o se normalizan por época, porque la tasa de duplicados es del 23 % sin título y del 44 % con título (ADR-033);
+  3. la familia es una categoría con ~30 % de error: se usa como agrupación gruesa y no se interpreta fina;
+  4. `events-v2` no se usa para features.

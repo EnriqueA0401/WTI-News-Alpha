@@ -2,7 +2,7 @@
 
 > Preferencias del usuario: `docs/USER_PREFERENCES.md` (adelantar siempre lo que no dependa del usuario; respuestas breves).
 
-**Fase actual:** F3 (noticias → eventos). **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
+**Fase actual:** F4 (features point-in-time). **G2 aprobada por el usuario (2026-10-17, ADR-034).** **G1 aprobada por el usuario (2026-10-16, ADR-027).** Captura en vivo pasada a bucle largo (ADR-027). **G0 aprobado por el usuario el 2026-10-16** (ADR-019): intradía viable, condicionado, con Darwinex en 2018–2020 + 2024–2026.
 
 ### F2: estado por bloque
 | Bloque | Estado | Salida |
@@ -23,7 +23,7 @@
 | Etiquetas | Propuestas de Claude aceptadas por el usuario (ADR-031) | `reports/f3/g2_labels.csv` |
 | Precisión por categoría + informe G2 (1.ª medición) | Hecho; el usuario eligió simplificar (ADR-032) | `reports/G2_eventos.md` |
 | `events-v3`: 5 familias y deduplicación por slug (ADR-032/033, revisión adversarial resuelta) | Hecho | `events-v3`: 115.930 elegibles, 20.312 eventos |
-| 2.ª medición (150 titulares, 5 familias) | Hecho. **Puerta G2: decisión del usuario pendiente** | `reports/G2_eventos.md`, `reports/f3/g2_metrics2.json` |
+| 2.ª medición (150 titulares, 5 familias) | Hecho. **G2 aprobada (ADR-034)** | `reports/G2_eventos.md`, `reports/f3/g2_metrics2.json` |
 
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
