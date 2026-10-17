@@ -547,3 +547,10 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - **no hechos** (se aplazan, sin impacto en la decisión de G3): RV posterior frente a previa, tiempo hasta 1×ATR y hasta la retracción a la mitad, segmentos por novedad, nº de fuentes y sesión Asia/Europa/EE. UU., y el control de pseudo-eventos de baja relevancia;
   - MFE/MAE se calcula pero no se reporta.
 - La volatilidad previa usa una tolerancia de 10 min, y el pool se une por `t0`.
+
+## ADR-039 — Puerta G3 aprobada (usuario, 2026-10-17)
+- **Decisión:** se aprueba G3 sobre `reports/G3_eventos.md` (método ADR-038) y se pasa a F6.
+- **Contexto para F6–F8:**
+  - La evidencia preliminar es débil: reacción de pequeño tamaño en horizontes ≤ 30 min, que no sobrevive al control por volatilidad previa.
+  - El horizonte principal y la métrica del pre-registro se fijan en F6 con el usuario, sin mirar estos resultados por familia para elegirlos (CLAUDE.md §11.1).
+- **Pendiente de F5** (ADR-038), aplazado sin bloquear: RV posterior frente a previa, tiempos hasta el umbral, segmentos por novedad, fuentes y sesión, y control de baja relevancia.
