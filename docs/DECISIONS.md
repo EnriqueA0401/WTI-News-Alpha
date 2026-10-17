@@ -623,3 +623,14 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - F7 ejecuta exactamente lo pre-registrado: M0, M3 y M4 a 15 y 60 min, Holm sobre las 2 pruebas principales.
   - El resultado no se ajusta: ni hiperparámetros, ni features, ni folds, ni criterios.
   - Cualquier cambio posterior del pre-registro exige un ADR nuevo y se reporta.
+
+## ADR-045 — Revisión adversarial de F7: correcciones (2026-10-17)
+Ninguna cambia modelos, features, folds ni criterios del pre-registro; se aplican antes de la corrida oficial.
+1. **(Medio) Holm y comparación:** un p no finito o fuera de [0, 1] y una pérdida no finita lanzan `SchemaError` (antes un NaN anulaba en silencio el otro horizonte).
+2. **(Medio) Registro:** toda la corrida va dentro de un único control. Filas `ok` solo si el informe se escribió. Si no, las filas pasan a `partial` y se añade una fila `failed` con la etapa (también con Ctrl-C). `run_id` lleva marca de tiempo.
+3. **(Medio) Lógica del veredicto testeada:** pasa a `models/h1.py` (serie diaria, d por fold, dejar-un-fold-fuera, Holm y criterios), con casos a mano y controles con y sin señal.
+4. **(Bajo) Lectura de los criterios 3 y 4:** sobre la serie diaria (cada día pesa igual), coherente con "media por día UTC" del pre-registro. Se informa además el d por fold ponderado por filas.
+5. **(Bajo) Bootstrap:** es de bloques móviles de días (ADR-043); el informe lo dice.
+6. **(Bajo) Constantes del script** (semilla, n bootstrap, α, 60 %, primer test, embargo, grupos de M3/M4): se comprueban contra el pre-registro; si no coinciden, falla.
+7. **(Bajo) `news_source_ok` (booleana) no entra en M4:** ya ocurría al congelar el pre-registro y en el placebo de F6. Las features de noticias ya son nulas cuando la fuente falla, así que la información es redundante. **No se cambia** (cambiar features tras congelar no se permite); ahora se informa en `excluded_non_numeric`.
+8. **(Bajo) Reproducibilidad:** se comprueba repitiendo la corrida y comparando el sha256 de las predicciones OOS.

@@ -86,6 +86,19 @@ def feature_columns(df: pl.DataFrame, spec: ModelSpec, allowed: frozenset[str]) 
     return sorted(cols)
 
 
+def excluded_columns(df: pl.DataFrame, spec: ModelSpec, allowed: frozenset[str]) -> list[str]:
+    """Columnas permitidas de los grupos del modelo que no entran por no ser numéricas
+    (p. ej. ``news_source_ok``, booleana; revisión F7). Se informan, no se descartan en silencio."""
+    return sorted(
+        c
+        for c in df.columns
+        if c in allowed
+        and c.split("_", 1)[0] in spec.groups
+        and not c.endswith(pit.SUFFIX)
+        and not df.schema[c].is_numeric()
+    )
+
+
 def check_features_pit(df: pl.DataFrame, spec: ModelSpec) -> None:
     """Cada grupo usado debe tener su ``<grupo>*_available_at`` y no puede haber fugas."""
     avail = [c for c in df.columns if c.endswith(pit.SUFFIX) and c.split("_", 1)[0] in spec.groups]
@@ -164,6 +177,7 @@ class WalkForwardResult:
     predictions: pl.DataFrame
     skipped: list[int]
     imputed: dict[int, tuple[int, int]] = field(default_factory=dict)  # M1: fold → (train, test)
+    excluded: list[str] = field(default_factory=list)  # columnas no numéricas de sus grupos
 
 
 def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explícito
@@ -228,7 +242,7 @@ def run_walk_forward(  # noqa: PLR0913 - todo lo que define la corrida es explí
     if not out:
         raise SchemaError(f"{spec.name}: ningún fold con datos")
     preds = pl.concat(out).with_columns(model=pl.lit(spec.name))
-    return WalkForwardResult(preds, skipped, imputed)
+    return WalkForwardResult(preds, skipped, imputed, excluded_columns(df, spec, allowed))
 
 
 def climatology_loss(

@@ -97,6 +97,8 @@ def compare_losses(
     if len(loss_a) != len(loss_b):
         raise SchemaError("pérdidas de A y B con distinto número de observaciones")
     diffs = [a - b for a, b in zip(loss_a, loss_b, strict=True)]
+    if not all(math.isfinite(d) for d in diffs):
+        raise SchemaError("pérdidas no finitas en la comparación")
     daily = block_means(diffs, blocks)
     if len(daily) < MIN_DAYS:
         raise SchemaError(f"comparación con {len(daily)} días (< {MIN_DAYS}): tamaño no fiable")
@@ -112,6 +114,9 @@ def holm(pvals: dict[str, float]) -> dict[str, float]:
     """p ajustados de Holm-Bonferroni (FWER), en el mismo orden de claves."""
     if not pvals:
         raise SchemaError("Holm sin pruebas")
+    bad = {k: p for k, p in pvals.items() if not 0.0 <= p <= 1.0}  # NaN también falla
+    if bad:
+        raise SchemaError(f"p fuera de [0, 1] en Holm: {bad}")
     m = len(pvals)
     order = sorted(pvals, key=lambda k: (pvals[k], k))
     out: dict[str, float] = {}

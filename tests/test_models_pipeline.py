@@ -76,3 +76,13 @@ def test_folds_without_data_or_classes() -> None:
         _run(up, _folds(up))
     with pytest.raises(SchemaError, match="M0"):
         pipeline.climatology_loss(df, [], horizon_min=15)
+
+
+def test_non_numeric_group_columns_are_reported() -> None:
+    df = _df().with_columns(wpsr_flag=pl.lit(True))
+    allowed = synthetic.FEATURES | {"wpsr_flag"}
+    assert pipeline.excluded_columns(df, M3, allowed) == ["wpsr_flag"]
+    res = pipeline.run_walk_forward(
+        df, M3, _folds(df), horizon_min=15, allowed=allowed, sealed_start=SEALED
+    )
+    assert res.excluded == ["wpsr_flag"]
