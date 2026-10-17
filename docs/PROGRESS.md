@@ -15,6 +15,14 @@
 | Noticias con `first_available_at` | Hecho y revisado (decisiones del usuario en ADR-026) | `gdelt-news-v2`, `reports/f2/gdelt_news_normalized.md` |
 | Puerta G1 | Aprobada (ADR-027) | `reports/G1_cierre.md` |
 
+### F3: estado
+| Bloque | Estado | Salida |
+|---|---|---|
+| Capa de eventos (reglas, dedup online, eventos) | Hecho y revisado | `events-v2` / `rules-v2` |
+| Muestra G2 (288 titulares, 26 repetidos a ciegas) | Hecha; propuestas de Claude cargadas | `scripts/f3/g2_sample.py`, página de revisión (artifact privado) |
+| Revisión del usuario | **Pendiente (usuario)** | etiquetas en la base de datos de la página |
+| Precisión por categoría + informe G2 | Pendiente de la revisión | `reports/G2_*.md` |
+
 ## Hecho
 - F0 cerrada: esqueleto, núcleo (`timeutils`, `config`, `runlog`, CLI), protocolo aprobado (ADR-009). Revisión adversarial F0 resuelta (ADR-008).
 - Especificaciones de CL verificadas con el Rulebook NYMEX cap. 200 (ADR-005).
