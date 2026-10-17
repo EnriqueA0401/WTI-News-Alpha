@@ -501,3 +501,15 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - festivos y vísperas;
   - minutos desde la apertura (aproximados por `mkt_minutes_since_break`).
   - Motivo: CLAUDE.md §13 (lo más simple primero) y que no son necesarias para la prueba M4 frente a M3.
+
+## ADR-036 — Test final sellado: 2025-07-01 → 2026-08-01 UTC (usuario, 2026-10-17)
+- **Decisión del usuario:** la opción recomendada, jul-2025 → jul-2026.
+  - Es `[2025-07-01 00:00Z, 2026-08-01 00:00Z)`, en `config/splits.yaml`.
+  - Incluye 74.125 de los 392.465 instantes de `feat-v1` (18,9 %), hasta el último dato de precio (2026-07-21).
+- **Datos para investigar:** 2018–2020 y 2024-01 → 2025-06.
+- **Reglas:**
+  1. Desde ahora **ningún análisis** (EDA, estudio de eventos, ajuste, selección o calibración) usa instantes del periodo sellado.
+     - Hasta que exista la guardia de F6, cada script filtra con `decision_time < 2025-07-01` (o `t0` del evento) y lo hace constar.
+     - Las etiquetas cuyo intervalo termina dentro del sellado se purgan.
+  2. Solo se abre una vez, en F10, tras el pre-registro aprobado por el usuario (CLAUDE.md §3.5, §11.4).
+  3. Cambiar la ventana es un punto de parada (CLAUDE.md §4).

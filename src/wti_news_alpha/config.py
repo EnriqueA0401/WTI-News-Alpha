@@ -164,12 +164,25 @@ class CostsConfig(_Strict):
 # ------------------------------------------------------------------ splits
 
 
+class SealedWindow(_Strict):
+    """Periodo sellado ``[start, end)`` en UTC (CLAUDE.md §3.5)."""
+
+    start: AwareDatetime
+    end: AwareDatetime
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.end <= self.start:
+            raise ValueError("ventana sellada vacía o invertida")
+        return self
+
+
 class SplitsConfig(_Strict):
     train_fraction: Param[UnitFraction]
     validation_fraction: Param[UnitFraction]
     test_fraction: Param[UnitFraction]
     embargo: Param[NonEmptyStr]
-    sealed_test_window: Param[NonEmptyStr]
+    sealed_test_window: Param[SealedWindow]
 
     @model_validator(mode="after")
     def _fractions_sum_to_one(self) -> Self:
