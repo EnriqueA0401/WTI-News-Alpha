@@ -1,0 +1,33 @@
+# Features point-in-time (docs/plans/FASE_04.md). Parámetros de diseño técnico (no son horizontes
+# de etiqueta, costes ni timestamps de fuentes); cualquier cambio es una versión nueva.
+version: feat-v1
+inputs:
+  price: dwx-xti-m1-v3
+  events: events-v3
+  wpsr: eia-wpsr-v2
+  cot: cftc-cot-v2
+  fred: fred-alfred-v2
+step_minutes:
+  value: 5
+  status: approved
+  source_ref: "PROTOCOL A4 (ADR-009): rejilla fija cada 5 min dentro de sesión"
+max_bar_age_minutes:
+  value: 5
+  status: approved
+  source_ref: "FASE_04.md: un instante entra en la rejilla si la última barra completa tiene <= 5 min"
+max_gap_minutes:
+  value: 5
+  status: approved
+  source_ref: "FASE_04.md: un hueco > 5 min entre barras corta retornos y ventanas (no se rellena)"
+return_minutes:
+  value: [1, 5, 15, 60]
+  status: approved
+  source_ref: "Documento §7 (menú de mercado): retornos 1/5/15/60 min"
+vol_window_minutes:
+  value: 60
+  status: approved
+  source_ref: "Documento §7: volatilidad realizada y rango; ventana de 60 min"
+news_windows_minutes:
+  value: [15, 60, 240]
+  status: approved
+  source_ref: "Documento §7 (menú de noticias): conteos 15 min / 1 h / 4 h"

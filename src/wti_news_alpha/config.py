@@ -477,6 +477,34 @@ def load_events_config(config_dir: Path = CONFIG_DIR) -> EventsConfig:
     return load_yaml_model(config_dir / "events.yaml", EventsConfig)
 
 
+class FeatureInputs(_Strict):
+    """Versiones de las capas de entrada de las features."""
+
+    price: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    events: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    wpsr: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    cot: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    fred: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+
+
+class FeaturesConfig(_Strict):
+    """Features point-in-time (``config/features.yaml``, FASE_04.md)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    inputs: FeatureInputs
+    step_minutes: Param[PositiveInt]
+    max_bar_age_minutes: Param[PositiveInt]
+    max_gap_minutes: Param[PositiveInt]
+    return_minutes: Param[list[PositiveInt]]
+    vol_window_minutes: Param[PositiveInt]
+    news_windows_minutes: Param[list[PositiveInt]]
+
+
+def load_features_config(config_dir: Path = CONFIG_DIR) -> FeaturesConfig:
+    """Carga ``config/features.yaml``."""
+    return load_yaml_model(config_dir / "features.yaml", FeaturesConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 
