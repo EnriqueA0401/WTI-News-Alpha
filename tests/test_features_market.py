@@ -56,6 +56,7 @@ def test_returns_hand_case() -> None:
         math.log(105 / 101)
     )  # cierre de la barra de las 15:02
     assert row["mkt_minutes_since_bar"] == 0.0
+    assert row["mkt_minutes_since_break"] == 6.0  # primera barra (corte inicial) a las 15:01
     # Ventana de 3 min: barras 5, 6 y 7 → retornos 1 min de 4→5, 5→6, 6→7.
     r = [math.log(104 / 103), math.log(105 / 104)]
     rv = math.sqrt(math.log(103 / 102) ** 2 + r[0] ** 2 + r[1] ** 2)
@@ -79,6 +80,7 @@ def test_gap_breaks_returns_and_windows() -> None:
     assert row["mkt_ret_1m"] == pytest.approx(math.log(113 / 112))
     assert row["mkt_ret_5m"] is None  # 15:10 cae en el hueco
     assert row["mkt_rv_3m"] is not None  # 13→14→15 no cruza
+    assert row["mkt_minutes_since_break"] == 3.0  # la barra de las 15:12 sigue al hueco
     row2 = _run(bars, _grid([13])).row(0, named=True)
     assert row2["mkt_ret_1m"] == pytest.approx(math.log(111 / 110))
     assert row2["mkt_rv_3m"] is None  # la ventana (15:10, 15:13] empieza en el hueco

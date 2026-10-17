@@ -23,6 +23,13 @@ AVAILABLE = "available_at"
 SUFFIX = "_available_at"
 
 
+def require_grid(grid: pl.DataFrame) -> None:
+    """La rejilla necesita ``decision_time`` en UTC, sin nulos ni duplicados."""
+    require_utc_column(grid, DECISION)
+    if grid[DECISION].is_duplicated().any():
+        raise SchemaError("decision_time duplicado en la rejilla")
+
+
 def asof_latest(
     grid: pl.DataFrame,
     source: pl.DataFrame,
@@ -37,9 +44,7 @@ def asof_latest(
     Devuelve ``grid`` ordenado por ``decision_time`` con ``<prefix>_<valor>`` y
     ``<prefix>_available_at``; las mismas filas que ``grid``.
     """
-    require_utc_column(grid, DECISION)
-    if grid[DECISION].is_duplicated().any():
-        raise SchemaError("decision_time duplicado en la rejilla")
+    require_grid(grid)
     missing = {AVAILABLE, *values} - set(source.columns)
     if missing:
         raise SchemaError(f"faltan columnas en la fuente {prefix!r}: {sorted(missing)}")

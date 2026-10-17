@@ -132,4 +132,6 @@ def market_features(grid: pl.DataFrame, bars: pl.DataFrame, p: MarketParams) -> 
             .then((pl.col("mkt_close") / pl.col("then_bid_close")).log())
             .alias(f"mkt_ret_{k}m")
         ).drop("then_bid_close", "then_available_at")
-    return out.drop("mkt__break_at")
+    # Minutos desde el último corte: aproxima el tiempo desde la reapertura de la sesión.
+    since = (pl.col(DECISION) - pl.col("mkt__break_at")).dt.total_microseconds() / 60e6
+    return out.with_columns(mkt_minutes_since_break=since).drop("mkt__break_at")
