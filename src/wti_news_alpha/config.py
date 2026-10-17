@@ -539,6 +539,24 @@ def load_features_config(config_dir: Path = CONFIG_DIR) -> FeaturesConfig:
     return load_yaml_model(config_dir / "features.yaml", FeaturesConfig)
 
 
+class LabelInputs(_Strict):
+    price: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    features: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+
+
+class LabelsConfig(_Strict):
+    """Etiquetas (``config/labels.yaml``, FASE_06.md)."""
+
+    version: Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]*$")]
+    inputs: LabelInputs
+    max_gap_minutes: Param[PositiveInt]
+
+
+def load_labels_config(config_dir: Path = CONFIG_DIR) -> LabelsConfig:
+    """Carga ``config/labels.yaml``."""
+    return load_yaml_model(config_dir / "labels.yaml", LabelsConfig)
+
+
 class CaptureConfig(_Strict):
     """Captura prospectiva (D12, ADR-016)."""
 

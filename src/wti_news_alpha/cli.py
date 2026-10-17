@@ -19,6 +19,7 @@ from wti_news_alpha.config import (
     load_features_config,
     load_fred_config,
     load_gdelt_config,
+    load_labels_config,
     load_news_config,
     load_project_config,
 )
@@ -27,6 +28,7 @@ from wti_news_alpha.events import pipeline as events_pipeline
 from wti_news_alpha.features import build as features_build
 from wti_news_alpha.ingestion import capture, gdelt_gkg
 from wti_news_alpha.ingestion.source_check import AccessStatus, probe_all, render_markdown
+from wti_news_alpha.labels import build as labels_build
 from wti_news_alpha.normalization import cftc_cot, darwinex, eia_wpsr, fred_alfred, gdelt_news
 from wti_news_alpha.runlog import REPO_ROOT, current_commit, get_logger, run_step
 
@@ -307,8 +309,22 @@ def build_features() -> None:
 
 @app.command("build-labels")
 def build_labels() -> None:
-    """Etiquetas versionadas (F6)."""
-    _not_yet("build-labels", "F6")
+    """Etiquetas versionadas del periodo de investigación (F6, FASE_06.md). Idempotente."""
+    cfg = load_labels_config(CONFIG_DIR)
+    proj = load_project_config(CONFIG_DIR)
+    commit = current_commit()
+    logger = get_logger()
+    with run_step("labels_build", logger, commit, version=cfg.version) as res:
+        pub = labels_build.run_build(
+            out_root=REPO_ROOT / "data" / "normalized",
+            manifest_dir=REPO_ROOT / "manifests",
+            cfg=cfg,
+            proj=proj,
+            commit=commit,
+        )
+        res.update(created=pub.created, n_rows=pub.manifest["n_rows"])
+    action = "creada" if pub.created else "verificada (ya existía)"
+    typer.echo(f"{cfg.version} {action}: {pub.manifest['n_rows']} instantes")
 
 
 @app.command()

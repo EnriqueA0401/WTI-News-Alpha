@@ -1,0 +1,10 @@
+# Etiquetas (docs/plans/FASE_06.md; ADR-037/040). Horizontes en config/horizons.yaml, latencia en
+# config/costs.yaml y test sellado en config/splits.yaml; aquí solo versiones y el hueco máximo.
+version: label-v1
+inputs:
+  price: dwx-xti-m1-v3
+  features: feat-v1
+max_gap_minutes:
+  value: 5
+  status: approved
+  source_ref: "Igual que feat-v1 (FASE_04.md): un hueco > 5 min entre barras anula la etiqueta"
