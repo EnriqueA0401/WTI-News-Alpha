@@ -127,6 +127,8 @@ def _costs(**override: Any) -> dict[str, Any]:
         "currency": "USD",
         "commission_usd_per_side": _param(None, "unverified"),
         "spread_ticks": _param(None, "unverified"),
+        "spread_source": _param("measured", "approved"),
+        "tick_size_usd": _param(0.01, "approved"),
         "slippage_ticks_per_side": _param(1.0, "proposed"),
         "latency_seconds": _param(None, "proposed"),
         "sensitivity_multipliers": _param([1.0, 2.0, 3.0], "proposed"),

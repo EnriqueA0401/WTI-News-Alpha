@@ -571,3 +571,14 @@ Corregido en `cftc-cot-v2` (la v1 no llegó a publicarse):
   - las dos pruebas principales (M4 frente a M3 a 15 y a 60 min) se corrigen con **Holm** a α = 0,05: la más significativa necesita p < 0,025;
   - la prueba de tamaño y los análisis por familia o régimen son secundarios y llevan BH aparte.
 - **Consecuencias:** las etiquetas `label-v1` se calculan a 15 y 60 min (y a 4 h, fin de sesión y 1–3 sesiones como análisis secundarios). Todo esto se copia al pre-registro (`preregistration/H1.yaml`) antes de mirar ningún resultado de modelos.
+
+## ADR-041 — Modelo de costes, caso base (usuario, 2026-10-17)
+- **Decisión del usuario (recomendada):**
+  - el **spread** es el medido en cada barra (`avg_spread` de Darwinex, ≈ 0,035–0,045 USD/bbl de mediana anual, ≈ 6 pb);
+  - **1 tick (0,01 USD) de deslizamiento por lado**;
+  - **comisión 0**: CFD con el coste incluido en el spread, hipótesis **no verificada** con el bróker;
+  - sensibilidad **1×, 2× y 3×** sobre el spread y el deslizamiento.
+- **Ejecución con precios bid:**
+  - largo: compra a `bid_e + spread_e + slip` y vende a `bid_x - slip`;
+  - corto: vende a `bid_e - slip` y recompra a `bid_x + spread_x + slip`.
+- **Riesgo:** si el bróker cobra comisión, el caso base es optimista. Se reporta junto a 2× y 3×.

@@ -1,13 +1,22 @@
-# Modelo de costes. Caso base aprobado (docs/PROTOCOL.md, 2026-10-15); comisión y spread sin verificar.
+# Modelo de costes. Caso base aprobado por el usuario (ADR-041, 2026-10-17): spread medido del CFD +
+# 1 tick de deslizamiento por lado; comisión 0 (hipótesis no verificada con el bróker).
 currency: USD
 commission_usd_per_side:
-  value: null
-  status: unverified
-  source_ref: "Pendiente: tarifa de broker + fees CME a verificar"
+  value: 0.0
+  status: approved
+  source_ref: "ADR-041 (usuario): CFD con coste incluido en el spread; NO verificado con el bróker"
 spread_ticks:
   value: null
   status: unverified
-  source_ref: "Pendiente: medir en F1 con datos BBO si existen"
+  source_ref: "No se usa: el spread es el medido por barra (spread_source = measured, ADR-041)"
+spread_source:
+  value: measured
+  status: approved
+  source_ref: "ADR-041 (usuario): avg_spread de cada barra de Darwinex"
+tick_size_usd:
+  value: 0.01
+  status: approved
+  source_ref: "ADR-005: tick CL = 0,01 USD/bbl (Rulebook NYMEX cap. 200); se usa también para el CFD"
 slippage_ticks_per_side:
   value: 1.0
   status: approved

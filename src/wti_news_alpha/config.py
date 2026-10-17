@@ -156,6 +156,8 @@ class CostsConfig(_Strict):
     currency: Literal["USD"]
     commission_usd_per_side: Param[NonNegativeFloat]
     spread_ticks: Param[NonNegativeFloat]
+    spread_source: Param[Literal["measured", "fixed_ticks"]]
+    tick_size_usd: Param[PositiveFloat]
     slippage_ticks_per_side: Param[NonNegativeFloat]
     latency_seconds: Param[NonNegativeFloat]
     sensitivity_multipliers: Param[tuple[PositiveFloat, ...]]
