@@ -19,3 +19,25 @@ Estado F0: esquemas definidos a nivel de diseño (Documento §5.1); se implement
 | predictions / runs | runs | model_id, run_id, prediction_time, predictions, split_id, model_version, calibration_version | — | F7 |
 
 Unidades: precios en USD/bbl; volumen en contratos; tick 0,01 USD/bbl (pendiente de verificar, ADR-005).
+
+## Capa de features `feat-v1` (`data/features/feat-v1/features_YYYYMM.parquet`, F4)
+Una fila por `decision_time`, cada 5 min en UTC, cuando la última barra completa tiene ≤ 5 min. Código en `src/wti_news_alpha/features/`; configuración en `config/features.yaml`. Ningún valor se rellena: lo ausente es nulo.
+
+| Columna | Unidad | Definición | Disponibilidad |
+|---|---|---|---|
+| `decision_time`, `data_cutoff_time` | UTC | instante de decisión; el corte es el mismo instante | — |
+| `feature_version` | texto | `feat-v1` | — |
+| `mkt_close`, `mkt_spread` | USD (bid) | cierre bid y spread medio de la última barra de 1 min | `mkt_available_at` = fin de esa barra |
+| `mkt_ret_{1,5,15,60}m` | log | `log(cierre_t / cierre_{t-k})`; nulo si la barra de t-k tiene > 5 min o hay un corte (hueco > 5 min) entre ambas | idem |
+| `mkt_rv_60m`, `mkt_range_60m`, `mkt_tick_volume_60m` | log / ticks | volatilidad realizada (√Σ r₁²), log(máx/mín) y volumen de ticks en (t-60, t]; nulo si la ventana cruza un corte | idem |
+| `mkt_minutes_since_bar`, `mkt_minutes_since_break` | min | antigüedad de la última barra; minutos desde el último corte (≈ reapertura) | idem |
+| `wpsr_<serie>_value`, `wpsr_<serie>_chg` | miles de bbl, miles de bbl/d o % | último valor semanal publicado y cambio frente a la semana anterior exacta (11 series) | `wpsr_available_at`; `wpsr_age_h` = horas desde la publicación |
+| `cot_mm_net`, `cot_mm_net_chg`, `cot_mm_net_oi` | contratos / fracción | neto *managed money*, cambio semanal y neto / interés abierto | `cot_available_at`; `cot_age_h` |
+| `fred_<serie>_value`, `fred_<serie>_obs_lag_d` | unidades de FRED / días | última observación publicada (vintage vigente) y días desde ella; los festivos sin valor no cuentan | `fred_<serie>_available_at` |
+| `news_n_<clave>_{15,60,240}m`, `news_new_<clave>_{15,60,240}m` | artículos / eventos | artículos elegibles únicos y eventos nuevos en (t-w, t]; `<clave>` = `all` o una de las 5 familias; nulo si la ventana empieza antes de la cobertura de GDELT | `news_available_at` = último artículo elegible |
+| `news_title_share_240m` | fracción | proporción con título real en 4 h: indicador de época (ADR-033/034) | idem |
+| `news_event_age_min_<familia>` | min | minutos desde el último evento nuevo de la familia | idem |
+| `cal_hour_et`, `cal_weekday_et` | h / 1-7 | hora decimal y día (lunes = 1) en America/New_York | conocidas de antemano |
+| `cal_min_to_wpsr_std`, `cal_min_to_cot_std` | min | minutos al próximo miércoles 10:30 ET o viernes 15:30 ET (calendario estándar; no recoge festivos) | regla fija |
+
+No hay mecanismo ni dirección de las reglas (ADR-032). Las normalizaciones (por hora o régimen) se ajustan en F7, dentro de cada fold.
