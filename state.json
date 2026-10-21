@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-21T10:20:03.100399Z",
+   "last_check_utc": "2026-10-21T10:25:01.239904Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -10,7 +10,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-21T10:20:00.587766Z",
+   "last_check_utc": "2026-10-21T10:25:00.901947Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00"
@@ -18,14 +18,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-21T10:20:00.485668Z",
+   "last_check_utc": "2026-10-21T10:25:00.758416Z",
    "seen": [
-    "20261021021500.export.CSV.zip|available",
-    "20261021021500.mentions.CSV.zip|listed|e9b258710f0738b784324a8a5c64f732",
-    "20261021021500.mentions.CSV.zip|available",
-    "20261021021500.gkg.csv.zip|listed|faecd8eceb79855411a293d5d2ddb7f7",
-    "20261021021500.gkg.csv.zip|available",
-    "20261021013000.gkg.csv.zip|available",
     "20261021014500.gkg.csv.zip|available",
     "20261021020000.gkg.csv.zip|available",
     "20261021023000.export.CSV.zip|listed|ef9a8afb346ecc3950f0be9ab8de83e2",
@@ -219,11 +213,17 @@
     "20261021101500.mentions.CSV.zip|listed|4aa2a8f306539529a07bfcecd882268e",
     "20261021101500.mentions.CSV.zip|available",
     "20261021101500.gkg.csv.zip|listed|58cff92d40434262174f66ae6975a90a",
-    "20261021101500.gkg.csv.zip|available"
+    "20261021101500.gkg.csv.zip|available",
+    "20261021103000.export.CSV.zip|listed|f40f83fb27aea99f8382f1939072d4d4",
+    "20261021103000.export.CSV.zip|available",
+    "20261021103000.mentions.CSV.zip|listed|234a27e9a9a1b598307a08162fc97351",
+    "20261021103000.mentions.CSV.zip|available",
+    "20261021103000.gkg.csv.zip|listed|11b69dc89d68d33caaa99d8367120f75",
+    "20261021103000.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-10-21T10:15:00+00:00"
+    "last_nominal": "2026-10-21T10:30:00+00:00"
    }
   }
  }
