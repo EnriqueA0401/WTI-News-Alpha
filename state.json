@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-22T18:15:01.622921Z",
+   "last_check_utc": "2026-10-22T18:20:01.617335Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -10,7 +10,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-22T18:15:01.323030Z",
+   "last_check_utc": "2026-10-22T18:20:01.309293Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -19,12 +19,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-22T18:15:01.125941Z",
+   "last_check_utc": "2026-10-22T18:20:01.072659Z",
    "seen": [
-    "20261022100000.export.CSV.zip|listed|2a376ff4c00130c2d6c0d1c8573383f9",
-    "20261022100000.export.CSV.zip|available",
-    "20261022100000.mentions.CSV.zip|listed|a54d8fa792025965a241ab99417fc943",
-    "20261022100000.mentions.CSV.zip|available",
     "20261022100000.gkg.csv.zip|listed|cce93a33fa9431a843dcbf773431dfb3",
     "20261022100000.gkg.csv.zip|available",
     "20261022101500.export.CSV.zip|listed|8b0026f9de45a818af627270d0cc8101",
@@ -220,15 +216,14 @@
     "20261022181500.export.CSV.zip|available",
     "20261022181500.mentions.CSV.zip|listed|1e16a5e8ff1aaf3d0a3f81bd9a7a6726",
     "20261022181500.mentions.CSV.zip|available",
-    "20261022181500.gkg.csv.zip|listed|fe4ed98fa142368e50868a0329f3b201"
+    "20261022181500.gkg.csv.zip|listed|fe4ed98fa142368e50868a0329f3b201",
+    "20261022181500.gkg.csv.zip|available",
+    "20261022173000.gkg.csv.zip|available",
+    "20261022174500.gkg.csv.zip|available",
+    "20261022180000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {
-     "20261022173000.gkg.csv.zip": "2026-10-22T17:30:00+00:00",
-     "20261022174500.gkg.csv.zip": "2026-10-22T17:45:00+00:00",
-     "20261022180000.gkg.csv.zip": "2026-10-22T18:00:00+00:00",
-     "20261022181500.gkg.csv.zip": "2026-10-22T18:15:00+00:00"
-    },
+    "pending": {},
     "last_nominal": "2026-10-22T18:15:00+00:00"
    }
   }
