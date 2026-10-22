@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-22T18:35:01.375982Z",
+   "last_check_utc": "2026-10-22T18:40:01.651031Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -10,7 +10,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-22T18:35:00.739251Z",
+   "last_check_utc": "2026-10-22T18:40:01.348125Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -19,13 +19,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-22T18:35:00.588213Z",
+   "last_check_utc": "2026-10-22T18:40:01.016361Z",
    "seen": [
-    "20261022101500.gkg.csv.zip|listed|b5ae7423a805bec2e611cd459be29f03",
-    "20261022101500.gkg.csv.zip|available",
-    "20261022103000.export.CSV.zip|listed|569c521fcccbb34022f84ecf63e538a9",
-    "20261022103000.export.CSV.zip|available",
-    "20261022103000.mentions.CSV.zip|listed|c843e08e111922b0b8d8595ee33ba28b",
     "20261022103000.mentions.CSV.zip|available",
     "20261022103000.gkg.csv.zip|listed|46d7303c402152907672b3884499f391",
     "20261022103000.gkg.csv.zip|available",
@@ -220,11 +215,18 @@
     "20261022183000.mentions.CSV.zip|listed|b084ddccf7738bbddcfdab78e4b5cf17",
     "20261022183000.mentions.CSV.zip|available",
     "20261022183000.gkg.csv.zip|listed|1ba0e57f88de50acaa962111404c6445",
-    "20261022183000.gkg.csv.zip|available"
+    "20261022183000.gkg.csv.zip|available",
+    "20261022184500.export.CSV.zip|listed|837c216f0cc48b2378ad55480c8dbbbf",
+    "20261022184500.export.CSV.zip|available",
+    "20261022184500.mentions.CSV.zip|listed|5f5541f81e03a4b3b17bbe1894586f15",
+    "20261022184500.mentions.CSV.zip|available",
+    "20261022184500.gkg.csv.zip|listed|861f350342ee83c6d356316073d4fb49"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-10-22T18:30:00+00:00"
+    "pending": {
+     "20261022184500.gkg.csv.zip": "2026-10-22T18:45:00+00:00"
+    },
+    "last_nominal": "2026-10-22T18:45:00+00:00"
    }
   }
  }
