@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-23T04:15:01.469352Z",
+   "last_check_utc": "2026-10-23T04:20:15.161800Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -10,7 +10,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-23T04:15:01.131876Z",
+   "last_check_utc": "2026-10-23T04:20:15.023008Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -19,12 +19,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-23T04:15:01.001493Z",
+   "last_check_utc": "2026-10-23T04:20:14.778593Z",
    "seen": [
-    "20261022200000.gkg.csv.zip|listed|32b07ebee6e470c48ebe164bed9c0212",
-    "20261022200000.gkg.csv.zip|available",
-    "20261022201500.export.CSV.zip|listed|87a06b99f57ac39904f5f03a141a769d",
-    "20261022201500.export.CSV.zip|available",
     "20261022201500.mentions.CSV.zip|listed|6b01a8dbcfa0c6c599a02ba564b821e5",
     "20261022201500.mentions.CSV.zip|available",
     "20261022201500.gkg.csv.zip|listed|75e2296b4bc1bbba5a5ba7db3338d9c9",
@@ -220,11 +216,18 @@
     "20261023041500.mentions.CSV.zip|listed|c433fea9350f6b5ec9a6085e995dc1e8",
     "20261023041500.mentions.CSV.zip|available",
     "20261023041500.gkg.csv.zip|listed|13969a92666b334b41c2f9e363a28793",
-    "20261023041500.gkg.csv.zip|available"
+    "20261023041500.gkg.csv.zip|available",
+    "20261023043000.export.CSV.zip|listed|1a8d3aa4230b7c6b64ead93aa742325a",
+    "20261023043000.mentions.CSV.zip|listed|9d1202badd041361cacbc30469e397aa",
+    "20261023043000.mentions.CSV.zip|available",
+    "20261023043000.gkg.csv.zip|listed|4844117a846271d26dcd88d293433888"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-10-23T04:15:00+00:00"
+    "pending": {
+     "20261023043000.export.CSV.zip": "2026-10-23T04:30:00+00:00",
+     "20261023043000.gkg.csv.zip": "2026-10-23T04:30:00+00:00"
+    },
+    "last_nominal": "2026-10-23T04:30:00+00:00"
    }
   }
  }
