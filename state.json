@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-25T23:10:01.454033Z",
+   "last_check_utc": "2026-10-25T23:15:01.827563Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -11,7 +11,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-25T23:10:01.142692Z",
+   "last_check_utc": "2026-10-25T23:15:01.507994Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -20,12 +20,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-25T23:10:00.921972Z",
+   "last_check_utc": "2026-10-25T23:15:01.151239Z",
    "seen": [
-    "20261025150000.export.CSV.zip|listed|d7a376f6c8714636378c487385898e0c",
-    "20261025150000.export.CSV.zip|available",
-    "20261025150000.mentions.CSV.zip|listed|ec15346bf2cc1c8964241ee2d56f2b67",
-    "20261025150000.mentions.CSV.zip|available",
     "20261025150000.gkg.csv.zip|listed|0e11d7506131d0a46a981c6cb850d971",
     "20261025150000.gkg.csv.zip|available",
     "20261025151500.export.CSV.zip|listed|353b81b493feabe9b9ee78b688ae690e",
@@ -221,15 +217,14 @@
     "20261025231500.export.CSV.zip|available",
     "20261025231500.mentions.CSV.zip|listed|1625555c820b526974e8ab5e4aa447dc",
     "20261025231500.mentions.CSV.zip|available",
-    "20261025231500.gkg.csv.zip|listed|5c87298b7a4c6e37651b997755f3136e"
+    "20261025231500.gkg.csv.zip|listed|5c87298b7a4c6e37651b997755f3136e",
+    "20261025231500.gkg.csv.zip|available",
+    "20261025223000.gkg.csv.zip|available",
+    "20261025224500.gkg.csv.zip|available",
+    "20261025230000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {
-     "20261025223000.gkg.csv.zip": "2026-10-25T22:30:00+00:00",
-     "20261025224500.gkg.csv.zip": "2026-10-25T22:45:00+00:00",
-     "20261025230000.gkg.csv.zip": "2026-10-25T23:00:00+00:00",
-     "20261025231500.gkg.csv.zip": "2026-10-25T23:15:00+00:00"
-    },
+    "pending": {},
     "last_nominal": "2026-10-25T23:15:00+00:00"
    }
   }
