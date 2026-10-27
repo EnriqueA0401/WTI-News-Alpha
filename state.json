@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-27T08:05:01.728108Z",
+   "last_check_utc": "2026-10-27T08:10:01.976583Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -11,7 +11,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-27T08:05:01.437184Z",
+   "last_check_utc": "2026-10-27T08:10:01.680948Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -20,14 +20,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-27T08:05:01.052208Z",
+   "last_check_utc": "2026-10-27T08:10:01.343016Z",
    "seen": [
-    "20261026234500.gkg.csv.zip|listed|7c954ecfbba8af0f7eb42ac3ba92a383",
-    "20261026234500.gkg.csv.zip|available",
-    "20261027000000.export.CSV.zip|listed|be46b87be94459d51b21b69939bbad9a",
-    "20261027000000.export.CSV.zip|available",
-    "20261027000000.mentions.CSV.zip|listed|a1aa8387395374aecb596d68abcec3b6",
-    "20261027000000.mentions.CSV.zip|available",
     "20261027000000.gkg.csv.zip|listed|395f250def064f718c7575cd2fcb1806",
     "20261027001500.export.CSV.zip|listed|1c7c823291a6ccbcdce8d8a4ae77b64e",
     "20261027001500.export.CSV.zip|available",
@@ -221,11 +215,17 @@
     "20261027080000.mentions.CSV.zip|listed|17b95fd5717616eb9e6dd56f00e21b5c",
     "20261027080000.mentions.CSV.zip|available",
     "20261027080000.gkg.csv.zip|listed|2a0f751d510e4ecca47c5b49a4fcf2b1",
-    "20261027080000.gkg.csv.zip|available"
+    "20261027080000.gkg.csv.zip|available",
+    "20261027081500.export.CSV.zip|listed|d167d052db7a7f719ce74488325fd145",
+    "20261027081500.export.CSV.zip|available",
+    "20261027081500.mentions.CSV.zip|listed|72baffbf21f5f62cbf5d16aaf8b721b4",
+    "20261027081500.mentions.CSV.zip|available",
+    "20261027081500.gkg.csv.zip|listed|6aba907b8963db654d49c21fc0ebea32",
+    "20261027081500.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-10-27T08:00:00+00:00"
+    "last_nominal": "2026-10-27T08:15:00+00:00"
    }
   }
  }
