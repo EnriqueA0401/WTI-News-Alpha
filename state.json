@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-28T17:00:01.238212Z",
+   "last_check_utc": "2026-10-28T17:05:01.248461Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -11,7 +11,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-28T17:00:01.107423Z",
+   "last_check_utc": "2026-10-28T17:05:01.134252Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -21,11 +21,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-28T17:00:00.941263Z",
+   "last_check_utc": "2026-10-28T17:05:00.965596Z",
    "seen": [
-    "20261028054500.mentions.CSV.zip|listed|bb2f0e491768fc45668d5d33885edf07",
-    "20261028054500.mentions.CSV.zip|available",
-    "20261028054500.gkg.csv.zip|listed|409a32523c7ab40ed757882c4bef0266",
     "20261028060000.export.CSV.zip|listed|9cf320fffbdaa625f5dd6e0f8139d854",
     "20261028060000.mentions.CSV.zip|listed|5471aba41278570bbca23cfade5ab61d",
     "20261028060000.mentions.CSV.zip|available",
@@ -222,15 +219,15 @@
     "20261028170000.mentions.CSV.zip|listed|d1e55ccfd396f73cda289565265c19a0",
     "20261028170000.mentions.CSV.zip|available",
     "20261028170000.gkg.csv.zip|listed|0c2005d5026c743951e7285fd3cc1c26",
-    "20261028161500.gkg.csv.zip|available"
+    "20261028161500.gkg.csv.zip|available",
+    "20261028170000.gkg.csv.zip|available",
+    "20261028163000.gkg.csv.zip|available",
+    "20261028164500.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {
-     "20261028163000.gkg.csv.zip": "2026-10-28T16:30:00+00:00",
      "20261028164500.export.CSV.zip": "2026-10-28T16:45:00+00:00",
-     "20261028164500.gkg.csv.zip": "2026-10-28T16:45:00+00:00",
-     "20261028170000.export.CSV.zip": "2026-10-28T17:00:00+00:00",
-     "20261028170000.gkg.csv.zip": "2026-10-28T17:00:00+00:00"
+     "20261028170000.export.CSV.zip": "2026-10-28T17:00:00+00:00"
     },
     "last_nominal": "2026-10-28T17:00:00+00:00"
    }
