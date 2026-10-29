@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-29T04:50:01.169339Z",
+   "last_check_utc": "2026-10-29T04:55:01.737300Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -11,7 +11,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-29T04:50:00.887882Z",
+   "last_check_utc": "2026-10-29T04:55:01.459653Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -21,9 +21,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-29T04:50:00.739326Z",
+   "last_check_utc": "2026-10-29T04:55:01.147687Z",
    "seen": [
-    "20261028210000.mentions.CSV.zip|listed|a2a1d6e18f3a5b17d7657334b53b23a2",
     "20261028210000.mentions.CSV.zip|available",
     "20261028210000.gkg.csv.zip|listed|76ec9e7870e21c98a4f1d6ec3e2451c9",
     "20261028210000.gkg.csv.zip|available",
@@ -222,11 +221,11 @@
     "20261029050000.mentions.CSV.zip|listed|8947049bf71d94eef39254dc6092b2c7",
     "20261029050000.mentions.CSV.zip|available",
     "20261029050000.gkg.csv.zip|listed|b38aab1d7b470961f0cb2f8027c2810f",
-    "20261029050000.gkg.csv.zip|available"
+    "20261029050000.gkg.csv.zip|available",
+    "20261029043000.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {
-     "20261029043000.gkg.csv.zip": "2026-10-29T04:30:00+00:00",
      "20261029044500.export.CSV.zip": "2026-10-29T04:45:00+00:00"
     },
     "last_nominal": "2026-10-29T05:00:00+00:00"
