@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-10-31T05:30:01.300993Z",
+   "last_check_utc": "2026-10-31T05:35:00.879980Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-10-31T05:30:01.080735Z",
+   "last_check_utc": "2026-10-31T05:35:00.632656Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -22,13 +22,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-10-31T05:30:00.903419Z",
+   "last_check_utc": "2026-10-31T05:35:00.465530Z",
    "seen": [
-    "20261030211500.mentions.CSV.zip|available",
-    "20261030211500.gkg.csv.zip|listed|945c648aa63fa77d303d08a54e9f9610",
-    "20261030211500.gkg.csv.zip|available",
-    "20261030213000.export.CSV.zip|listed|3297f23567d80a91d97d56d87b762331",
-    "20261030213000.export.CSV.zip|available",
     "20261030213000.mentions.CSV.zip|listed|b1f40c316544b067d2db4bc829cbd795",
     "20261030213000.mentions.CSV.zip|available",
     "20261030213000.gkg.csv.zip|listed|b3fec788b8c3ac2c6bc289a0bcac2508",
@@ -223,13 +218,19 @@
     "20261031053000.export.CSV.zip|available",
     "20261031053000.mentions.CSV.zip|listed|537eb3c120806342ac71f471a4ef0a9c",
     "20261031053000.mentions.CSV.zip|available",
-    "20261031053000.gkg.csv.zip|listed|0a8bb829407ccb283cd4b745cbc7801a"
+    "20261031053000.gkg.csv.zip|listed|0a8bb829407ccb283cd4b745cbc7801a",
+    "20261031054500.export.CSV.zip|listed|bedd190be6d482b0c9c4aef4bd73ac34",
+    "20261031054500.export.CSV.zip|available",
+    "20261031054500.mentions.CSV.zip|listed|744aa748f1d23f13b3627142896343ab",
+    "20261031054500.mentions.CSV.zip|available",
+    "20261031054500.gkg.csv.zip|listed|f907611aff711ac6e06881db8314362e"
    ],
    "extra": {
     "pending": {
-     "20261031053000.gkg.csv.zip": "2026-10-31T05:30:00+00:00"
+     "20261031053000.gkg.csv.zip": "2026-10-31T05:30:00+00:00",
+     "20261031054500.gkg.csv.zip": "2026-10-31T05:45:00+00:00"
     },
-    "last_nominal": "2026-10-31T05:30:00+00:00"
+    "last_nominal": "2026-10-31T05:45:00+00:00"
    }
   }
  }
