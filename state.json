@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-01T22:00:01.201587Z",
+   "last_check_utc": "2026-11-01T22:05:02.352157Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-01T22:00:00.847851Z",
+   "last_check_utc": "2026-11-01T22:05:02.034791Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -22,14 +22,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-01T22:00:00.635299Z",
+   "last_check_utc": "2026-11-01T22:05:01.102648Z",
    "seen": [
-    "20261101140000.export.CSV.zip|available",
-    "20261101140000.mentions.CSV.zip|listed|9ac348c4ac091b4fa02d73a897d22701",
-    "20261101140000.mentions.CSV.zip|available",
-    "20261101140000.gkg.csv.zip|listed|483cc593998aa1625a382d3df3b499da",
-    "20261101140000.gkg.csv.zip|available",
-    "20261101131500.gkg.csv.zip|available",
     "20261101133000.gkg.csv.zip|available",
     "20261101134500.gkg.csv.zip|available",
     "20261101141500.export.CSV.zip|listed|a96e27d3703d3a0bfd3976e5b6de78c9",
@@ -223,11 +217,17 @@
     "20261101220000.mentions.CSV.zip|listed|7760e8ac6797a206fb3d26e0aa950a56",
     "20261101220000.mentions.CSV.zip|available",
     "20261101220000.gkg.csv.zip|listed|7de093eedf03d208d5519b564f0b2821",
-    "20261101220000.gkg.csv.zip|available"
+    "20261101220000.gkg.csv.zip|available",
+    "20261101221500.export.CSV.zip|listed|cbb10e108b9751a70ad96a3649f16468",
+    "20261101221500.export.CSV.zip|available",
+    "20261101221500.mentions.CSV.zip|listed|864ca7c442f0244504d36980a735d71e",
+    "20261101221500.mentions.CSV.zip|available",
+    "20261101221500.gkg.csv.zip|listed|74baafbac21941868ec44c094def5fab",
+    "20261101221500.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-11-01T22:00:00+00:00"
+    "last_nominal": "2026-11-01T22:15:00+00:00"
    }
   }
  }
