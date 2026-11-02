@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-02T01:10:01.208894Z",
+   "last_check_utc": "2026-11-02T01:15:02.083443Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-02T01:10:00.887791Z",
+   "last_check_utc": "2026-11-02T01:15:01.737502Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -22,12 +22,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-02T01:10:00.617007Z",
+   "last_check_utc": "2026-11-02T01:15:01.154143Z",
    "seen": [
-    "20261101170000.mentions.CSV.zip|available",
-    "20261101170000.gkg.csv.zip|listed|60a779169dfbd83979ff10e9900da377",
-    "20261101170000.gkg.csv.zip|available",
-    "20261101171500.export.CSV.zip|listed|1338c5702ec6431286a1f24f0d9a9320",
     "20261101171500.mentions.CSV.zip|listed|e819bf2a371176520a1b605932822357",
     "20261101171500.mentions.CSV.zip|available",
     "20261101171500.gkg.csv.zip|listed|1582b4fd68e04585defd3a1f2554f749",
@@ -223,15 +219,14 @@
     "20261102011500.export.CSV.zip|available",
     "20261102011500.mentions.CSV.zip|listed|050a5e3b32cdc7a971c366c703eee6df",
     "20261102011500.mentions.CSV.zip|available",
-    "20261102011500.gkg.csv.zip|listed|3ea363f28f6d860f1ad3f033a48660dc"
+    "20261102011500.gkg.csv.zip|listed|3ea363f28f6d860f1ad3f033a48660dc",
+    "20261102011500.gkg.csv.zip|available",
+    "20261102003000.gkg.csv.zip|available",
+    "20261102004500.gkg.csv.zip|available",
+    "20261102010000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {
-     "20261102003000.gkg.csv.zip": "2026-11-02T00:30:00+00:00",
-     "20261102004500.gkg.csv.zip": "2026-11-02T00:45:00+00:00",
-     "20261102010000.gkg.csv.zip": "2026-11-02T01:00:00+00:00",
-     "20261102011500.gkg.csv.zip": "2026-11-02T01:15:00+00:00"
-    },
+    "pending": {},
     "last_nominal": "2026-11-02T01:15:00+00:00"
    }
   }
