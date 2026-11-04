@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-04T21:05:00.848642Z",
+   "last_check_utc": "2026-11-04T21:10:01.031498Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-04T21:05:00.682060Z",
+   "last_check_utc": "2026-11-04T21:10:00.919915Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -23,13 +23,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-04T21:05:00.607362Z",
+   "last_check_utc": "2026-11-04T21:10:00.667117Z",
    "seen": [
-    "20261104050000.export.CSV.zip|listed|408c225c2e8a03d0b9bf8a740942e504",
-    "20261104050000.export.CSV.zip|available",
-    "20261104050000.mentions.CSV.zip|listed|af6cd641178a95d49decfc312bffc509",
-    "20261104050000.mentions.CSV.zip|available",
-    "20261104050000.gkg.csv.zip|listed|9d481ab1ff48eef8e315b57de28075c7",
     "20261104051500.export.CSV.zip|listed|a20634bfd57983e2b3abcedf16fff347",
     "20261104051500.export.CSV.zip|available",
     "20261104051500.mentions.CSV.zip|listed|bb83fb73cead724aa34d1108ed12fb3e",
@@ -224,11 +219,18 @@
     "20261104210000.gkg.csv.zip|available",
     "20261104201500.export.CSV.zip|available",
     "20261104203000.export.CSV.zip|available",
-    "20261104204500.export.CSV.zip|available"
+    "20261104204500.export.CSV.zip|available",
+    "20261104211500.export.CSV.zip|listed|b45e918c9a9eca4a6c294fe89b78f391",
+    "20261104211500.mentions.CSV.zip|listed|de5e0264e71974a3a4b91a85795cf984",
+    "20261104211500.mentions.CSV.zip|available",
+    "20261104211500.gkg.csv.zip|listed|06e1ba00cb1c55d7394163daad580aa0",
+    "20261104211500.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-11-04T21:00:00+00:00"
+    "pending": {
+     "20261104211500.export.CSV.zip": "2026-11-04T21:15:00+00:00"
+    },
+    "last_nominal": "2026-11-04T21:15:00+00:00"
    }
   }
  }
