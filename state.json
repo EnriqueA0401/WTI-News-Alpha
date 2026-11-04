@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-04T03:45:00.744290Z",
+   "last_check_utc": "2026-11-04T03:50:01.798218Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-04T03:45:00.449355Z",
+   "last_check_utc": "2026-11-04T03:50:01.548495Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -22,14 +22,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-04T03:45:00.314433Z",
+   "last_check_utc": "2026-11-04T03:50:01.147016Z",
    "seen": [
-    "20261103184500.export.CSV.zip|available",
-    "20261103194500.export.CSV.zip|listed|6594dfffeccb65e5592d02bce9876ff7",
-    "20261103194500.mentions.CSV.zip|listed|ff253231a65ad6037a2958e62090bbd1",
-    "20261103194500.mentions.CSV.zip|available",
-    "20261103194500.gkg.csv.zip|listed|17f55f5cf028140c78d8d19ca6279747",
-    "20261103194500.gkg.csv.zip|available",
     "20261103190000.export.CSV.zip|available",
     "20261103190000.gkg.csv.zip|available",
     "20261103191500.gkg.csv.zip|available",
@@ -223,11 +217,17 @@
     "20261104034500.mentions.CSV.zip|listed|6eb7183ac5138050bca05333b798bcbc",
     "20261104034500.mentions.CSV.zip|available",
     "20261104034500.gkg.csv.zip|listed|e7772f28507c9ae38682383ff74c3ce1",
-    "20261104034500.gkg.csv.zip|available"
+    "20261104034500.gkg.csv.zip|available",
+    "20261104040000.export.CSV.zip|listed|d2c0712e3a0584b9611e1f9ac8dabb46",
+    "20261104040000.export.CSV.zip|available",
+    "20261104040000.mentions.CSV.zip|listed|b42f748eff7e93d3445aecaa462879c5",
+    "20261104040000.mentions.CSV.zip|available",
+    "20261104040000.gkg.csv.zip|listed|35e9a3b5f9ecf49331585b59d80e9172",
+    "20261104040000.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-11-04T03:45:00+00:00"
+    "last_nominal": "2026-11-04T04:00:00+00:00"
    }
   }
  }
