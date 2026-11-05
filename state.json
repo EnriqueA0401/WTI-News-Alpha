@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-05T04:15:17.202437Z",
+   "last_check_utc": "2026-11-05T04:20:01.361964Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -12,7 +12,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-05T04:15:16.941496Z",
+   "last_check_utc": "2026-11-05T04:20:01.128174Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -23,14 +23,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-05T04:15:16.518027Z",
+   "last_check_utc": "2026-11-05T04:20:00.808588Z",
    "seen": [
-    "20261104200000.gkg.csv.zip|listed|69460aab985d49ad05dd85e9de58f1e0",
-    "20261104200000.gkg.csv.zip|available",
-    "20261104201500.export.CSV.zip|listed|04e3ceefc9e5d626a1a8df69c25a4ae2",
-    "20261104201500.mentions.CSV.zip|listed|7f0b9e4a2e2f17f541ec386d679c54f3",
-    "20261104201500.mentions.CSV.zip|available",
-    "20261104201500.gkg.csv.zip|listed|78b658a1b37e2695c4781a3e5ccc92c1",
     "20261104201500.gkg.csv.zip|available",
     "20261104203000.export.CSV.zip|listed|bba638690eecd09688eefefa89250d29",
     "20261104203000.mentions.CSV.zip|listed|aa951e3fc78df60610900ba0409909d2",
@@ -224,11 +218,17 @@
     "20261105034500.export.CSV.zip|available",
     "20261105034500.gkg.csv.zip|available",
     "20261105040000.export.CSV.zip|available",
-    "20261105040000.gkg.csv.zip|available"
+    "20261105040000.gkg.csv.zip|available",
+    "20261105043000.export.CSV.zip|listed|6843056bae03ae9269cf0e1147c9d3d4",
+    "20261105043000.export.CSV.zip|available",
+    "20261105043000.mentions.CSV.zip|listed|f85dc91242b91480967326fb706af51c",
+    "20261105043000.mentions.CSV.zip|available",
+    "20261105043000.gkg.csv.zip|listed|31261f15a87442f66f56646db2aaae98",
+    "20261105043000.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-11-05T04:15:00+00:00"
+    "last_nominal": "2026-11-05T04:30:00+00:00"
    }
   }
  }
