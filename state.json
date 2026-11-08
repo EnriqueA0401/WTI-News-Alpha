@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-08T08:55:01.544143Z",
+   "last_check_utc": "2026-11-08T09:00:27.430350Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -13,7 +13,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-08T08:55:01.373611Z",
+   "last_check_utc": "2026-11-08T09:00:27.110262Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -24,12 +24,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-08T08:55:01.251915Z",
+   "last_check_utc": "2026-11-08T09:00:26.666860Z",
    "seen": [
-    "20261108004500.export.CSV.zip|listed|7c0b8f9a329fdccc62cf15bf69a234b7",
-    "20261108004500.export.CSV.zip|available",
-    "20261108004500.mentions.CSV.zip|listed|8c03f882e43c5b45cd0b3a98fdeed81b",
-    "20261108004500.mentions.CSV.zip|available",
     "20261108004500.gkg.csv.zip|listed|433b72c30b962a114c483df26d47567c",
     "20261108004500.gkg.csv.zip|available",
     "20261108010000.export.CSV.zip|listed|ab61b2426bc38c8733d311532067fcde",
@@ -225,15 +221,14 @@
     "20261108090000.mentions.CSV.zip|listed|17f68fd5a3f4792d9a8842fcb73f8d56",
     "20261108090000.mentions.CSV.zip|available",
     "20261108090000.gkg.csv.zip|listed|8359f227d9fc8b9dbf42daf913caed73",
-    "20261108090000.gkg.csv.zip|available"
+    "20261108090000.gkg.csv.zip|available",
+    "20261108090000.export.CSV.zip|available",
+    "20261108081500.export.CSV.zip|available",
+    "20261108083000.export.CSV.zip|available",
+    "20261108084500.export.CSV.zip|available"
    ],
    "extra": {
-    "pending": {
-     "20261108081500.export.CSV.zip": "2026-11-08T08:15:00+00:00",
-     "20261108083000.export.CSV.zip": "2026-11-08T08:30:00+00:00",
-     "20261108084500.export.CSV.zip": "2026-11-08T08:45:00+00:00",
-     "20261108090000.export.CSV.zip": "2026-11-08T09:00:00+00:00"
-    },
+    "pending": {},
     "last_nominal": "2026-11-08T09:00:00+00:00"
    }
   }
