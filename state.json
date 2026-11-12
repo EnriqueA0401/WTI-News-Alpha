@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-12T22:20:01.394852Z",
+   "last_check_utc": "2026-11-12T22:25:01.352545Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -13,7 +13,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-12T22:20:01.113245Z",
+   "last_check_utc": "2026-11-12T22:25:01.085054Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -25,13 +25,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-12T22:20:00.996458Z",
+   "last_check_utc": "2026-11-12T22:25:00.965471Z",
    "seen": [
-    "20261112111500.gkg.csv.zip|available",
-    "20261112113000.export.CSV.zip|listed|35c852f2b00f1693fdbd4b94c47f470d",
-    "20261112113000.export.CSV.zip|available",
-    "20261112113000.mentions.CSV.zip|listed|eb8e878b0cf6b4d2857cd92955925ec0",
-    "20261112113000.mentions.CSV.zip|available",
     "20261112113000.gkg.csv.zip|listed|afe3cf9471b58bc0ff9156f9403fad54",
     "20261112113000.gkg.csv.zip|available",
     "20261112114500.export.CSV.zip|listed|c8d53d7d29cdc495fec9796d3a460f1b",
@@ -226,11 +221,18 @@
     "20261112221500.mentions.CSV.zip|listed|9f0bc12a24dc682daf080b556812b9d9",
     "20261112221500.mentions.CSV.zip|available",
     "20261112221500.gkg.csv.zip|listed|745836cf2949d1cd377f28d7bb7f6319",
-    "20261112221500.gkg.csv.zip|available"
+    "20261112221500.gkg.csv.zip|available",
+    "20261112223000.export.CSV.zip|listed|cef21531ea1ebcc498379b8611372433",
+    "20261112223000.export.CSV.zip|available",
+    "20261112223000.mentions.CSV.zip|listed|fe885bb4f9ff34da5e766f7af5277466",
+    "20261112223000.mentions.CSV.zip|available",
+    "20261112223000.gkg.csv.zip|listed|6de2f66b5bb99f7fcf2ef01bf537b0e3"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-11-12T22:15:00+00:00"
+    "pending": {
+     "20261112223000.gkg.csv.zip": "2026-11-12T22:30:00+00:00"
+    },
+    "last_nominal": "2026-11-12T22:30:00+00:00"
    }
   }
  }
