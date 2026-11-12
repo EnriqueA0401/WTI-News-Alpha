@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-12T19:15:01.132000Z",
+   "last_check_utc": "2026-11-12T19:20:01.179803Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -13,7 +13,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-12T19:15:00.844547Z",
+   "last_check_utc": "2026-11-12T19:20:00.904363Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -25,12 +25,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-12T19:15:00.689836Z",
+   "last_check_utc": "2026-11-12T19:20:00.738201Z",
    "seen": [
-    "20261112060000.mentions.CSV.zip|listed|bad62319b05e6a3c32386fc64a29ac6c",
-    "20261112060000.mentions.CSV.zip|available",
-    "20261112060000.gkg.csv.zip|listed|343baa9ff94926ec7147e144583b68f2",
-    "20261112050000.gkg.csv.zip|available",
     "20261112051500.gkg.csv.zip|available",
     "20261112061500.export.CSV.zip|listed|66a0d23d08c2c2ceaf75b0ee607f05f1",
     "20261112061500.mentions.CSV.zip|listed|276c2c21ecc6a7e0d1ca5bc99feb0637",
@@ -226,15 +222,14 @@
     "20261112191500.export.CSV.zip|available",
     "20261112191500.mentions.CSV.zip|listed|5a7c4b94c6f149a99629b013485e229e",
     "20261112191500.mentions.CSV.zip|available",
-    "20261112191500.gkg.csv.zip|listed|20dd9bbbadc15ac153346a6c62e2706b"
+    "20261112191500.gkg.csv.zip|listed|20dd9bbbadc15ac153346a6c62e2706b",
+    "20261112191500.gkg.csv.zip|available",
+    "20261112183000.gkg.csv.zip|available",
+    "20261112184500.gkg.csv.zip|available",
+    "20261112190000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {
-     "20261112183000.gkg.csv.zip": "2026-11-12T18:30:00+00:00",
-     "20261112184500.gkg.csv.zip": "2026-11-12T18:45:00+00:00",
-     "20261112190000.gkg.csv.zip": "2026-11-12T19:00:00+00:00",
-     "20261112191500.gkg.csv.zip": "2026-11-12T19:15:00+00:00"
-    },
+    "pending": {},
     "last_nominal": "2026-11-12T19:15:00+00:00"
    }
   }
