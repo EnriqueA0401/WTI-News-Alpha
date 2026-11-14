@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-14T06:00:01.115282Z",
+   "last_check_utc": "2026-11-14T06:05:01.615620Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -13,7 +13,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-14T06:00:00.912585Z",
+   "last_check_utc": "2026-11-14T06:05:01.409797Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -25,13 +25,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-14T06:00:00.575285Z",
+   "last_check_utc": "2026-11-14T06:05:01.123627Z",
    "seen": [
-    "20261113211500.mentions.CSV.zip|listed|bf9b1f7e54dbd3f72fe38e9cfdfb9407",
-    "20261113211500.mentions.CSV.zip|available",
-    "20261113211500.gkg.csv.zip|listed|17c191f3338b782cdaf499bb2bf88910",
-    "20261113203000.gkg.csv.zip|available",
-    "20261113213000.export.CSV.zip|listed|b696e9ecdcc3b53e729dad67772bd5cb",
     "20261113213000.export.CSV.zip|available",
     "20261113213000.mentions.CSV.zip|listed|7ed6ed92661e89f32c2f942acb9d987c",
     "20261113213000.mentions.CSV.zip|available",
@@ -226,11 +221,18 @@
     "20261114060000.mentions.CSV.zip|available",
     "20261114060000.gkg.csv.zip|listed|b000870bb70438bfcc2684809fd7321a",
     "20261114060000.gkg.csv.zip|available",
-    "20261114060000.export.CSV.zip|available"
+    "20261114060000.export.CSV.zip|available",
+    "20261114061500.export.CSV.zip|listed|126d1089120b26eb04219da49dda13d1",
+    "20261114061500.export.CSV.zip|available",
+    "20261114061500.mentions.CSV.zip|listed|5a45e9c4ba33da960bdeab16d941fbfc",
+    "20261114061500.mentions.CSV.zip|available",
+    "20261114061500.gkg.csv.zip|listed|04e0fa0bca716b7e00595751b6af39ab"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-11-14T06:00:00+00:00"
+    "pending": {
+     "20261114061500.gkg.csv.zip": "2026-11-14T06:15:00+00:00"
+    },
+    "last_nominal": "2026-11-14T06:15:00+00:00"
    }
   }
  }
