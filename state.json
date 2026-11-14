@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-14T02:15:01.061489Z",
+   "last_check_utc": "2026-11-14T02:20:01.235343Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -13,7 +13,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-14T02:15:00.715493Z",
+   "last_check_utc": "2026-11-14T02:20:00.947183Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -25,13 +25,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-14T02:15:00.638263Z",
+   "last_check_utc": "2026-11-14T02:20:00.847068Z",
    "seen": [
-    "20261113173000.export.CSV.zip|listed|a010775fbbadb3bffc0a074208e1a886",
-    "20261113173000.export.CSV.zip|available",
-    "20261113173000.mentions.CSV.zip|listed|7845c5b313e0051850c0131547391c6b",
-    "20261113173000.mentions.CSV.zip|available",
-    "20261113173000.gkg.csv.zip|listed|2a6d06c781f0bf7a370d9a6be23113b7",
     "20261113174500.export.CSV.zip|listed|91384cec50af50d4d22e2819c54288f9",
     "20261113174500.export.CSV.zip|available",
     "20261113174500.mentions.CSV.zip|listed|cb1ad675aeb3f036518132e533fceada",
@@ -226,11 +221,18 @@
     "20261114021500.export.CSV.zip|available",
     "20261114013000.export.CSV.zip|available",
     "20261114014500.export.CSV.zip|available",
-    "20261114020000.export.CSV.zip|available"
+    "20261114020000.export.CSV.zip|available",
+    "20261114023000.export.CSV.zip|listed|92d043b848f59d2d57e0e9bac4a3f915",
+    "20261114023000.mentions.CSV.zip|listed|79fb1e4ed4bb6bc529f1163cb0242034",
+    "20261114023000.mentions.CSV.zip|available",
+    "20261114023000.gkg.csv.zip|listed|743227dc174426551f290626b17669b7",
+    "20261114023000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-11-14T02:15:00+00:00"
+    "pending": {
+     "20261114023000.export.CSV.zip": "2026-11-14T02:30:00+00:00"
+    },
+    "last_nominal": "2026-11-14T02:30:00+00:00"
    }
   }
  }
