@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-19T15:50:01.443594Z",
+   "last_check_utc": "2026-11-19T15:55:01.428747Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -14,7 +14,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-19T15:50:01.237595Z",
+   "last_check_utc": "2026-11-19T15:55:01.272983Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -27,15 +27,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-19T15:50:01.135902Z",
+   "last_check_utc": "2026-11-19T15:55:01.198553Z",
    "seen": [
-    "20261119034500.mentions.CSV.zip|listed|f137e4f041f7252ffc7f686216250093",
-    "20261119034500.mentions.CSV.zip|available",
-    "20261119034500.gkg.csv.zip|listed|1035a26982021d38d15ec8aad12ae183",
-    "20261119034500.gkg.csv.zip|available",
-    "20261119040000.export.CSV.zip|listed|28980395fb56f627e11868b6fe0401ff",
-    "20261119040000.export.CSV.zip|available",
-    "20261119040000.mentions.CSV.zip|listed|a9c713449c990714808d3e7cdcc7b02c",
     "20261119040000.mentions.CSV.zip|available",
     "20261119040000.gkg.csv.zip|listed|8b3a3f87a205505c9f2ccf5d3a518715",
     "20261119040000.gkg.csv.zip|available",
@@ -228,15 +221,21 @@
     "20261119154500.mentions.CSV.zip|listed|9df6ae32a06823e35cf7d66c4911cd13",
     "20261119154500.mentions.CSV.zip|available",
     "20261119154500.gkg.csv.zip|listed|3ff43a9778cb8db1f01648132337343b",
-    "20261119154500.gkg.csv.zip|available"
+    "20261119154500.gkg.csv.zip|available",
+    "20261119160000.export.CSV.zip|listed|739f494bdb1e81fcd67ab11f5da6f12e",
+    "20261119160000.export.CSV.zip|available",
+    "20261119160000.mentions.CSV.zip|listed|239a42101684c586385ba4fdd434e15c",
+    "20261119160000.mentions.CSV.zip|available",
+    "20261119160000.gkg.csv.zip|listed|e73c29ead2b9dc25bc6411a2b4b45c69",
+    "20261119160000.gkg.csv.zip|available",
+    "20261119151500.export.CSV.zip|available"
    ],
    "extra": {
     "pending": {
-     "20261119151500.export.CSV.zip": "2026-11-19T15:15:00+00:00",
      "20261119153000.export.CSV.zip": "2026-11-19T15:30:00+00:00",
      "20261119154500.export.CSV.zip": "2026-11-19T15:45:00+00:00"
     },
-    "last_nominal": "2026-11-19T15:45:00+00:00"
+    "last_nominal": "2026-11-19T16:00:00+00:00"
    }
   }
  }
