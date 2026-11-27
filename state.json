@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-27T23:15:00.700599Z",
+   "last_check_utc": "2026-11-27T23:20:00.950960Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -15,7 +15,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-27T23:15:00.656151Z",
+   "last_check_utc": "2026-11-27T23:20:00.921938Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -29,13 +29,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-27T23:15:00.591034Z",
+   "last_check_utc": "2026-11-27T23:20:00.856619Z",
    "seen": [
-    "20261127093000.export.CSV.zip|available",
-    "20261127100000.export.CSV.zip|listed|385ca626c41a5c95502f9b00f0f68c60",
-    "20261127100000.mentions.CSV.zip|listed|cd4ca624ac59ed831f72dfffb0e6bc5c",
-    "20261127100000.mentions.CSV.zip|available",
-    "20261127100000.gkg.csv.zip|listed|d8009b80ee42253eca370e47c44eea49",
     "20261127100000.gkg.csv.zip|available",
     "20261127101500.export.CSV.zip|listed|0a119c7b897310e884f6cd58563d180d",
     "20261127101500.mentions.CSV.zip|listed|2113c7117c9affd406f1ecbcb363e018",
@@ -230,11 +225,18 @@
     "20261127231500.export.CSV.zip|available",
     "20261127223000.export.CSV.zip|available",
     "20261127224500.export.CSV.zip|available",
-    "20261127230000.export.CSV.zip|available"
+    "20261127230000.export.CSV.zip|available",
+    "20261127233000.export.CSV.zip|listed|fb1ce87a206afa02d0e06e7d3e55a183",
+    "20261127233000.mentions.CSV.zip|listed|061b5a60768dbbf9489a2ecb220b04e1",
+    "20261127233000.mentions.CSV.zip|available",
+    "20261127233000.gkg.csv.zip|listed|bbe49191a0b524ea6c9544831d4363e3",
+    "20261127233000.gkg.csv.zip|available"
    ],
    "extra": {
-    "pending": {},
-    "last_nominal": "2026-11-27T23:15:00+00:00"
+    "pending": {
+     "20261127233000.export.CSV.zip": "2026-11-27T23:30:00+00:00"
+    },
+    "last_nominal": "2026-11-27T23:30:00+00:00"
    }
   }
  }
