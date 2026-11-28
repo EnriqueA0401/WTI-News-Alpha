@@ -1,7 +1,7 @@
 {
  "sources": {
   "cftc_cot": {
-   "last_check_utc": "2026-11-28T15:00:00.992623Z",
+   "last_check_utc": "2026-11-28T15:05:01.051392Z",
    "seen": [
     "2026-10-06",
     "2026-10-06|2026-10-09T19:30:07.543000+00:00",
@@ -15,7 +15,7 @@
    "extra": {}
   },
   "eia_wpsr": {
-   "last_check_utc": "2026-11-28T15:00:00.676621Z",
+   "last_check_utc": "2026-11-28T15:05:00.775042Z",
    "seen": [
     "2026-10-09|2026-10-15T15:12:40+00:00",
     "2026-10-09|2026-10-15T15:12:40+00:00|2026-10-15T16:00:00+00:00",
@@ -29,14 +29,8 @@
    "extra": {}
   },
   "gdelt": {
-   "last_check_utc": "2026-11-28T15:00:00.582787Z",
+   "last_check_utc": "2026-11-28T15:05:00.516501Z",
    "seen": [
-    "20261128043000.mentions.CSV.zip|available",
-    "20261128043000.gkg.csv.zip|listed|733976771df13e061fda6d9f4d374337",
-    "20261128043000.gkg.csv.zip|available",
-    "20261128043000.export.CSV.zip|available",
-    "20261128034500.export.CSV.zip|available",
-    "20261128040000.export.CSV.zip|available",
     "20261128041500.export.CSV.zip|available",
     "20261128044500.export.CSV.zip|listed|f46cb6ce1a2b9273aaa9eebd840312d2",
     "20261128044500.mentions.CSV.zip|listed|d1d2da00e14959cd227840feeaae953e",
@@ -230,11 +224,17 @@
     "20261128150000.mentions.CSV.zip|listed|5c2b0560c78600e9dfd4a41dd69f95f1",
     "20261128150000.mentions.CSV.zip|available",
     "20261128150000.gkg.csv.zip|listed|24425f70e9e1ac33d39f43d365927247",
-    "20261128150000.gkg.csv.zip|available"
+    "20261128150000.gkg.csv.zip|available",
+    "20261128151500.export.CSV.zip|listed|c10ca71fcccdea4c9042e0ea5abc19ec",
+    "20261128151500.export.CSV.zip|available",
+    "20261128151500.mentions.CSV.zip|listed|c591199e8b542ecf89aee47d76470659",
+    "20261128151500.mentions.CSV.zip|available",
+    "20261128151500.gkg.csv.zip|listed|9ab3ac6634dfec3a34b0716a60d47adb",
+    "20261128151500.gkg.csv.zip|available"
    ],
    "extra": {
     "pending": {},
-    "last_nominal": "2026-11-28T15:00:00+00:00"
+    "last_nominal": "2026-11-28T15:15:00+00:00"
    }
   }
  }
